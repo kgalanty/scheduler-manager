@@ -1,35 +1,28 @@
 <template>
   <div id="app">
+    
     <Header />
+
+    <SidebarRight v-if="$route.matched.some(({ name }) => name.includes('Schedule'))"></SidebarRight >
     <div class="container is-fullhd notification">
-      <UserHeader />
-      <SearchEngine />
-      <RecentEvents />
-      <Browser />
+      <router-view/>
     </div>
   </div>
 </template>
-
 <script>
 import Header from './components/Header.vue'
-import UserHeader from './components/UserHeader.vue'
-import SearchEngine from './components/SearchEngine.vue'
-import RecentEvents from './components/RecentEvents.vue'
-import Browser from './components/Browser.vue'
+import SidebarRight from './components/SidebarRight.vue'
 
 export default {
   name: 'App',
   components: {
-    Header,
-    UserHeader,
-    SearchEngine,
-    RecentEvents,
-    Browser
+    Header, SidebarRight
+   
   }
 }
 </script>
-
 <style>
+
 html
 {
   background-color: rgb(181, 201, 255) !important;

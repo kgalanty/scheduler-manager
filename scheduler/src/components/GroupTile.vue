@@ -1,5 +1,5 @@
 <template>
-  <article class="tile is-parent">
+  <article class="tile is-parent" @click="openTeam">
     <div class="tile is-child box is-group">
       <p class="title">
             <b-icon
@@ -17,7 +17,14 @@
 <script>
 export default {
   name: 'GroupTile',
-  props:['label', 'icon']
+  props:['label', 'icon', 'path'],
+    methods: {
+    openTeam() {
+      this.$router.push({
+        path: this.path,
+      });
+    },
+  },
 }
 </script>
 

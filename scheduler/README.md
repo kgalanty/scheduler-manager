@@ -1,4 +1,4 @@
-# scheduler
+# schedulemanager
 
 ## Project setup
 ```

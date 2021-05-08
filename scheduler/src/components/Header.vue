@@ -17,6 +17,12 @@
                 size="is-medium">
             </b-icon>&nbsp;Back to WHMCS
       </a>
+      <router-link class="navbar-item" :to="`/`">
+       <b-icon
+                icon="home"
+                size="is-medium">
+            </b-icon>
+      </router-link>
   </div>
   </div>
 </nav>
@@ -24,7 +30,7 @@
 
 <script>
 export default {
-  name: 'UserHeader',
+  name: 'Header',
 }
 </script>
 
