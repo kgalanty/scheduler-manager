@@ -1,69 +1,91 @@
 <template>
-  <div style="background-color: white;">
-<b-tabs v-model="activeTab" type="is-toggle">
-  <b-tab-item label="Shifts">
-
-    <section class="section">
-      <h1 class="title">Add New Shift</h1>
-      <h2 class="subtitle">
-        <b-field
-          label="Team"
-          style="display: inline-block; margin-right: 20px"
-        >
-          <b-select placeholder="Select a team" v-model="team_id">
+  <div style="background-color: white">
+    <b-tabs v-model="activeTab" type="is-toggle">
+      <b-tab-item label="Teams & Shifts">
+        <div class="sectionscontainer">
+        <section class="section">
+          <h1 class="title">Add New Team</h1>
+          <h2 class="subtitle">
+            <b-field
+              label="Team"
+              style="display: inline-block; margin-right: 20px"
+            >
+              <b-input
+                v-model="new_team"
+                placeholder="Enter team name"
+              ></b-input>
+            </b-field>
+          </h2>
+            <b-message type="is-info" has-icon>
+            You can assign members in `Agents` tab.
+        </b-message>
+          <h2 class="subtitle">
+            <b-button type="is-primary"  @click="addTeam"
+              >Add New Team</b-button
+            >
+          </h2>
+         
+        </section>
+        <section class="section">
+          <h1 class="title">Add New Shift</h1>
+          <h2 class="subtitle">
+            <b-field
+              label="Team"
+              style="display: inline-block; margin-right: 20px"
+            >
+              <b-select placeholder="Select a team" v-model="team_id">
                 <option
-                    v-for="( option, i) in teams"
-                    :value="i"
-                    :key="option.id">
-                    {{ option.name }}
+                  v-for="(option, i) in teams"
+                  :value="i"
+                  :key="option.id"
+                >
+                  {{ option.name }}
                 </option>
-            </b-select>
-        </b-field>
-        <b-field
-          label="Time from"
-          style="display: inline-block; margin-right: 20px"
-        >
-          <b-timepicker
-            inline
-            v-model="timefrom"
-            rounded
-            placeholder="Click to select..."
-            icon="clock"
-            :date-formatter="formatter"
-          >
-          </b-timepicker>
-        </b-field>
-        <b-field label="Time to" style="display: inline-block">
-          <b-timepicker
-            inline
-            v-model="timeto"
-            rounded
-            placeholder="Click to select..."
-            icon="clock"
-          >
-          </b-timepicker>
-        </b-field>
-      </h2>
-      <h2 class="subtitle">
-        <b-button type="is-primary" outlined @click="addShift"
-          >Add New Shift</b-button
-        >
-      </h2>
-    </section>
-    <ShiftsList />
-    </b-tab-item>
-    <b-tab-item label="Agents">
-
-    <section class="section">
-      <h1 class="title">Agents</h1>
-      <h2 class="subtitle">
-        <AgentsList />
-    
-      </h2>
-    </section>
-
-    </b-tab-item>
-   <b-tab-item label="Agents Groups">
+              </b-select>
+            </b-field>
+            <b-field
+              label="Time from"
+              style="display: inline-block; margin-right: 20px"
+            >
+              <b-timepicker
+                inline
+                v-model="timefrom"
+                rounded
+                placeholder="Click to select..."
+                icon="clock"
+                :date-formatter="formatter"
+              >
+              </b-timepicker>
+            </b-field>
+            <b-field label="Time to" style="display: inline-block">
+              <b-timepicker
+                inline
+                v-model="timeto"
+                rounded
+                placeholder="Click to select..."
+                icon="clock"
+              >
+              </b-timepicker>
+            </b-field>
+          </h2>
+          <h2 class="subtitle">
+            <b-button type="is-primary"  @click="addShift"
+              >Add New Shift</b-button
+            >
+          </h2>
+        </section>
+        </div>
+        <ShiftsList />
+      </b-tab-item>
+      <b-tab-item label="Agents">
+        <section class="section">
+          <h1 class="title">Agents</h1>
+          <div class="subtitle">
+            <AgentsList />
+          </div>
+        </section>
+      </b-tab-item>
+      <!-- <b-tab-item label="Agents Groups">
     <section class="section">
       <h1 class="title">Assign a person to a shift</h1>
       <h2 class="subtitle">
@@ -82,20 +104,19 @@
         <b-button type="is-primary" outlined>Assign</b-button>
       </h2>
     </section>
-  </b-tab-item>
-  </b-tabs>
+  </b-tab-item> -->
+    </b-tabs>
   </div>
 </template>
 <script>
-import ShiftsList from '../components/ShiftsList.vue'
-import AgentsList from '../components/AgentsList.vue'
+import ShiftsList from "../components/ShiftsList.vue";
+import AgentsList from "../components/AgentsList.vue";
 export default {
-    name: 'admin',
-    components: {
-      ShiftsList,
-      AgentsList
-    
-    },
+  name: "admin",
+  components: {
+    ShiftsList,
+    AgentsList,
+  },
   data() {
     const data = [
       {
@@ -120,18 +141,18 @@ export default {
     ];
 
     return {
-      activeTab:0,
+      activeTab: 0,
       data,
       agents,
       timefrom: null,
       timeto: null,
-      team_id: null
+      team_id: null,
+      new_team: "",
     };
   },
   computed: {
-   teams()
-    {
-      return this.$store.state.schedule_teams
+    teams() {
+      return this.$store.state.schedule_teams;
     },
     admins() {
       return this.$store.state.admins;
@@ -152,13 +173,50 @@ export default {
     },
   },
   mounted() {
-    this.$store.dispatch("getAdmins");
-    this.$store.dispatch("getShiftsList");
-    this.$store.dispatch('getTeams')
+   this.$http
+      .get("./scheduleapi/verify", { withCredentials: true })
+      .then((r) => {
+        if (r.data.response === "success") {
+            this.$store.dispatch("getAdmins");
+            this.$store.dispatch("getShiftsList");
+            this.$store.dispatch("getTeams");
+        } else {
+         this.$router.push({ path: `/`})
+        }
+      });
+
   },
   methods: {
     formatter(d) {
       return d.toLocaleDateString();
+    },
+        addTeam() {
+      if (!this.new_team) {
+        this.$buefy.toast.open({
+          message: "All fields must be filled",
+          type: "is-danger",
+        });
+        return;
+      }
+         this.$http
+        .post("./scheduleapi/agents/addgroup", {name:this.new_team})
+        .then((response) => {
+          if (response.data.response == "success") {
+            this.$buefy.toast.open({
+              message: "New Team Added",
+              type: "is-success",
+            });
+            this.new_team = ''
+            this.$store.dispatch("getShiftsList");
+            this.$store.dispatch("getTeams");
+             
+          } else {
+            this.$buefy.toast.open({
+              message: response.data.response,
+              type: "is-danger",
+            });
+          }
+        });
     },
     addShift() {
       if (!this.timefrom || !this.timeto || !this.team_id) {
@@ -169,10 +227,10 @@ export default {
         return;
       }
       this.$http
-        .post("/scheduleapi/insertshift", {
+        .post("./scheduleapi/insertshift", {
           from: this.moment(this.timefrom).format("HH:mm"),
           to: this.moment(this.timeto).format("HH:mm"),
-          team_id: this.team_id
+          team_id: this.team_id,
         })
         .then((response) => {
           if (response.data.response == "success") {
@@ -187,7 +245,6 @@ export default {
               type: "is-danger",
             });
           }
-          
         });
     },
     getFirstDay() {
@@ -198,21 +255,30 @@ export default {
 </script>
 <style >
 .notification a:not(.button):not(.dropdown-item) {
-text-decoration:none;
+  text-decoration: none;
 }
 .section:first-child {
   margin-right: 5px;
 }
 .section {
-  width: 100%;
-  float: left;
+    -webkit-flex: 1; /* Safari */
+    -ms-flex: 1; /* IE 10 */
+    flex: 1; /* Standard syntax */
   border: 1px solid rgb(211, 211, 211);
   border-radius: 5px;
 }
 .subtitle {
   text-align: center;
+  display:flex;
+  align-items: center;
+  justify-content: center;
 }
 .table tr {
   height: 40px;
+}
+.sectionscontainer
+{
+    display: -webkit-flex; /* Safari */     
+    display: flex; /* Standard syntax */
 }
 </style>

@@ -30,6 +30,11 @@ const routes = [
      path: '/schedule/:team/:date',
      name: 'ScheduleTeam',
      component: () => import( '../views/schedule.vue')
+   },
+   {
+     path: '/assigneditors',
+     name: 'AssignEditors',
+     component: () => import( '../views/assigneditors.vue')
    }
 ]
 

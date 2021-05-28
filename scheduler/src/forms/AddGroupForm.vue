@@ -56,7 +56,7 @@ export default {
     addGroup()
     {
        this.$http
-        .post("/scheduleapi/agents/addgroup", {name:this.groupname, agents:this.agentsToAdd})
+        .post("./scheduleapi/agents/addgroup", {name:this.groupname, agents:this.agentsToAdd})
         .then((response) => {
           if (response.data.response == "success") {
             this.$buefy.toast.open({

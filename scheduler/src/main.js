@@ -15,6 +15,13 @@ import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
 
 library.add(fas);
 Vue.component('vue-fontawesome', FontAwesomeIcon);
+Vue.prototype.$filterObject = (obj, filter, filterValue) => 
+Object.keys(obj).reduce((acc, val) => 
+(obj[val][filter] === filterValue ? {
+    ...acc,
+    [val]: obj[val]
+}:   acc                               
+), {});
 Vue.use(Buefy, {
   defaultIconComponent: "vue-fontawesome",
   defaultIconPack: "fas",
@@ -89,5 +96,5 @@ new Vue({
 //           dragged.parentNode.removeChild( dragged );
 //           event.target.appendChild( dragged );
 //       }
-    
+
 //   }, false);

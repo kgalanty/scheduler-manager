@@ -1,11 +1,6 @@
 <template>
   <div>
-     <b-tabs v-model="activeTab" position="is-centered" class="block" destroy-on-hide animateInitially :animated="false">
-        <b-tab-item v-for="(team, team_index) in teams" :key="team_index" :label="team.name">
-          <GroupSchedule :team_id="team_index" />
-        </b-tab-item>
-           
-        </b-tabs>
+      <GroupSchedule />
 
 
   </div>
@@ -68,8 +63,8 @@ export default {
    
   },
   mounted(){
-    this.activeTab = Object.keys(this.teams)[0]
-   
+    //this.activeTab = Object.keys(this.teams)[0]
+    console.log(this.$route.params.date)
   },
   methods:
   {

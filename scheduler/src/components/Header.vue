@@ -23,6 +23,12 @@
                 size="is-medium">
             </b-icon>
       </router-link>
+       <router-link class="navbar-item" :to="`/assigneditors`" v-if="canAssignEditors==1">
+       <b-icon
+                icon="clipboard-list"
+                size="is-medium">
+            </b-icon>
+      </router-link>
   </div>
   </div>
 </nav>
@@ -31,6 +37,13 @@
 <script>
 export default {
   name: 'Header',
+  computed:
+  {
+    canAssignEditors()
+    {
+      return this.$store.state.canassigneditors
+    }
+  }
 }
 </script>
 

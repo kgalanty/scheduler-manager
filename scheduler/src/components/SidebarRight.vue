@@ -10,6 +10,7 @@
       flex-direction: column;
       align-content: stretch;
       background-color: white;
+      width:400px;
     "
     class=""
   >
@@ -18,11 +19,11 @@
       <a @click="open = true"><b-icon icon="expand-alt" size="is-small" style="float:left"></b-icon>Agents</a>
     </div>
       <transition name="list">
-    <div class="container floatright openedsidebar" v-if="open == true">
+    <div class=" floatright openedsidebar" v-if="open == true">
       <!-- <b-sidebar type="is-light" v-model="open" fullheight right> -->
       <div class="p-3">
         <b-button type="is-info" label="Close" @click="open = false"  size="is-small" />
-        <b-button type="is-success" label="Add new group" icon-left="plus" @click="openModal"  size="is-small" />
+        <!-- <b-button type="is-success" label="Add new group" icon-left="plus" @click="openModal"  size="is-small" /> -->
          <b-tooltip label="Show Delete icons" position="is-bottom" style="float: right;">
          <b-switch size="is-small"
          v-model="showDelete"
@@ -32,15 +33,17 @@
                     size="is-medium" /></b-switch>
                      </b-tooltip>
       </div>
-
+      <b-message type="is-info" has-icon style="margin:0px 10px">
+            To edit members and manage shifts & groups, <router-link :to="`/admin`">navigate here</router-link>.
+        </b-message>
       <div class="p-3" v-for="(team, team_i) in teams" :key="'teams' + team_i">
         <span class="team_name">#{{team_i}} {{team.name}}</span>
         <b-table :data="team.members" narrowed bordered mobile-cards> 
           <template #empty>
-                <div class="has-text-centered">No records</div>
+                <div class="has-text-centered">No members</div>
             </template>
           <b-table-column field="Agent" centered label="Agent" v-slot="props" header-class="headerclass">
-            <b-button :style="getStyle(props.row.bg, props.row.color)"
+            <b-button size="is-small" :style="getStyle(props.row.bg, props.row.color)"
             @dragstart="startDrag($event, props.row)"
             draggable
               @dragend.prevent="dragEnd($event)"
@@ -65,19 +68,8 @@
             {{ props.row.name }}
           </b-table-column> -->
         </b-table>
-        Add member:  <b-select style="
-    display: inline-flex;
-" placeholder="Select a name" v-model="newadmin[team_i]">
-                <option
-                    v-for="option in admins"
-                    :value="option.id"
-                    :key="option.id">
-                    {{ option.firstname }}   {{ option.lastname }}
-                </option>
-            </b-select>
-            <b-button type="is-primary" icon-left="plus" @click="addMember(team_i)" 
-            >Add</b-button>
       </div>
+    
       <!-- </b-sidebar> -->
     </div>
 
@@ -109,7 +101,8 @@ export default {
       return this.$store.state.admins;
     },
     teams() {
-      return this.$store.state.schedule_teams;
+      console.log(this.$filterObject(this.$store.state.schedule_teams, "name", this.$route.params.team))
+      return this.$filterObject(this.$store.state.schedule_teams, "name", this.$route.params.team);
     },
     days() {
       return [
@@ -131,7 +124,7 @@ export default {
     addMember(team_id)
     {
       this.$http
-        .post("/scheduleapi/agents/assigntogroup", {team_id: team_id, agent: this.newadmin[team_id]})
+        .post("./scheduleapi/agents/assigntogroup", {team_id: team_id, agent: this.newadmin[team_id]})
         .then((response) => {
           if (response.data.response == "success") {
             this.$buefy.toast.open({

@@ -1,6 +1,6 @@
 <template>
   <div>
-    <h2 class="subtitle">TMD Teams Schedules Browser</h2>
+    <h1 class="">TMD Teams Schedules Browser</h1>
 
     <div class="tile is-ancestor" v-for="(item, i) in teamsrows" :key="i">
         <GroupTile v-for="(item2, ii) in teamsrows[i]"
