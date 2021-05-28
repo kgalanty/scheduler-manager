@@ -67,10 +67,19 @@ $app->post(ROUTE_PREFIX.'/agents/color','App\Controllers\AgentsController:setAge
 $app->post(ROUTE_PREFIX.'/shifts/delete_draft','App\Controllers\TimetableController:deleteDraft')->add(new JsonMiddleware());
 $app->post(ROUTE_PREFIX.'/shifts/commit','App\Controllers\TimetableController:commitDrafts');
 $app->post(ROUTE_PREFIX.'/shifts/revert','App\Controllers\TimetableController:revertDrafts');
+$app->post(ROUTE_PREFIX.'/editors/add','App\Controllers\EditorsController:add')->add(new JsonMiddleware());
+$app->post(ROUTE_PREFIX.'/editors/delete','App\Controllers\EditorsController:delete')->add(new JsonMiddleware());
 
+$app->post(ROUTE_PREFIX.'/templates/add','App\Controllers\TemplatesController:add')->add(new JsonMiddleware());
+$app->get(ROUTE_PREFIX.'/templates/{groupid}','App\Controllers\TemplatesController:list');
+$app->post(ROUTE_PREFIX.'/templates/confirm','App\Controllers\TemplatesController:confirm')->add(new JsonMiddleware());
+$app->post(ROUTE_PREFIX.'/templates/delete','App\Controllers\TemplatesController:delete')->add(new JsonMiddleware());
+
+$app->get(ROUTE_PREFIX.'/editors/list','App\Controllers\EditorsController:list');
 $app->get(ROUTE_PREFIX.'/shifts/teams','App\Controllers\AgentsController:teamsMembers');
 $app->get(ROUTE_PREFIX.'/shifts/shiftsgroups/{groupid}','App\Controllers\ShiftsController:shiftsGroups');
 $app->get(ROUTE_PREFIX.'/logs','App\Controllers\LogsController:get');
+$app->get(ROUTE_PREFIX.'/verify','App\Controllers\AgentsController:verifyAgent');
 // $app->post(ROUTE_PREFIX.'/assignshift','App\Controllers\ShiftsController:assignToShift');
 //$app->add($beforeMiddleware);
 $app->run();
