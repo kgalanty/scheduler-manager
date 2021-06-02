@@ -29,6 +29,12 @@
                 size="is-medium">
             </b-icon>
       </router-link>
+             <router-link class="navbar-item" :to="`/admin`" v-if="canAssignEditors==1">
+       <b-icon
+                icon="cogs"
+                size="is-medium">
+            </b-icon>
+      </router-link>
   </div>
   </div>
 </nav>

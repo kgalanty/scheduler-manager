@@ -32,7 +32,7 @@
             label="Text Color"
             v-slot="props" 
           >  <b-tooltip position="is-bottom"  label="Color is not set">
-             <b-icon icon="plus-square" v-if="props.row.color == null"
+             <b-icon icon="border-none" v-if="props.row.color == null"
                     size="is-small"></b-icon>
                     </b-tooltip>
                <input type="color" name="color[]" :value="props.row.color" @change="setcolor('color', $event.target.value, props.row.id)" >

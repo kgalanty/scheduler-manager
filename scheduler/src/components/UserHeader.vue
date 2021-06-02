@@ -1,7 +1,7 @@
 <template>
   <div>
     <div class="content">
-      <h1>Hello {{ info }}</h1>
+      <h1 v-if="info">Hello {{ info }}</h1>
     </div>
   </div>
 </template>

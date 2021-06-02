@@ -16,14 +16,14 @@
       <div v-show="pendingchangeswidget" class="pendingmenu" style="">
         <ul style="overflow: auto; max-height: inherit; height: 100%">
           <li
-            v-for="(draft, i) in pendinglist"
+            v-for="(draft, i) in draftList"
             :key="i"
             style="text-align: left"
           >
-            <b-tag type="is-danger" v-if="draft.item.deldraftauthor"
+            <b-tag type="is-danger" v-if="draft.deldraftauthor"
               >Deletion</b-tag
             >
-            <b-tag type="is-success" v-if="!draft.item.deldraftauthor"
+            <b-tag type="is-success" v-if="!draft.deldraftauthor"
               >Addition</b-tag
             >
             {{ draft.day }}
@@ -31,16 +31,16 @@
               <b-tag type="is-dark"
                 ><b-icon icon="user-clock" size="is-small"></b-icon
               ></b-tag>
-              <b-tag type="is-link">{{ draft.item.shift }} </b-tag>
-              {{ draft.item.agent }}
+              <b-tag type="is-link">{{ draft.from }}-{{ draft.to }} </b-tag>
+              {{ draft.firstname }} {{ draft.lastname }}
             </b-taglist>
           </li>
 
           <li style="border-top: 1px dashed black; padding: 5px 0">
-            <b-button @click="apply" style="float: left" type="is-primary"
+            <b-button @click="apply" style="float: left" type="is-primary" icon-left="check"
               >Commit all</b-button
             >
-            <b-button @click="revert" style="float: right" type="is-danger"
+            <b-button @click="revert" style="float: right" type="is-danger" icon-left="undo"
               >Revert all</b-button
             >
           </li>
@@ -50,19 +50,26 @@
 
     <h2 class="groupname">
       <span style="vertical-align: text-top;display:inline-flex;margin-right:5px;">{{ groupname }}</span>
-      <b-taglist attached style="    display: inline-flex;">
+      <b-taglist attached style="display: inline-flex;">
         <b-tag type="is-dark">{{ days[0] }}</b-tag>
         <b-tag type="is-info">{{ days[6] }}</b-tag>
       </b-taglist>
     </h2>
 
-    <div v-if="shiftsTimetable.length > 0">
+    <div v-if="shiftsTimetable.length > 0" class="weekmovingActions">
       <b-button
         @click="moveWeek(-1)"
         type="is-primary"
         icon-left="angle-double-left"
         >1 week back</b-button
-      ><b-button
+      >
+     <b-button
+        @click="readAPI"
+        type="is-info"
+        icon-left="sync-alt"
+        ></b-button
+      >
+      <b-button
         style="float: right"
         type="is-primary"
         @click="moveWeek(1)"
@@ -128,13 +135,12 @@ export default {
   name: "GroupSchedule",
   props: ["team_id"],
   mounted() {
+   // console.log(this.$route.params.date)
     this.readAPI();
   },
 
   computed: {
-    pendinglist() {
-      return this.$store.state.draftentries;
-    },
+
     draftExists() {
       return this.$store.state.draftexists;
     },
@@ -184,7 +190,7 @@ export default {
       teams: [],
       schedule: [],
       loading: null,
-      group_name: "",
+      group_name: '',
       pendingchangeswidget: false,
       referenceDate: this.moment(this.$store.state.refDate),
       shiftsTimetable: [],
@@ -241,6 +247,19 @@ export default {
           this.loading = null;
           this.$set(this, "shiftsTimetable", this.$store.state.shiftsTimetable);
           this.referenceDate = this.moment(this.$store.state.refDate);
+        }, (reason) =>
+        {
+           this.loading.close();
+          this.loading = null;
+          this.$router.push({path: `/schedule`})
+         
+            this.$buefy.snackbar.open({
+                      duration: 5000,
+                      message: reason,
+                      type: 'is-danger',
+                      position: 'is-bottom-left',
+                      queue: false,
+                  })
         });
       // this.$http
       //   .get(
@@ -263,6 +282,19 @@ export default {
       } else {
         this.referenceDate = this.moment(this.referenceDate).add(1, "week");
       }
+     let alreadyInStore = false
+        if(this.$store.state.timetable[this.moment(this.referenceDate).format('YYYY-MM-DD')])
+        {
+          alreadyInStore = true
+        }
+      for(var i=1;i<8;i++)
+      {
+        if(this.$store.state.timetable[this.moment(this.referenceDate).add(1, "day").format('YYYY-MM-DD')])
+        {
+          alreadyInStore = true
+        }
+      }
+
       this.$router.push({
         path: `/schedule/${this.$route.params.team}/${this.moment(
           this.referenceDate
@@ -270,7 +302,7 @@ export default {
           .add(6, "day")
           .format("MMMDD")}-${this.moment(this.referenceDate).format("YYYY")}`,
       });
-      this.readAPI();
+      if(!alreadyInStore) this.readAPI();
     },
   },
 };
@@ -278,7 +310,8 @@ export default {
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
-.pendingmenubar {
+.weekmovingActions button{
+  margin-left:5px;
 }
 .pendingmenu {
   border-top: 1px solid black;

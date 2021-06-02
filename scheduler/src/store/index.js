@@ -4,6 +4,8 @@ import axios from 'axios'
 import moment from 'moment'
 Vue.prototype.moment = moment
 Vue.use(Vuex)
+
+
 export default new Vuex.Store({
   state: {
     // schedule_teams: [
@@ -143,9 +145,20 @@ export default new Vuex.Store({
           context.commit('setTemplates', response.data.list)
         })
       },
+      getDrafts(context, payload)
+      {
+        console.log(payload)
+        axios
+          .get(
+            "./scheduleapi/group/"+payload+"/drafts"
+          )
+          .then((response) => {
+            context.commit('setDrafts', {draftexists: response.data.drafts.length > 0 ? true : false, draftentries:response.data.drafts})
+          })
+      },
       loadFromAPI(context, payload)
       {
-        return new Promise((resolve) => {
+        return new Promise((resolve, reject) => {
           const refdate = payload.refdateroute != null ? payload.refdateroute : payload.refdate
           const team = payload.teamroute != null ? payload.teamroute : parseInt(payload.team)
         axios
@@ -156,26 +169,14 @@ export default new Vuex.Store({
               refdate
           )
           .then((response) => {
-            context.commit('setCurrentGroup', response.data.group)
-            let isdraft = false
-            let drafts = []
-            for(var i in response.data.t)
+            //console.log(response.data)
+            if(response.data.response)
             {
-              for(var day in response.data.t[i])
-              {
-                for(var item in response.data.t[i][day])
-                {
-                  if(response.data.t[i][day][item].draft == 1 || response.data.t[i][day][item].deldraftauthor)
-                  {
-                    isdraft = true
-                    drafts.push({item:response.data.t[i][day][item], day: day})
-                  }
-                  
-                }
-              }            
+              reject(response.data.response)
+              return;
             }
-            drafts.sort((a,b) => (a.day > b.day) ? 1 : ((b.day > a.day) ? -1 : 0))
-            context.commit('setDrafts', {draftexists: isdraft, draftentries:drafts})
+            context.commit('setCurrentGroup', response.data.group)
+            context.dispatch('getDrafts', response.data.group.id)
             context.commit('setTimetable', {data: response.data, date: response.data.refdate})
             context.commit('setShiftsTimetable', response.data.shifts)
             resolve()

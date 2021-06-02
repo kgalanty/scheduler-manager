@@ -15,7 +15,7 @@
                     </section>
                     <section class="modal-card-body">
 
-                        <b-checkbox v-model="overwrite">Overwrite shifts (Current week will be erased first - Only in corresponding shifts)</b-checkbox>
+                        <b-checkbox v-model="overwrite">Overwrite shifts <strong>(Current week will be erased before inserting new duties<br />as drafts - Only in corresponding shifts). It won't touch current drafts</strong></b-checkbox>
                     </section>
                     <footer class="modal-card-foot">
                         <b-button

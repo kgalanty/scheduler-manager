@@ -1,7 +1,7 @@
 <template>
   <div>
     <div v-for="(team,i) in teams" :key="i">
-     <router-link :to="`/schedule/${team.name}/${dateStart}-${dateEnd}`">{{team.name}} ({{dateStart}} - {{dateEnd}})</router-link>
+     <router-link  class="teambar" :to="`/schedule/${team.name}/${dateStart}-${dateEnd}`">{{team.name}} ({{dateStart}} - {{dateEnd}})</router-link>
       </div>
   </div>
 </template>
@@ -89,8 +89,9 @@ export default {
       } else {
         this.referenceDate = this.moment(this.referenceDate).add(1, "week");
       }
-      console.log(this.$route.params)
+      
       this.$router.push({ path: `/schedule/${this.$route.params.team}/${this.moment(this.referenceDate).format('MMMDD')}-${this.moment(this.referenceDate).add(1, "week").format('MMMDD')}-${this.moment(this.referenceDate).format('YYYY')}`}) 
+      
       this.readAPI();
     },
   },
@@ -100,6 +101,23 @@ export default {
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
+.teambar a:hover
+{
+ text-decoration: none !important;
+ color:grey;
+}
+.teambar
+{
+background: rgb(255,255,255);
+background: linear-gradient(90deg, rgba(255,255,255,1) 0%, rgba(92,92,236,1) 51%, rgba(0,212,255,1) 100%);
+  display:block;
+  padding:7px;
+  border:1px solid black;
+  border-radius:5px;
+  margin-bottom:5px;
+  font-weight:bold;
+ 
+}
 .graphcolumn
 {
   background: rgb(58,97,180);

@@ -34,7 +34,7 @@ export default {
   },
   data() {
     return {
-      dateStart: this.moment().day(1).format("MMMDD"),
+      dateStart: this.moment().isoWeekday(1).format("MMMDD"),
       dateEnd:
         this.moment().day(7).format("MMMDD") +
         "-" +

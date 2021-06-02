@@ -64,7 +64,8 @@ export default {
   },
   mounted(){
     //this.activeTab = Object.keys(this.teams)[0]
-    console.log(this.$route.params.date)
+    console.log(this.$route.params)
+   this.checkpointDate()
   },
   methods:
   {

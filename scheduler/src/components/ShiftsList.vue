@@ -110,8 +110,8 @@ export default {
 }
 
 .shiftstable thead:first-child th {
-background: rgb(146,179,255);
-background: linear-gradient(180deg, rgba(146,179,255,1) 0%, rgba(96,56,255,1) 100%);
+background: rgb(165,197,255);
+background: linear-gradient(180deg, rgba(165,197,255,1) 0%, rgba(40,68,207,1) 100%);
 color:white;
 }
 </style>

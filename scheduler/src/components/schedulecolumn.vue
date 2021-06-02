@@ -20,32 +20,32 @@
         :class="[item.draft == 1 || item.deldraftauthor ? 'draftCell' : '']"
       >
        
-        <b-tooltip label="Addition candidate. Undo addition" position="is-right">
-          <a @click="remove(item.id)"  v-if="item.draft"
+        <b-tooltip label="Addition candidate. Undo addition" position="is-top" class="undoicon" v-if="item.draft">
+          <a @click="remove(item.id)" 
           ><b-icon
-           
             icon="undo"
             size="is-small"
           ></b-icon
         ></a></b-tooltip>
-        <a @click="remove(item.id)"  v-if="showDelBtn && !item.draft && item.deldraftauthor === false"
+        <a @click="remove(item.id)" v-if="showDelBtn && !item.draft && item.deldraftauthor === false"
           ><b-icon
-           
             icon="trash"
             size="is-small"
           ></b-icon
         ></a>
-         <b-tooltip label="Delete candidate. Undo deletion" position="is-right">
-          <a @click="undo(item.id)"  v-if="item.deldraftauthor !== false"
+         <b-tooltip label="Delete candidate. Undo deletion" position="is-top" class="undoicon" v-if="item.deldraftauthor !== false">
+          <a @click="undo(item.id)" 
           ><b-icon
-           
+          
             icon="undo"
             size="is-small"
           ></b-icon
         ></a></b-tooltip>
+         <b-icon v-if="item.draft" icon="plus-square" class="plusicon"></b-icon> 
+         <b-icon v-if="item.deldraftauthor" icon="minus-square" class="minusicon"></b-icon>
+
         {{ item.agent }}
-        <b-icon v-if="item.draft" icon="plus-square"></b-icon>
-         <b-icon v-if="item.deldraftauthor" icon="minus-square"></b-icon>
+
       </li>
     </ul>
     <ul v-else style="opacity: 0.5">
@@ -204,9 +204,31 @@ export default {
     rgba(0, 0, 0, 0.9) 0px 0px 0px 1px;
   background-color: rgb(255, 255, 255) !important;
   border: 3px dashed rgb(255, 2, 242) !important;
+  color: black !important;
 }
+
 </style>
 <style >
+.undoicon
+{
+  background: rgb(105,105,255);
+background: linear-gradient(90deg, rgba(105,105,255,1) 0%, rgba(79,158,251,1) 100%);
+padding:5px;
+border:1px solid black;
+border-radius:5px;
+}
+.undoicon:hover
+{
+  opacity:.9;
+}
+.plusicon
+{
+  color:green;
+}
+.minusicon
+{
+  color: red;
+}
 .agentitem {
   padding: 8px 0;
   text-align: center;

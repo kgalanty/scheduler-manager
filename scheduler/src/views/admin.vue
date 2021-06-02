@@ -3,7 +3,7 @@
     <b-tabs v-model="activeTab" type="is-toggle">
       <b-tab-item label="Teams & Shifts">
         <div class="sectionscontainer">
-        <section class="section">
+        <section class="section adminsection">
           <h1 class="title">Add New Team</h1>
           <h2 class="subtitle">
             <b-field
@@ -26,7 +26,7 @@
           </h2>
          
         </section>
-        <section class="section">
+        <section class="section adminsection">
           <h1 class="title">Add New Shift</h1>
           <h2 class="subtitle">
             <b-field
@@ -227,7 +227,7 @@ export default {
         return;
       }
       this.$http
-        .post("./scheduleapi/insertshift", {
+        .post("./scheduleapi/shift/new", {
           from: this.moment(this.timefrom).format("HH:mm"),
           to: this.moment(this.timeto).format("HH:mm"),
           team_id: this.team_id,
@@ -253,6 +253,13 @@ export default {
   },
 };
 </script>
+<style scoped>
+.adminsection
+{
+  background: rgb(198,204,255);
+background: linear-gradient(167deg, rgba(198,204,255,1) 1%, rgba(79,158,251,1) 100%);
+}
+</style>
 <style >
 .notification a:not(.button):not(.dropdown-item) {
   text-decoration: none;

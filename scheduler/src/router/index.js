@@ -4,6 +4,32 @@ import Home from '../views/Home.vue'
 
 Vue.use(VueRouter)
 
+Vue.mixin({
+  methods: {
+    checkpointDate() {
+      let dateparams = this.$route.params.date.split('-')
+      // console.log(this.moment(dateparams[0]+'-'+dateparams[2], 'MMMDD-YYYY'))
+       if(dateparams.length != 3 || !this.moment(dateparams[0]+'-'+dateparams[2], 'MMMDD-YYYY', true).isValid() || dateparams[2].length != 4)
+       {
+                   this.$router.push({path: `/schedule`})
+            
+               this.$buefy.snackbar.open({
+                         duration: 5000,
+                         message: 'Wrong date',
+                         type: 'is-danger',
+                         position: 'is-bottom-left',
+                         queue: false,
+                     })
+                     return
+       }
+       if(!this.moment(dateparams[1]+'-'+dateparams[2], 'MMMDD-YYYY', true).isValid())
+       {
+         let newenddate = this.moment(dateparams[0]+'-'+dateparams[2], 'MMMDD-YYYY').add(6, 'day');
+         this.$router.push({path: `/schedule/${this.$route.params.team}/${dateparams[0]}-${newenddate.format('MMMDD')}-${dateparams[2]}`})
+       }
+    }
+  }
+})
 const routes = [
   {
     path: '/',
