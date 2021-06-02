@@ -71,14 +71,47 @@ class ShiftsController
     {
         $data = $request->getParsedBody();
     }
-    public function timetable($request, $response, $args)
+    public function loadDrafts($request, $response, $args)
     {
-        //DB::table('schedule_shifts')->where('id', $id)
+        $group = (int)$args['groupid'];
+        if (!$group) {
+            $payload = json_encode(['response' => 'Team not found']);
+            $response->getBody()->write($payload);
+            return $response
+                ->withHeader('Content-Type', 'application/json');
+        }
+        $author = AgentConstants::adminid();
+        $shifts = DB::table('schedule_shifts AS s')->where('group_id', $group)
+       ->get();
 
-        // $data = $request->getParsedBody();
+       $timetable = DB::table('schedule_timetable AS t')
+            ->leftJoin('schedule_timetable_deldrafts as dr',  function ($join) use ($author){
+
+                $join->on('dr.entry_id', '=', 't.id')->where('dr.author', '=', $author);
+            })
+            ->leftJoin('tbladmins AS a', 'a.id', '=', 't.agent_id')
+            ->leftJoin('schedule_agents_details AS d', 'd.agent_id', '=', 'a.id')
+            ->join('schedule_shifts AS shifts', 'shifts.id', '=', 't.shift_id')
+            ->where('t.group_id', $group)
+            ->where(function ($query) use($author) {
+                $query->where('dr.author', $author );
+                $query->orWhere(['t.draft' => 1, 't.author' => $author]);
+            })
+            ->orderBy('day', 'ASC')
+            ->get([
+                't.id', 't.shift_id', 't.day', 'a.firstname', 'a.lastname', 'd.color', 'd.bg', 't.draft', 't.author',
+                'dr.author AS deldraftauthor',
+                'shifts.from', 'shifts.to'
+            ]);
+            $payload = json_encode(['drafts' => $timetable]);
+        $response->getBody()->write($payload);
+        return $response
+            ->withHeader('Content-Type', 'application/json');
+
     }
     public function shiftsGroups($request, $response, $args)
     {
+        $author = AgentConstants::adminid();
         $group = $args['groupid'];
         $group = DB::table('schedule_agentsgroups')->where('group', $group)->first();
         if (!$group) {
@@ -96,18 +129,18 @@ class ShiftsController
         $startdateprocessed = date('Y-m-d', strtotime($startdateparams[0] . ' ' . $startdateparams[2]));
         $enddate = date('Y-m-d', strtotime($startdateprocessed . ' +6 days'));
         $timetable = DB::table('schedule_timetable AS t')
-            ->leftJoin('schedule_timetable_deldrafts as dr',  function ($join) {
+            ->leftJoin('schedule_timetable_deldrafts as dr',  function ($join) use ($author){
 
-                $join->on('dr.entry_id', '=', 't.id')->where('dr.author', '=', '230');
+                $join->on('dr.entry_id', '=', 't.id')->where('dr.author', '=', $author);
             })
             ->leftJoin('tbladmins AS a', 'a.id', '=', 't.agent_id')
             ->leftJoin('schedule_agents_details AS d', 'd.agent_id', '=', 'a.id')
             ->join('schedule_shifts AS shifts', 'shifts.id', '=', 't.shift_id')
             ->where('t.group_id', $group->id)
             ->whereBetween('t.day', [$startdateprocessed, $enddate])
-            ->where(function ($query) {
+            ->where(function ($query) use($author) {
                 $query->where('t.draft', '0');
-                $query->orWhere(['t.draft' => 1, 't.author' => 230]);
+                $query->orWhere(['t.draft' => 1, 't.author' => $author]);
             })
             ->get([
                 't.id', 't.shift_id', 't.day', 'a.firstname', 'a.lastname', 'd.color', 'd.bg', 't.draft', 't.author',

@@ -19,7 +19,7 @@ class TemplatesController
     if (!$datesParsed) {
       $data['response'] = 'Error, date format incorrect.';
     } else {
-     // $startdateparams = explode('-', $dates, 3);
+      // $startdateparams = explode('-', $dates, 3);
       $startdateprocessed = $datesParsed[0];
       $enddate = $datesParsed[1];
 
@@ -38,7 +38,7 @@ class TemplatesController
         DB::table('schedule_timetable')->whereIn('shift_id', $shiftsToDelete)->whereBetween('day', [$startdateprocessed, $enddate])->where('draft', '0')->delete();
       }
       foreach ($template_entries as $e) {
-        $shiftsToAdd[] = ['agent_id' => $e->agent_id, 'group_id' => $e->group_id, 'shift_id' => $e->shift_id, 'day' => DatesHelper::getDateBasedOnWeekday((int)$e->day, $startdateprocessed), 'draft' => '0', 'author' => '0'];
+        $shiftsToAdd[] = ['agent_id' => $e->agent_id, 'group_id' => $e->group_id, 'shift_id' => $e->shift_id, 'day' => DatesHelper::getDateBasedOnWeekday((int)$e->day, $startdateprocessed), 'draft' => '1', 'author' => AgentConstants::adminid()];
       }
       $logs->createAddLogs($shiftsToAdd);
       DB::table('schedule_timetable')->insert($shiftsToAdd);

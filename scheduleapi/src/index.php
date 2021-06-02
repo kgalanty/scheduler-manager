@@ -56,7 +56,7 @@ $app->get(ROUTE_PREFIX.'/agents','App\Controllers\AgentsController:agents');
 $app->get(ROUTE_PREFIX.'/agents/myinfo','App\Controllers\AgentsController:myinfo');
 $app->get(ROUTE_PREFIX.'/shifts','App\Controllers\ShiftsController:getShifts');
 
-$app->post(ROUTE_PREFIX.'/insertshift','App\Controllers\ShiftsController:insertShift')->add(new JsonMiddleware());
+$app->post(ROUTE_PREFIX.'/shift/new','App\Controllers\ShiftsController:insertShift')->add(new JsonMiddleware());
 $app->post(ROUTE_PREFIX.'/shifts/delete','App\Controllers\ShiftsController:deleteShift')->add(new JsonMiddleware());
 $app->post(ROUTE_PREFIX.'/groups/delete','App\Controllers\ShiftsController:deleteGroup')->add(new JsonMiddleware());
 $app->post(ROUTE_PREFIX.'/agents/addgroup','App\Controllers\AgentsController:addGroup')->add(new JsonMiddleware());
@@ -77,6 +77,7 @@ $app->post(ROUTE_PREFIX.'/templates/delete','App\Controllers\TemplatesController
 
 $app->get(ROUTE_PREFIX.'/editors/list','App\Controllers\EditorsController:list');
 $app->get(ROUTE_PREFIX.'/shifts/teams','App\Controllers\AgentsController:teamsMembers');
+$app->get(ROUTE_PREFIX.'/group/{groupid}/drafts','App\Controllers\ShiftsController:loadDrafts');
 $app->get(ROUTE_PREFIX.'/shifts/shiftsgroups/{groupid}','App\Controllers\ShiftsController:shiftsGroups');
 $app->get(ROUTE_PREFIX.'/logs','App\Controllers\LogsController:get');
 $app->get(ROUTE_PREFIX.'/verify','App\Controllers\AgentsController:verifyAgent');
