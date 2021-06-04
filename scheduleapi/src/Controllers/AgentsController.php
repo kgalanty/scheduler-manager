@@ -4,7 +4,7 @@ namespace App\Controllers;
 
 use WHMCS\Database\Capsule as DB;
 use App\Constants\AgentConstants;
-
+use App\Responses\Response;
 class AgentsController
 {
   public function agents($request, $response, $args)
@@ -21,10 +21,11 @@ class AgentsController
       $row[$d->id]['groups'][] = ['name' => $d->group, 'id' => $d->groupid];
     }
     $row = array_values($row);
-    $payload = json_encode($row);
-    $response->getBody()->write($payload);
-    return $response
-      ->withHeader('Content-Type', 'application/json');
+    return Response::json($row, $response);
+    // $payload = json_encode($row);
+    // $response->getBody()->write($payload);
+    // return $response
+    //   ->withHeader('Content-Type', 'application/json');
   }
   public function addGroup($request, $response, $args)
   {
@@ -40,10 +41,11 @@ class AgentsController
     }
     if ($rows)
       DB::table('schedule_agents_to_groups')->insert($rows);
-    $resp = ['response' => 'success'];
-    $response->getBody()->write(json_encode($resp));
-    return $response
-      ->withHeader('Content-Type', 'application/json');
+    $payload = ['response' => 'success'];
+    return Response::json($payload, $response);
+    // $response->getBody()->write(json_encode($resp));
+    // return $response
+    //   ->withHeader('Content-Type', 'application/json');
   }
   public function teamsMembers($request, $response, $args)
   {
@@ -69,9 +71,10 @@ class AgentsController
         ];
       }
     }
-    $response->getBody()->write(json_encode($teams));
-    return $response
-      ->withHeader('Content-Type', 'application/json');
+    return Response::json($teams, $response);
+    // $response->getBody()->write(json_encode($teams));
+    // return $response
+    //   ->withHeader('Content-Type', 'application/json');
   }
   public function addMemberToTeam($request, $response, $args)
   {
@@ -80,10 +83,10 @@ class AgentsController
     DB::table('schedule_agents_to_groups')->updateOrInsert(['agent_id' => $agent], ['group_id' => $team]);
 
     $resp = ['response' => 'success'];
-
-    $response->getBody()->write(json_encode($resp));
-    return $response
-      ->withHeader('Content-Type', 'application/json');
+    return Response::json($resp, $response);
+    // $response->getBody()->write(json_encode($resp));
+    // return $response
+    //   ->withHeader('Content-Type', 'application/json');
   }
   public function  setAgentsColor($request, $response, $args)
   {
@@ -95,9 +98,10 @@ class AgentsController
       [$colortype => $color]
     );
     $resp = ['response' => 'success'];
-    $response->getBody()->write(json_encode($resp));
-    return $response
-      ->withHeader('Content-Type', 'application/json');
+    return Response::json($resp, $response);
+    // $response->getBody()->write(json_encode($resp));
+    // return $response
+    //   ->withHeader('Content-Type', 'application/json');
   }
   public function myinfo($request, $response, $args)
   {
@@ -107,9 +111,10 @@ class AgentsController
     } else {
       $resp = ['response' => 'error', 'msg' => 'Not logged as admin'];
     }
-    $response->getBody()->write(json_encode($resp));
-    return $response
-      ->withHeader('Content-Type', 'application/json');
+    return Response::json($resp, $response);
+    // $response->getBody()->write(json_encode($resp));
+    // return $response
+    //   ->withHeader('Content-Type', 'application/json');
   }
   public function verifyAgent($request, $response, $args)
   {
@@ -123,9 +128,11 @@ class AgentsController
       $data['response'] = 'No permission for this operation';
     } else {
       $data['response'] = 'success';
-      $response->getBody()->write(json_encode($data));
-      return $response
-        ->withHeader('Content-Type', 'application/json');
     }
+    return Response::json($data, $response);
+      // $response->getBody()->write(json_encode($data));
+      // return $response
+      //   ->withHeader('Content-Type', 'application/json');
+    
   }
 }

@@ -6,6 +6,7 @@ use WHMCS\Database\Capsule as DB;
 use App\Functions\LogEntry as Logs;
 use App\Constants\AgentConstants;
 use App\Functions\EditorsAuth;
+use App\Responses\Response;
 
 class TimetableController
 {
@@ -16,10 +17,11 @@ class TimetableController
     $author = AgentConstants::adminid();
     DB::table("schedule_timetable_deldrafts")->where('entry_id', $id)->where('author', $author)->delete();
     $data['response'] = 'success';
-    $payload = json_encode($data);
-    $response->getBody()->write($payload);
-    return $response
-      ->withHeader('Content-Type', 'application/json');
+    return Response::json($data, $response);
+    // $payload = json_encode($data);
+    // $response->getBody()->write($payload);
+    // return $response
+    //   ->withHeader('Content-Type', 'application/json');
   }
   public function deleteDuty($request, $response, $args)
   {
@@ -40,10 +42,11 @@ class TimetableController
       //DB::table("schedule_timetable")->where('id', $id)->delete();
       $data['response'] = 'success';
     }
-    $payload = json_encode($data);
-    $response->getBody()->write($payload);
-    return $response
-      ->withHeader('Content-Type', 'application/json');
+    return Response::json($data, $response);
+    // $payload = json_encode($data);
+    // $response->getBody()->write($payload);
+    // return $response
+    //   ->withHeader('Content-Type', 'application/json');
   }
   public function insertDuty($request, $response, $args)
   {
@@ -76,10 +79,11 @@ class TimetableController
         $data['response'] = 'Already exist';
       }
     }
-    $payload = json_encode($data);
-    $response->getBody()->write($payload);
-    return $response
-      ->withHeader('Content-Type', 'application/json');
+    return Response::json($data, $response);
+    // $payload = json_encode($data);
+    // $response->getBody()->write($payload);
+    // return $response
+    //   ->withHeader('Content-Type', 'application/json');
   }
   public function commitDrafts($request, $response, $args)
   {
@@ -108,10 +112,11 @@ class TimetableController
       DB::table('schedule_timetable_deldrafts')->whereIn('entry_id', $delid)->delete();
       $data = ['response' => 'success'];
     }
-    $payload = json_encode($data);
-    $response->getBody()->write($payload);
-    return $response
-      ->withHeader('Content-Type', 'application/json');
+    return Response::json($data, $response);
+    // $payload = json_encode($data);
+    // $response->getBody()->write($payload);
+    // return $response
+    //   ->withHeader('Content-Type', 'application/json');
   }
   public function revertDrafts($request, $response, $args)
   {
@@ -122,9 +127,11 @@ class TimetableController
       ->delete();
 
     DB::table('schedule_timetable_deldrafts')->where('author', $author)->delete();
-    $payload = json_encode(['response' => 'success']);
-    $response->getBody()->write($payload);
-    return $response
-      ->withHeader('Content-Type', 'application/json');
+      $data = ['response' => 'success'];
+    return Response::json($data, $response);
+    // $payload = json_encode(['response' => 'success']);
+    // $response->getBody()->write($payload);
+    // return $response
+    //   ->withHeader('Content-Type', 'application/json');
   }
 }

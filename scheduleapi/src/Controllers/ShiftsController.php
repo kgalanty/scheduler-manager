@@ -4,7 +4,7 @@ namespace App\Controllers;
 
 use WHMCS\Database\Capsule as DB;
 use App\Constants\AgentConstants;
-
+use App\Responses\Response;
 class ShiftsController
 {
     public function getShifts($request, $response, $args)
@@ -25,10 +25,12 @@ class ShiftsController
                 $data[$result->group_id]['shifts'][] = ['from' => $result->from, 'to' => $result->to];
             }
         }
-        $payload = json_encode(array_values($data));
-        $response->getBody()->write($payload);
-        return $response
-            ->withHeader('Content-Type', 'application/json');
+        $result = array_values($data);
+        return Response::json($result, $response);
+        // $payload = json_encode(array_values($data));
+        // $response->getBody()->write($payload);
+        // return $response
+        //     ->withHeader('Content-Type', 'application/json');
     }
     public function insertShift($request, $response, $args)
     {
@@ -42,18 +44,20 @@ class ShiftsController
         } else {
             $resp = ['response' => 'This shift already exists'];
         }
-        $response->getBody()->write(json_encode($resp));
-        return $response
-            ->withHeader('Content-Type', 'application/json');
+        return Response::json($resp, $response);
+        // $response->getBody()->write(json_encode($resp));
+        // return $response
+        //     ->withHeader('Content-Type', 'application/json');
     }
     public function deleteShift($request, $response, $args)
     {
         $id =  $request->getParsedBody()['id'];
         DB::table('schedule_shifts')->where('id', $id)->delete();
         $resp = ['response' => 'success'];
-        $response->getBody()->write(json_encode($resp));
-        return $response
-            ->withHeader('Content-Type', 'application/json');
+        return Response::json($resp, $response);
+        // $response->getBody()->write(json_encode($resp));
+        // return $response
+        //     ->withHeader('Content-Type', 'application/json');
     }
     public function deleteGroup($request, $response, $args)
     {
@@ -63,9 +67,10 @@ class ShiftsController
         DB::table('schedule_agents_to_groups')->where('group_id', $id)->delete();
         DB::table('schedule_shifts')->where('group_id', $id)->delete();
         $resp = ['response' => 'success'];
-        $response->getBody()->write(json_encode($resp));
-        return $response
-            ->withHeader('Content-Type', 'application/json');
+        return Response::json($resp, $response);
+        // $response->getBody()->write(json_encode($resp));
+        // return $response
+        //     ->withHeader('Content-Type', 'application/json');
     }
     public function assignToShift($request, $response, $args)
     {
@@ -103,10 +108,11 @@ class ShiftsController
                 'dr.author AS deldraftauthor',
                 'shifts.from', 'shifts.to'
             ]);
-            $payload = json_encode(['drafts' => $timetable]);
-        $response->getBody()->write($payload);
-        return $response
-            ->withHeader('Content-Type', 'application/json');
+            return Response::json(['drafts' => $timetable], $response);
+        //     $payload = json_encode(['drafts' => $timetable]);
+        // $response->getBody()->write($payload);
+        // return $response
+        //     ->withHeader('Content-Type', 'application/json');
 
     }
     public function shiftsGroups($request, $response, $args)
@@ -155,10 +161,11 @@ class ShiftsController
             ];
         }
         $data = ['shifts' => $shifts, 't' => $days, 'group' => $group, 'refdate' => $startdateprocessed];
-        $payload = json_encode($data);
-        $response->getBody()->write($payload);
-        return $response
-            ->withHeader('Content-Type', 'application/json');
+        return Response::json($data, $response);
+        // $payload = json_encode($data);
+        // $response->getBody()->write($payload);
+        // return $response
+        //     ->withHeader('Content-Type', 'application/json');
         //$data = $request->getParsedBody();
     }
 }

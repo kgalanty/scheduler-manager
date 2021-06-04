@@ -6,6 +6,7 @@ use WHMCS\Database\Capsule as DB;
 use App\Functions\LogEntry as Logs;
 use App\Constants\AgentConstants;
 use App\Functions\DatesHelper;
+use App\Responses\Response;
 
 class TemplatesController
 {
@@ -50,10 +51,11 @@ class TemplatesController
       //DB::table("schedule_editors")->where('editor_id', $id)->delete();
       $data['response'] = 'success';
     }
-    $payload = json_encode($data);
-    $response->getBody()->write($payload);
-    return $response
-      ->withHeader('Content-Type', 'application/json');
+    return Response::json($data, $response);
+    // $payload = json_encode($data);
+    // $response->getBody()->write($payload);
+    // return $response
+    //   ->withHeader('Content-Type', 'application/json');
   }
   public function delete($request, $response, $args)
   {
@@ -68,11 +70,11 @@ class TemplatesController
     //$author = $_SESSION['adminpw'];
     // $author = AgentConstants::adminid();
 
-
-    $payload = json_encode($data);
-    $response->getBody()->write($payload);
-    return $response
-      ->withHeader('Content-Type', 'application/json');
+    return Response::json($data, $response);
+    // $payload = json_encode($data);
+    // $response->getBody()->write($payload);
+    // return $response
+    //   ->withHeader('Content-Type', 'application/json');
   }
   public function list($request, $response, $args)
   {
@@ -91,9 +93,11 @@ class TemplatesController
         $resp[$listitem->id][] = $listitem;
       }
     }
-    $response->getBody()->write(json_encode(['response' => 'success', 'list' => $resp]));
-    return $response
-      ->withHeader('Content-Type', 'application/json');
+    $data = ['response' => 'success', 'list' => $resp];
+    return Response::json($data, $response);
+    // $response->getBody()->write(json_encode(['response' => 'success', 'list' => $resp]));
+    // return $response
+    //   ->withHeader('Content-Type', 'application/json');
   }
   public function add($request, $response, $args)
   {
@@ -129,9 +133,10 @@ class TemplatesController
       }
     }
     //$data['response'] = 'Already exist';
-    $payload = json_encode($data);
-    $response->getBody()->write($payload);
-    return $response
-      ->withHeader('Content-Type', 'application/json');
+    return Response::json($data, $response);
+    // $payload = json_encode($data);
+    // $response->getBody()->write($payload);
+    // return $response
+    //   ->withHeader('Content-Type', 'application/json');
   }
 }

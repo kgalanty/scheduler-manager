@@ -5,7 +5,7 @@ namespace App\Controllers;
 use WHMCS\Database\Capsule as DB;
 use App\Functions\LogEntry as Logs;
 use App\Constants\AgentConstants;
-
+use App\Responses\Response;
 class EditorsController
 {
   public function delete($request, $response, $args)
@@ -15,18 +15,21 @@ class EditorsController
    // $author = AgentConstants::adminid();
     DB::table("schedule_editors")->where('editor_id', $id)->delete();
     $data['response'] = 'success';
-    $payload = json_encode($data);
-    $response->getBody()->write($payload);
-    return $response
-      ->withHeader('Content-Type', 'application/json');
+    return Response::json($data, $response);
+    // $payload = json_encode($data);
+    // $response->getBody()->write($payload);
+    // return $response
+    //   ->withHeader('Content-Type', 'application/json');
   }
   public function list($request, $response, $args)
   {
     $list = DB::table("schedule_editors as e")->join('tbladmins as a', 'a.id', '=', 'e.editor_id')
     ->get(['a.id', 'a.firstname', 'a.lastname', 'a.username']);
-    $response->getBody()->write(json_encode(['response'=>'success', 'list' => $list]));
-    return $response
-      ->withHeader('Content-Type', 'application/json');
+    $data = ['response'=>'success', 'list' => $list];
+    return Response::json($data, $response);
+    // $response->getBody()->write(json_encode(['response'=>'success', 'list' => $list]));
+    // return $response
+    //   ->withHeader('Content-Type', 'application/json');
   }
   public function add($request, $response, $args)
   {
@@ -47,9 +50,10 @@ class EditorsController
       } else {
         $data['response'] = 'Already exist';
       }
-    $payload = json_encode($data);
-    $response->getBody()->write($payload);
-    return $response
-      ->withHeader('Content-Type', 'application/json');
+      return Response::json($data, $response);
+    // $payload = json_encode($data);
+    // $response->getBody()->write($payload);
+    // return $response
+    //   ->withHeader('Content-Type', 'application/json');
   }
 }
