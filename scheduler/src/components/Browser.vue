@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div style="width:80%;margin:0 auto;">
     <h1 class="">TMD Teams Schedules Browser</h1>
 
     <div class="tile is-ancestor" v-for="(item, i) in teamsrows" :key="i">
@@ -17,7 +17,7 @@
         <GroupTile label="DevOps & Cloud" icon="users" />
         <GroupTile label="System Administrators" icon="users" />
      </div> -->
-    <div class="tile is-ancestor">
+    <div class="tile is-ancestor" >
       <GroupTile label="Feedback" icon="meh" />
       <GroupTile label="Trainings" icon="graduation-cap" />
       <GroupTile label="Vacationing" icon="sun" />
@@ -43,7 +43,7 @@ export default {
   },
   methods: {
     openTeam(name) {
-      console.log(name);
+     // console.log(name);
       this.$router.push({
         path: `/schedule/${name}/${this.dateStart}-${this.dateEnd}`,
       });

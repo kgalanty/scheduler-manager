@@ -1,6 +1,7 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
 import Home from '../views/Home.vue'
+import NotFound from '../views/NotFound.vue'
 
 Vue.use(VueRouter)
 
@@ -42,7 +43,7 @@ const routes = [
     // route level code-splitting
     // this generates a separate chunk (about.[hash].js) for this route
     // which is lazy-loaded when the route is visited.
-    component: () => import(/* webpackChunkName: "about" */ '../views/scheduleOverview.vue')
+    component: () => import(/* webpackChunkName: "scheduleOverview" */ '../views/scheduleOverview.vue')
   },
   {
     path: '/admin',
@@ -50,18 +51,31 @@ const routes = [
     // route level code-splitting
     // this generates a separate chunk (about.[hash].js) for this route
     // which is lazy-loaded when the route is visited.
-    component: () => import(/* webpackChunkName: "about" */ '../views/admin.vue')
+    component: () => import(/* webpackChunkName: "admin" */ '../views/admin.vue')
+  },
+  {
+    path: '/stats',
+    name: 'Stats',
+    // route level code-splitting
+    // this generates a separate chunk (about.[hash].js) for this route
+    // which is lazy-loaded when the route is visited.
+    component: () => import(/* webpackChunkName: "stats" */ '../views/stats.vue')
   },
    {
      path: '/schedule/:team/:date',
      name: 'ScheduleTeam',
-     component: () => import( '../views/schedule.vue')
+     component: () => import(/* webpackChunkName: "schedule" */ '../views/schedule.vue')
    },
    {
      path: '/assigneditors',
      name: 'AssignEditors',
-     component: () => import( '../views/assigneditors.vue')
-   }
+     component: () => import(/* webpackChunkName: "assigneditors" */ '../views/assigneditors.vue')
+   },
+   { 
+     path: '*', 
+     name: 'NotFound',
+     component: NotFound 
+    }
 ]
 
 const router = new VueRouter({

@@ -42,24 +42,51 @@ export default new Vuex.Store({
     canassigneditors: '',
     refDate: '',
     templates: {},
-    shiftsTimetable: []
+    shiftsTimetable: [],
+    shiftToHighlight: ''
   },
   getters: {
     currentShifts: state => {
-      // if (
-      //  state.timetable[
-      //     moment(moment().day(1)).format("YYYY-MM-DD")
-      //   ] &&
-      // state.timetable[
-      //     moment(moment().day(1)).format("YYYY-MM-DD")
-      //   ].shifts
-      // )
-      //   return state.timetable[
-      //     moment(moment().day(1)).format("YYYY-MM-DD")
-      //   ].shifts;
-      // return [];
       return state.shiftsTimetable
-    }
+    },
+    timetable: state =>
+    { 
+      //  return this.$store.state.timetable[
+      //   this.moment(this.$store.state.refDate).format("YYYY-MM-DD")
+      // ].t;
+     // console.log(state.timetable[moment(state.refDate).format("YYYY-MM-DD")].t)\
+     if(!state.refDate) return []
+     let ar = [];
+   // console.log(Object.values(state.timetable[moment(state.refDate).format("YYYY-MM-DD")].t))
+   
+   // console.log(x.t)
+
+  Object.values(state.timetable).forEach(function(x) {
+    //console.log(x.t)
+     Object.values(x.t).forEach(function(element) 
+      {
+        Object.values(element).forEach(function(el)
+        {
+          ar.push(...el)
+        })
+       // console.log(element)
+      })
+    })
+      ar.forEach(function(ell)
+      {
+          ell.description = ell.agent+' ('+ell.shift+')'
+      })
+      ar.push({
+        date:{ start: new Date(state.refDate), end: new Date(moment(state.refDate).add(6, 'days').format('YYYY-MM-DD')) },
+        highlight: {
+          start: { fillMode: 'light' },
+          base: { fillMode: 'light' },
+          end: { fillMode: 'light' },
+        },
+      })
+     // ar[0].dates = { start: new Date(2021, 5, 14), end: new Date(2021, 5, 18) }
+      return ar;
+    } 
   },
   mutations: {
     setAdmins(state, admins) {
@@ -81,6 +108,10 @@ export default new Vuex.Store({
     {
       state.groupname = val.group
       state.groupid = val.id
+    },
+    setRefdate(state, refDate)
+    {
+        state.refDate = refDate
     },
     setTimetable(state, timetable) {
       
@@ -114,10 +145,19 @@ export default new Vuex.Store({
     ,setShiftsTimetable(state,val)
     {
       state.shiftsTimetable = val
+    },
+    setItemKey(state, val)
+    {
+      //console.log(val)
+      state.shiftToHighlight = val
     }
 
   },
   actions: {
+    setItemKey(context,payload)
+    {
+      context.commit('setItemKey', payload)
+    },
     getAdmins(context) {
       axios.get('./scheduleapi/agents').then((response) => {
         context.commit('setAdmins', response.data);
@@ -147,7 +187,7 @@ export default new Vuex.Store({
       },
       getDrafts(context, payload)
       {
-        console.log(payload)
+       // console.log(payload)
         axios
           .get(
             "./scheduleapi/group/"+payload+"/drafts"

@@ -38,11 +38,6 @@
   </div>
 </template>
 <style >
-.agentsListTbl thead:first-child th{ 
-  font-size:0.9em;
-  background-color:black;
-  color:white;
-  }
   .agentListContainer table td{
    background-color:rgb(214, 224, 255);
   }
@@ -147,6 +142,13 @@ export default {
 .title
 {
   text-decoration: underline;
+}
+.agentListContainer {
+   display: flow-root;
+}
+.agentsListTbl
+{
+  border:1px solid black;
 }
 </style>
 <style >

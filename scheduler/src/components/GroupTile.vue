@@ -33,7 +33,7 @@ export default {
 .title
 {
   margin-top:20px;
-  margin-bottom: 40px !important;
+  margin-bottom: 20px !important;
 }
 .title, .subtitle
 {

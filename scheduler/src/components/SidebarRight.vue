@@ -101,7 +101,7 @@ export default {
       return this.$store.state.admins;
     },
     teams() {
-      console.log(this.$filterObject(this.$store.state.schedule_teams, "name", this.$route.params.team))
+     // console.log(this.$filterObject(this.$store.state.schedule_teams, "name", this.$route.params.team))
       return this.$filterObject(this.$store.state.schedule_teams, "name", this.$route.params.team);
     },
     days() {
@@ -164,7 +164,7 @@ export default {
       evt.target.style.opacity = 0.5;
       evt.dataTransfer.dropEffect = "move";
       evt.dataTransfer.effectAllowed = "move";
-      console.log(item)
+     // console.log(item)
       evt.dataTransfer.setData("agentItem", JSON.stringify(item));
     },
     dragEnd(event) {

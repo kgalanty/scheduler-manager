@@ -15,14 +15,8 @@
       <b-icon icon="arrows-alt-v" style="float: right"></b-icon>
       <div v-show="pendingchangeswidget" class="pendingmenu" style="">
         <ul style="overflow: auto; max-height: inherit; height: 100%">
-          <li
-            v-for="(draft, i) in draftList"
-            :key="i"
-            style="text-align: left"
-          >
-            <b-tag type="is-danger" v-if="draft.deldraftauthor"
-              >Deletion</b-tag
-            >
+          <li v-for="(draft, i) in draftList" :key="i" style="text-align: left">
+            <b-tag type="is-danger" v-if="draft.deldraftauthor">Deletion</b-tag>
             <b-tag type="is-success" v-if="!draft.deldraftauthor"
               >Addition</b-tag
             >
@@ -37,25 +31,38 @@
           </li>
 
           <li style="border-top: 1px dashed black; padding: 5px 0">
-            <b-button @click="apply" style="float: left" type="is-primary" icon-left="check"
+            <b-button
+              @click="apply"
+              style="float: left"
+              type="is-primary"
+              icon-left="check"
               >Commit all</b-button
             >
-            <b-button @click="revert" style="float: right" type="is-danger" icon-left="undo"
+            <b-button
+              @click="revert"
+              style="float: right"
+              type="is-danger"
+              icon-left="undo"
               >Revert all</b-button
             >
           </li>
         </ul>
       </div>
     </div>
-
     <h2 class="groupname">
-      <span style="vertical-align: text-top;display:inline-flex;margin-right:5px;">{{ groupname }}</span>
-      <b-taglist attached style="display: inline-flex;">
+      <span
+        style="
+          vertical-align: text-top;
+          display: inline-flex;
+          margin-right: 5px;
+        "
+        >{{ groupname }}</span
+      >
+      <b-taglist attached style="display: inline-flex">
         <b-tag type="is-dark">{{ days[0] }}</b-tag>
         <b-tag type="is-info">{{ days[6] }}</b-tag>
       </b-taglist>
     </h2>
-
     <div v-if="shiftsTimetable.length > 0" class="weekmovingActions">
       <b-button
         @click="moveWeek(-1)"
@@ -63,12 +70,13 @@
         icon-left="angle-double-left"
         >1 week back</b-button
       >
-     <b-button
-        @click="readAPI"
+      <b-button @click="readAPI" type="is-info" icon-left="sync-alt"></b-button>
+      <b-button
+        @click="CalendarOpened = !CalendarOpened"
         type="is-info"
-        icon-left="sync-alt"
-        ></b-button
-      >
+        icon-left="calendar-alt"
+      ></b-button>
+
       <b-button
         style="float: right"
         type="is-primary"
@@ -76,36 +84,64 @@
         icon-right="angle-double-right"
         >1 week forward</b-button
       >
-
-      <div
-        class="schedulerow"
-        v-for="(shift, index) in shiftsTimetable"
-        :key="index + 'tt'"
+      <b-notification
+        has-icon
+        icon="calendar-alt"
+        v-model="CalendarOpened"
+        type="is-info"
+        aria-close-label="Close notification"
+        style="text-align: center"
       >
-        <strong
-          style="display: block; width: 100%; font-weght: bold; font-size: 20px"
-        >
-          <h1 style="margin-right: 10px; color: black; display: inline-flex">
-            <b-taglist attached>
-              <b-tag type="is-dark"
-                ><b-icon icon="user-clock" size="is-small"></b-icon
-              ></b-tag>
-              <b-tag type="is-link">{{ shift.from }} - {{ shift.to }}</b-tag>
-            </b-taglist>
-          </h1>
-        </strong>
-        <p></p>
-        <div class="columns">
-          <scheduleColumn
-            class="graphcolumn"
-            v-for="(day, index) in days"
-            :key="day"
-            :ind="index"
-            :day="day"
-            :shift="shift.id"
-            :group="shiftsTimetable[0].group_id"
-            :refdate="referenceDate"
-          ></scheduleColumn>
+        <vc-calendar
+          :attributes="attributes"
+          :masks="masks"
+          ref="calendar"
+        ></vc-calendar>
+      </b-notification>
+      <div class="schedulerow">
+        <div v-for="(shift, index) in shiftsTimetable" :key="index + 'tt'">
+          <strong
+            style="
+              display: block;
+              width: 100%;
+              font-weght: bold;
+              font-size: 20px;
+            "
+          >
+            <h1 style="margin-right: 10px; color: black; display: inline-flex">
+              <b-taglist
+                attached
+                v-if="shift.from === 'on' && shift.to === 'call'"
+              >
+                <b-tag type="is-dark"
+                  ><b-icon icon="phone-volume" size="is-small"></b-icon
+                ></b-tag>
+                <b-tag type="is-success" style="color: black">On Call</b-tag>
+              </b-taglist>
+              <b-taglist attached v-else>
+                <b-tag type="is-dark"
+                  ><b-icon icon="user-clock" size="is-small"></b-icon
+                ></b-tag>
+                <b-tag type="is-primary"
+                  >{{ shift.from }} - {{ shift.to }}</b-tag
+                >
+              </b-taglist>
+            </h1>
+          </strong>
+          <p></p>
+          <div class="columns">
+            <scheduleColumn
+              :ref="day + '-' + shift.id"
+              class="graphcolumn"
+              v-for="(day, index) in days"
+              :key="day + '-' + shift.id"
+              :ind="index"
+              :day="day"
+              :shift="shift.id"
+              :group="shiftsTimetable[0].group_id"
+              :refdate="referenceDate"
+            ></scheduleColumn>
+          </div>
         </div>
       </div>
     </div>
@@ -128,6 +164,7 @@
 
 <script>
 import scheduleColumn from "../components/schedulecolumn.vue";
+
 export default {
   components: {
     scheduleColumn,
@@ -135,12 +172,39 @@ export default {
   name: "GroupSchedule",
   props: ["team_id"],
   mounted() {
-   // console.log(this.$route.params.date)
+    // console.log(this.$route.params.date)
+    var interval = setInterval(() => {
+      if (this.$refs.calendar) {
+        this.loadCalendar();
+        clearInterval(interval);
+      }
+    }, 100);
     this.readAPI();
+    this.markShift();
   },
 
   computed: {
-
+    attributes() {
+      return [
+        // Attributes for todos
+        ...this.$store.getters.timetable.map((todo) => ({
+          dates: todo.date,
+          dot: !todo.highlight
+            ? {
+                color: "blue",
+              }
+            : undefined,
+          highlight: todo.highlight ?? [],
+          popover: !todo.highlight
+            ? {
+                visibility: "hover",
+                label: todo.description,
+              }
+            : undefined,
+          customData: todo,
+        })),
+      ];
+    },
     draftExists() {
       return this.$store.state.draftexists;
     },
@@ -187,16 +251,50 @@ export default {
   },
   data() {
     return {
+      CalendarOpened: false,
+      selectedDate: "",
+      calendardates: [
+        {
+          key: "2021-06-01",
+          highlight: true,
+          dates: new Date("2021-06-01"),
+        },
+      ],
+      masks: {
+        weekdays: "WWW",
+      },
       teams: [],
       schedule: [],
       loading: null,
-      group_name: '',
+      group_name: "",
       pendingchangeswidget: false,
       referenceDate: this.moment(this.$store.state.refDate),
       shiftsTimetable: [],
     };
   },
   methods: {
+    markShift() {
+      if (this.$store.state.shiftToHighlight) {
+        //console.log( this.$refs )
+        let shiftinfo = this.$store.state.shiftToHighlight.shift.split("-");
+        let shiftid = this.$store.getters.currentShifts.filter(
+          (x) => x.from == shiftinfo[0] && x.to == shiftinfo[1]
+        );
+        let dateSchedule = this.moment(
+          this.$store.state.shiftToHighlight.date
+        ).format("ddd DD.MM");
+        let refname = dateSchedule + "-" + shiftid[0].id;
+        // console.log(this.moment(this.$store.state.shiftToHighlight.date).format("ddd DD.MM"))
+        // console.log( this.$refs[refname] )
+        setTimeout(() => {
+          this.$refs[refname][0].$el.classList.add("graphcolumnanimation");
+          setTimeout(() => {
+            this.$refs[refname][0].$el.classList.remove("graphcolumnanimation");
+          }, 1500); // 2s
+        }, 3000);
+        this.$store.dispatch("setItemKey", "");
+      }
+    },
     apply() {
       this.$http.post("./scheduleapi/shifts/commit").then((response) => {
         if (response.data.response == "success") {
@@ -229,6 +327,13 @@ export default {
         }
       });
     },
+    loadCalendar() {
+      const c = this.$refs.calendar;
+      //console.log(c)
+      if (c) {
+        c.move(this.referenceDate.format("YYYY-MM-DD"));
+      }
+    },
     readAPI() {
       this.loading = this.$buefy.loading.open({
         container: null,
@@ -241,26 +346,33 @@ export default {
           refdateroute: this.$route.params.date,
           //refdate: this.referenceDate.format("YYYY-MM-DD"),
         })
-        .then(() => {
-          this.group_name = this.$store.state?.group?.group;
-          this.loading.close();
-          this.loading = null;
-          this.$set(this, "shiftsTimetable", this.$store.state.shiftsTimetable);
-          this.referenceDate = this.moment(this.$store.state.refDate);
-        }, (reason) =>
-        {
-           this.loading.close();
-          this.loading = null;
-          this.$router.push({path: `/schedule`})
-         
+        .then(
+          () => {
+            this.group_name = this.$store.state?.group?.group;
+            this.loading.close();
+            this.loading = null;
+            this.$set(
+              this,
+              "shiftsTimetable",
+              this.$store.state.shiftsTimetable
+            );
+            this.referenceDate = this.moment(this.$store.state.refDate);
+            this.loadCalendar();
+          },
+          (reason) => {
+            this.loading.close();
+            this.loading = null;
+            this.$router.push({ path: `/schedule` });
+
             this.$buefy.snackbar.open({
-                      duration: 5000,
-                      message: reason,
-                      type: 'is-danger',
-                      position: 'is-bottom-left',
-                      queue: false,
-                  })
-        });
+              duration: 5000,
+              message: reason,
+              type: "is-danger",
+              position: "is-bottom-left",
+              queue: false,
+            });
+          }
+        );
       // this.$http
       //   .get(
       //     "/scheduleapi/shifts/shiftsgroups/" +
@@ -282,16 +394,23 @@ export default {
       } else {
         this.referenceDate = this.moment(this.referenceDate).add(1, "week");
       }
-     let alreadyInStore = false
-        if(this.$store.state.timetable[this.moment(this.referenceDate).format('YYYY-MM-DD')])
-        {
-          alreadyInStore = true
-        }
-      for(var i=1;i<8;i++)
-      {
-        if(this.$store.state.timetable[this.moment(this.referenceDate).add(1, "day").format('YYYY-MM-DD')])
-        {
-          alreadyInStore = true
+
+      this.loadCalendar();
+      let alreadyInStore = false;
+      if (
+        this.$store.state.timetable[
+          this.moment(this.referenceDate).format("YYYY-MM-DD")
+        ]
+      ) {
+        alreadyInStore = true;
+      }
+      for (var i = 1; i < 8; i++) {
+        if (
+          this.$store.state.timetable[
+            this.moment(this.referenceDate).add(1, "day").format("YYYY-MM-DD")
+          ]
+        ) {
+          alreadyInStore = true;
         }
       }
 
@@ -302,7 +421,12 @@ export default {
           .add(6, "day")
           .format("MMMDD")}-${this.moment(this.referenceDate).format("YYYY")}`,
       });
-      if(!alreadyInStore) this.readAPI();
+
+      if (!alreadyInStore) {
+        this.readAPI();
+      } else {
+        this.$store.commit("setRefdate", this.referenceDate);
+      }
     },
   },
 };
@@ -310,8 +434,8 @@ export default {
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
-.weekmovingActions button{
-  margin-left:5px;
+.weekmovingActions button {
+  margin-left: 5px;
 }
 .pendingmenu {
   border-top: 1px solid black;
@@ -333,23 +457,28 @@ export default {
   font-weight: 500;
   text-align: center;
   border-radius: 5px;
-  background-color: ;
 }
 .groupname {
-  display: block;
   width: 100%;
   text-align: center;
   font-size: 1.6em;
 }
 .graphcolumn {
+  -webkit-transition: all 0.6s ease-in; /* Chrome 1-25, Safari 3.2+ */
+  -moz-transition: all 0.6s ease-in; /* Firefox 4-15 */
+  -o-transition: all 0.6s ease-in; /* Opera 10.50–12.00 */
+  transition: all 0.6s ease-in; /* Chrome 26, Firefox 16+, IE 10+, Opera 12.10+ */
   background: rgb(58, 97, 180);
+  background-position: 0 -30px;
   background: linear-gradient(
     90deg,
     rgba(58, 97, 180, 1) 0%,
     rgba(72, 171, 255, 1) 100%
   );
+  background-size: 300px;
   color: white;
 }
+
 .column {
   border-radius: 5px;
   margin: 15px 5px;
@@ -360,5 +489,10 @@ export default {
   background: rgb(206, 206, 206);
   border-radius: 10px;
   box-shadow: 6px 3px 3px rgb(179, 179, 179);
+}
+</style>
+<style scoped>
+.graphcolumnanimation {
+  background-position: 300px 190px;
 }
 </style>

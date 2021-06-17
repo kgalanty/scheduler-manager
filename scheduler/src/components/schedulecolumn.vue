@@ -1,6 +1,6 @@
 <template>
   <div
-    class="column"
+    class="column columnclass animation"
     @drop="onDrop($event)"
     @dragover.prevent="dragging = true"
     @dragend="dragEnd($event)"
@@ -48,8 +48,8 @@
 
       </li>
     </ul>
-    <ul v-else style="opacity: 0.5">
-      <li style="height: 50px">Empty</li>
+    <ul v-else style="opacity: 0.5;text-align: center;">
+      <li >Empty</li>
     </ul>
   </div>
 </template>
@@ -198,7 +198,11 @@ export default {
   },
 };
 </script>
+<style >
+
+</style>
 <style scoped >
+
 .draftCell {
   box-shadow: rgba(255, 255, 255, 0.2) 0px 0px 0px 1px inset,
     rgba(0, 0, 0, 0.9) 0px 0px 0px 1px;
@@ -209,6 +213,10 @@ export default {
 
 </style>
 <style >
+.columnclass
+{
+  padding: 0.5rem;
+}
 .undoicon
 {
   background: rgb(105,105,255);
@@ -230,15 +238,17 @@ border-radius:5px;
   color: red;
 }
 .agentitem {
-  padding: 8px 0;
+  padding: 2px 0;
+  font-size:14px;
   text-align: center;
+  font-weight:bold;
 }
 .columnday {
   font-weight: bold;
   text-align: center;
   width: 100%;
   display: block;
-  margin: 5px 2px;
+  margin: 2px 2px;
   font-size: 18px;
 }
 </style>

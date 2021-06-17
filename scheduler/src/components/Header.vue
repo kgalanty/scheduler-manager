@@ -1,22 +1,10 @@
 <template>
   <nav class="navbar is-info" role="navigation" aria-label="main navigation">
-  <div class="navbar-brand">
-    <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbarBasicExample">
-      <span aria-hidden="true"></span>
-      <span aria-hidden="true"></span>
-      <span aria-hidden="true"></span>
-    </a>
-  </div>
+
 
   <div id="navbarBasicExample" class="navbar-menu">
     <div class="navbar-start">
-      <a class="navbar-item" href="https://my.tmdhosting.com/admin/">
-       <b-icon
-                pack="fa"
-                icon="chevron-left"
-                size="is-medium">
-            </b-icon>&nbsp;Back to WHMCS
-      </a>
+     
       <router-link class="navbar-item" :to="`/`">
        <b-icon
                 icon="home"
@@ -35,8 +23,32 @@
                 size="is-medium">
             </b-icon>
       </router-link>
+        <router-link class="navbar-item" :to="`/stats`" >
+       <b-icon
+                icon="chart-bar"
+                size="is-medium">
+            </b-icon>
+      </router-link>
+  </div><div class="navbar-end">
+     <a class="navbar-item" href="https://my.tmdhosting.com/admin/">
+       <b-icon
+                pack="fa"
+                icon="chevron-left"
+                size="is-medium">
+            </b-icon>
+      </a>
   </div>
+  
   </div>
+    <div class="navbar-brand">
+    <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbarBasicExample">
+      <span aria-hidden="true"></span>
+      <span aria-hidden="true"></span>
+      <span aria-hidden="true"></span>
+    </a>
+    
+  </div>
+ 
 </nav>
 </template>
 
@@ -51,6 +63,31 @@ export default {
     }
   }
 }
+  document.addEventListener('DOMContentLoaded', () => {
+
+    // Get all "navbar-burger" elements                                                              
+   const $navbarBurgers = Array.prototype.slice.call(document.querySelectorAll('.navbar-burger'), 0);
+
+    // Check if there are any navbar burgers
+    if ($navbarBurgers.length > 0) {
+
+      // Add a click event on each of them
+      $navbarBurgers.forEach( el => {
+        el.addEventListener('click', () => {
+
+          // Get the target from the "data-target" attribute
+          const target = el.dataset.target;
+          const $target = document.getElementById(target);
+ 
+          // Toggle the "is-active" class on both the "navbar-burger" and the "navbar-menu"
+          el.classList.toggle('is-active');
+          $target.classList.toggle('is-active');
+  
+        });
+      });
+    }  
+
+  });
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->

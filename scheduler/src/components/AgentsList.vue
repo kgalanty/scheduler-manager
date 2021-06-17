@@ -1,13 +1,22 @@
 <template>
   <div>
-     <b-table :data="admins" narrowed bordered class="agentsListTbl"  :row-class="(row, index) => 'agentsListTbl'"> 
-
+     <b-table paginated :per-page="15" :data="admins" narrowed bordered class="agentsListTbl" :row-class="(row, index) => 'agentsListTbl'"> 
           <b-table-column
             centered
             label="Agent"
-            v-slot="props" 
-          >
-             #{{ props.row.id }} {{ props.row.firstname }} {{ props.row.lastname }} ( {{ props.row.username }} )
+            searchable
+            field="fullrow">
+               <template
+                  #searchable="props">
+                        <b-input 
+                            v-model="props.filters[props.column.field]"
+                            placeholder="Search by Agent Name"
+                            icon="search"
+                            size="is-medium" />
+                    </template>
+            <template v-slot="props">
+             {{ props.row.fullrow }}
+              </template>
           </b-table-column>
          <b-table-column
             field="color"
@@ -44,7 +53,7 @@
             v-slot="props" 
           >
          <b-tooltip position="is-bottom"  label="Color is not set">
-         <b-icon icon="plus-square" v-if="props.row.bg == null"
+         <b-icon icon="border-none" v-if="props.row.bg == null"
                     size="is-small"></b-icon> </b-tooltip>
               <input type="color" name="bgcolor" @change="setcolor('bg', $event.target.value, props.row.id)" :value="getColor(props.row.bg)">
           </b-table-column>
@@ -156,11 +165,13 @@ export default {
   }
 </style>
 <style >
-
+.pagination-link.is-current {
+color:white !important;
+}
 .b-table 
 {
   float:left;
-  width:100%;
+  width:100%;padding-bottom:10px;
 }
 .b-table td {
   height: auto;

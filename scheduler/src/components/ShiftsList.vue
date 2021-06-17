@@ -12,6 +12,14 @@
         >
           Delete
         </b-button>
+          <b-button
+          type="is-success"
+          icon-left="plus"
+          @click="addOnCallShift(props.row.group_id)"
+          size="is-small"
+        >
+          Add On Call Shift
+        </b-button>
       </b-table-column>
       <b-table-column field="Shift" centered label="Shifts" v-slot="props">
         <b-table :data="props.row.shifts" striped narrowed mobile-cards>
@@ -19,14 +27,24 @@
             <div class="has-text-centered">No records</div>
           </template>
           <b-table-column field="Shift" centered label="Shift" v-slot="props">
+            <span v-if="props.row.from==='on'&&props.row.to==='call'">
+                  <b-button
+              size="is-small"
+              type="is-info"
+              icon-left="phone-volume"
+             >On Call</b-button>
+
+            </span>
+            <span v-else>
             {{ props.row.from }} - {{ props.row.to }}
+            </span>
           </b-table-column>
           <b-table-column field="Shift" centered label="Action" v-slot="props">
             <b-button
               size="is-small"
               type="is-info"
               icon-left="trash"
-              @click="removeShift(props.row.id)">Remove</b-button>
+              @click="removeShift(props.row.shiftid)">Remove</b-button>
           </b-table-column>
         </b-table>
       </b-table-column>
@@ -43,6 +61,26 @@ export default {
     },
   },
   methods: {
+    addOnCallShift(group)
+    { 
+       this.$http
+            .post("./scheduleapi/shift/new", { team_id: group, oncall: 1 })
+            .then((response) => {
+              if (response.data.response == "success") {
+                this.$buefy.toast.open({
+                  message: "Added!",
+                  type: "is-success",
+                });
+                this.$store.dispatch("getShiftsList");
+               // this.$store.dispatch("getTeams");
+              } else {
+                this.$buefy.toast.open({
+                  message: response.data.response,
+                  type: "is-danger",
+                });
+              }
+            });
+    },
     confirmCustomDelete(group) {
       this.$buefy.dialog.confirm({
         title: "Deleting group",

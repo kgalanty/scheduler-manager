@@ -12,6 +12,7 @@
             >
               <b-input
                 v-model="new_team"
+                expanded
                 placeholder="Enter team name"
               ></b-input>
             </b-field>
@@ -28,10 +29,10 @@
         </section>
         <section class="section adminsection">
           <h1 class="title">Add New Shift</h1>
-          <h2 class="subtitle">
+          <h2 class="subtitle" style="    align-items: end !important;">
             <b-field
               label="Team"
-              style="display: inline-block; margin-right: 20px"
+              style="margin-right: 20px;"
             >
               <b-select placeholder="Select a team" v-model="team_id">
                 <option
@@ -45,7 +46,7 @@
             </b-field>
             <b-field
               label="Time from"
-              style="display: inline-block; margin-right: 20px"
+              style=" margin-right: 20px"
             >
               <b-timepicker
                 inline
@@ -57,7 +58,7 @@
               >
               </b-timepicker>
             </b-field>
-            <b-field label="Time to" style="display: inline-block">
+            <b-field label="Time to" style="">
               <b-timepicker
                 inline
                 v-model="timeto"
@@ -78,9 +79,9 @@
         <ShiftsList />
       </b-tab-item>
       <b-tab-item label="Agents">
-        <section class="section">
-          <h1 class="title">Agents</h1>
-          <div class="subtitle">
+        <section class="section adminsection">
+          <h1 class="title agentstitle">Agents</h1>
+          <div class="subtitle ">
             <AgentsList />
           </div>
         </section>
@@ -254,10 +255,15 @@ export default {
 };
 </script>
 <style scoped>
+.agentstitle
+{
+  text-align:center;
+}
 .adminsection
 {
   background: rgb(198,204,255);
 background: linear-gradient(167deg, rgba(198,204,255,1) 1%, rgba(79,158,251,1) 100%);
+flex: auto;
 }
 </style>
 <style >

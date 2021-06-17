@@ -139,6 +139,7 @@ import renderPreviewModal from "./renderPreviewModal.vue";
 import confirmInsertTplModal from "./confirmInsertTplModal.vue";
 import confirmDelTplModal from './confirmDelTplModal.vue'
 import DayOfWeek from "./DayOfWeek";
+
 export default {
   components:
   {
@@ -163,7 +164,9 @@ export default {
   computed: {
     templates() {
       if(this.$store.state.templates)
-      return Object.values(this.$store.state.templates);
+      {
+        return Object.values(this.$store.state.templates);
+      }
       return []
     },
     shifts() {

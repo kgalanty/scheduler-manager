@@ -6,6 +6,10 @@ import App from './App'
 import 'buefy/dist/buefy.css'
 import moment from 'moment'
 import axios from 'axios'
+import VCalendar from 'v-calendar';
+Vue.use(VCalendar, {
+  componentPrefix: 'vc',  // Use <vc-calendar /> instead of <v-calendar />
+});
 Vue.prototype.moment = moment
 Vue.prototype.$http = axios
 import { library } from '@fortawesome/fontawesome-svg-core';
