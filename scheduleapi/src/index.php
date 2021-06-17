@@ -75,6 +75,8 @@ $app->get(ROUTE_PREFIX.'/templates/{groupid}','App\Controllers\TemplatesControll
 $app->post(ROUTE_PREFIX.'/templates/confirm','App\Controllers\TemplatesController:confirm')->add(new JsonMiddleware());
 $app->post(ROUTE_PREFIX.'/templates/delete','App\Controllers\TemplatesController:delete')->add(new JsonMiddleware());
 
+$app->get(ROUTE_PREFIX.'/stats','App\Controllers\StatsController:get');
+
 $app->get(ROUTE_PREFIX.'/editors/list','App\Controllers\EditorsController:list');
 $app->get(ROUTE_PREFIX.'/shifts/teams','App\Controllers\AgentsController:teamsMembers');
 $app->get(ROUTE_PREFIX.'/group/{groupid}/drafts','App\Controllers\ShiftsController:loadDrafts');

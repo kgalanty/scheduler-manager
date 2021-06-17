@@ -37,5 +37,14 @@ class DatesHelper
         $enddate = date('Y-m-d', strtotime($startdateprocessed . ' +6 days'));
         return [$startdateprocessed, $enddate];
     }
-
+    public static function CreateDateToPathFromOneDate(string $date = null)
+    {
+        if(!$date) $date = date('Y-m-d');
+        $strtotime = strtotime($date);
+        $weekday = (int)date('N', $strtotime)-1; //integer for cweekday
+        $startdate = date('Md', strtotime($date.' -'.$weekday.' days'));
+        $enddate = date('Md', strtotime($date.' +'.(6-$weekday).' days'));
+        $year = date('Y', $strtotime);
+        return $startdate.'-'.$enddate.'-'.$year;
+    }
 }

@@ -11,7 +11,7 @@ class LogsController
         ->join('tbladmins as a', 'a.id', '=', 'et.author')
         ->orderBy('et.id', 'DESC')
         ->limit(20)
-        ->get(['et.log', 'et.action', 'et.date', 'a.firstname', 'a.lastname', 'et.author']);
+        ->get(['et.log', 'et.event_date', 'et.action', 'et.path', 'et.date', 'a.firstname', 'a.lastname', 'et.author']);
 
         return Response::json($results, $response);
         // $payload = json_encode($results);

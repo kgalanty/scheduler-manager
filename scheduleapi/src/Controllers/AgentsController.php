@@ -18,6 +18,7 @@ class AgentsController
     $row = [];
     foreach ($data as $d) {
       $row[$d->id] = (array)$d;
+      $row[$d->id]['fullrow'] = '#'.$d->id.' '.$d->firstname.' '.$d->lastname.' ('.$d->username.')';
       $row[$d->id]['groups'][] = ['name' => $d->group, 'id' => $d->groupid];
     }
     $row = array_values($row);

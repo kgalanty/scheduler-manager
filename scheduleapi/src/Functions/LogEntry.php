@@ -5,6 +5,7 @@ namespace App\Functions;
 use WHMCS\Database\Capsule as DB;
 use Illuminate\Support\Collection;
 use App\Constants\AgentConstants;
+use App\Functions\DatesHelper;
 class LogEntry
 {
 	public $admins, $shifts, $groups;
@@ -26,9 +27,9 @@ class LogEntry
 	}
 	public  function createAddLogs($entries)
 	{
-		$this->createLogs($entries, 'Added');
+		$this->createEntryLogs($entries, 'Added');
 	}
-	public  function createLogs($entries, $action)
+	public function createEntryLogs($entries, $action)
 	{
 		$author = AgentConstants::adminid();
 		$log = [];
@@ -37,16 +38,24 @@ class LogEntry
 			{
 				$entry = (object)$entry;
 			}
-			$log_entry = $this->groups[$entry->group_id]->group .': '. $this->admins[$entry->agent_id]->firstname . ' ' . $this->admins[$entry->agent_id]->lastname . ', Shift: ' . $this->shifts[$entry->shift_id]->from . '-' .
-			$this->shifts[$entry->shift_id]->to;
-			$log[] = ['author' => $author, 'log' => $log_entry, 'action' => $action, 'date' => DB::raw('NOW()')];
+			$shift = $this->HandleOnCallShift($this->shifts[$entry->shift_id]->from . '-' .$this->shifts[$entry->shift_id]->to);
+
+			$log_entry = $this->groups[$entry->group_id]->group .': '. $this->admins[$entry->agent_id]->firstname . ' ' . $this->admins[$entry->agent_id]->lastname . ' on '.$entry->day.', Shift: ' . $shift;
+			$log[] = [
+				'author' => $author, 
+				'log' => $log_entry, 
+				'event_date' => $entry->day,
+				'action' => $action, 
+				'path' => '/schedule/'.$this->groups[$entry->group_id]->group.'/'.DatesHelper::CreateDateToPathFromOneDate(),
+				'date' => DB::raw('NOW()')
+			];
 		}
 		$this->log($log);
 
 	}
 	public function createDelLogs($entries)
 	{
-		$this->createLogs($entries, 'Deleted');
+		$this->createEntryLogs($entries, 'Deleted');
 	}
 	private function log($logs)
 	{
@@ -54,5 +63,10 @@ class LogEntry
 		{
 			DB::table('schedule_eventslog')->insert($logs);
 		}
+	}
+	private function HandleOnCallShift(string $shiftlog) : string
+	{
+		if($shiftlog == 'on-call') return 'On Call';
+		return $shiftlog;
 	}
 }
