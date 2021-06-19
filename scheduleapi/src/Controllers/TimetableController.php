@@ -3,7 +3,8 @@
 namespace App\Controllers;
 
 use WHMCS\Database\Capsule as DB;
-use App\Functions\LogEntry as Logs;
+use App\Functions\Logs\AddEntryLog;
+use App\Functions\LogsFactory;
 use App\Constants\AgentConstants;
 use App\Functions\EditorsAuth;
 use App\Responses\Response;
@@ -93,15 +94,18 @@ class TimetableController
     } else {
 
       $entries = DB::table('schedule_timetable')->where(['author' => $author, 'draft' => 1])->get();
-      $logs = (new Logs());
-      $logs->createAddLogs($entries);
+      
+      $logs = (new AddEntryLog($entries));
+     // $GeneratedLogs = $logs->createAddLogs($entries);
+      (new LogsFactory($logs))->store();
       DB::table('schedule_timetable')->where(['author' => $author, 'draft' => 1])->update(['draft' => 0]);
 
       $deleteentries = DB::table('schedule_timetable_deldrafts as dd')
         ->join('schedule_timetable as t', 't.id', '=', 'dd.entry_id')
         ->where('dd.author', $author)
         ->get();
-      $logs->createDelLogs($deleteentries);
+        $logs = (new DeleteEntryLog($deleteentries));
+        (new LogsFactory($logs))->store();
 
       $delid = [];
       foreach ($deleteentries as $delentry) {

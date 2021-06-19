@@ -25,9 +25,9 @@ class LogEntry
 		$this->log($log);
 		//var_dump(func_get_args());die;
 	}
-	public  function createAddLogs($entries)
+	public function createAddLogs($entries)
 	{
-		$this->createEntryLogs($entries, 'Added');
+		return $this->createEntryLogs($entries, 'Added');
 	}
 	public function createEntryLogs($entries, $action)
 	{
@@ -50,12 +50,13 @@ class LogEntry
 				'date' => DB::raw('NOW()')
 			];
 		}
-		$this->log($log);
+		return $log;
+		//$this->log($log);
 
 	}
 	public function createDelLogs($entries)
 	{
-		$this->createEntryLogs($entries, 'Deleted');
+		return $this->createEntryLogs($entries, 'Deleted');
 	}
 	private function log($logs)
 	{

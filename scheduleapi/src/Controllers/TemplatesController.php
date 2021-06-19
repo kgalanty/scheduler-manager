@@ -7,6 +7,8 @@ use App\Functions\LogEntry as Logs;
 use App\Constants\AgentConstants;
 use App\Functions\DatesHelper;
 use App\Responses\Response;
+use App\Functions\Logs\createTplConfirmLog;
+use App\Functions\LogsFactory;
 
 class TemplatesController
 {
@@ -26,15 +28,22 @@ class TemplatesController
 
       $template_entries = DB::table('schedule_templates as t')
         ->join('schedule_tplshifts as ts', 'ts.tpl_id', '=', 't.id')->where('t.id', $tplid)->get();
-      $logs = (new Logs());
-      $logs->createTplConfirmLog($tplid, $datesParsed, $overwrite);
+      // $logs = (new Logs());
+      // $logs->createTplConfirmLog($tplid, $datesParsed, $overwrite);
+      
+      $logs = (new createTplConfirmLog($tplid, $datesParsed, $overwrite));
+         (new LogsFactory($logs))->store();
+
       if ($overwrite) {
         foreach ($template_entries as $e) {
           $shiftsToDelete[] = $e->shift_id;
         }
         $entries = DB::table('schedule_timetable')->whereIn('shift_id', $shiftsToDelete)->whereBetween('day', [$startdateprocessed, $enddate])->where('draft', '0')->get();
 
-        $logs->createDelLogs($entries);
+        //$logs->createDelLogs($entries);
+
+        // $logs = (new AddEntryLog($entries));
+        //  (new LogsFactory($logs))->store();
 
         DB::table('schedule_timetable')->whereIn('shift_id', $shiftsToDelete)->whereBetween('day', [$startdateprocessed, $enddate])->where('draft', '0')->delete();
       }
