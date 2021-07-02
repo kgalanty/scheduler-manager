@@ -83,6 +83,7 @@ $app->get(ROUTE_PREFIX.'/group/{groupid}/drafts','App\Controllers\ShiftsControll
 $app->get(ROUTE_PREFIX.'/shifts/shiftsgroups/{groupid}','App\Controllers\ShiftsController:shiftsGroups');
 $app->get(ROUTE_PREFIX.'/logs','App\Controllers\LogsController:get');
 $app->get(ROUTE_PREFIX.'/verify','App\Controllers\AgentsController:verifyAgent');
+$app->get(ROUTE_PREFIX.'/report/{workerid}/{datestart}/{dateend}','App\Controllers\TimetableController:scheduleForWorker');
 // $app->post(ROUTE_PREFIX.'/assignshift','App\Controllers\ShiftsController:assignToShift');
 //$app->add($beforeMiddleware);
 $app->run();

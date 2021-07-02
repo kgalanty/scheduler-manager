@@ -34,7 +34,7 @@ class AddEntryLog implements ILogs
 				'log' => $log_entry, 
 				'event_date' => $entry->day,
 				'action' => $this->action, 
-				'path' => '/schedule/'.$this->groups[$entry->group_id]->group.'/'.DatesHelper::CreateDateToPathFromOneDate(),
+				'path' => '/schedule/'.$this->groups[$entry->group_id]->group.'/'.DatesHelper::CreateDateToPathFromOneDate($entry->day),
 				'date' => DB::raw('NOW()')
 			];
 		}

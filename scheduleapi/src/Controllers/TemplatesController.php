@@ -50,7 +50,7 @@ class TemplatesController
       foreach ($template_entries as $e) {
         $shiftsToAdd[] = ['agent_id' => $e->agent_id, 'group_id' => $e->group_id, 'shift_id' => $e->shift_id, 'day' => DatesHelper::getDateBasedOnWeekday((int)$e->day, $startdateprocessed), 'draft' => '1', 'author' => AgentConstants::adminid()];
       }
-      $logs->createAddLogs($shiftsToAdd);
+      //$logs->createAddLogs($shiftsToAdd);
       DB::table('schedule_timetable')->insert($shiftsToAdd);
       //var_dump($template_entries);
       //die;

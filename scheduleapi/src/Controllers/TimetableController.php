@@ -4,11 +4,14 @@ namespace App\Controllers;
 
 use WHMCS\Database\Capsule as DB;
 use App\Functions\Logs\AddEntryLog;
+use App\Functions\Logs\DeleteEntryLog;
 use App\Functions\LogsFactory;
 use App\Constants\AgentConstants;
 use App\Functions\EditorsAuth;
 use App\Responses\Response;
-
+use App\Functions\Reports;
+use App\Functions\DatesHelper;
+use App\Functions\ReportsPDFWrapper;
 class TimetableController
 {
   public function deleteDraft($request, $response, $args)
@@ -137,5 +140,71 @@ class TimetableController
     // $response->getBody()->write($payload);
     // return $response
     //   ->withHeader('Content-Type', 'application/json');
+  }
+  public function scheduleForWorker($request, $response, $args)
+  {
+   //
+   //$admin = DB::table('tbladmins')->where('id', $args['workerid'])->first(['firstname', 'lastname']);
+
+   $admins = DB::table('schedule_agents_to_groups as g')
+   ->join('tbladmins as a', 'a.id', '=', 'g.agent_id')
+   ->where('g.group_id', function($query) use($args)
+   {
+    $query->select('group_id')->from('schedule_agents_to_groups')->where('agent_id', $args['workerid']);
+   })
+   ->get(['g.*', 'a.firstname', 'a.lastname']);
+  
+    //read data for other team members and put into array
+    $dataOfDatas = [];
+   foreach($admins as $admin)
+   {
+    $reports = new Reports(
+      ['worker_id' => $admin->agent_id, 
+      'startDate' => $args['datestart'],
+      'endDate' => $args['dateend']]);
+    $dataOfDatas[] = $reports->retrieveReport()->segregateByDays()->prepareRowsCellsData();
+    }
+    //echo('<pre>');  var_dump($dataOfDatas); die;
+    //echo('<pre>');  var_dump($output); die;
+    //$header = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+    $dates = DatesHelper::generateBetweenDates($args['datestart'], $args['dateend'], 'D d.m');
+    new ReportsPDFWrapper($admins, ['dates' => $dates, 'cells' => $dataOfDatas]);
+
+    // $pdf = new \TCPDF(PDF_PAGE_ORIENTATION, PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);                 // create TCPDF object with default constructor args
+    //   $pdf->AddPage();                    // pretty self-explanatory
+
+    //   $pdf->writeHTML('<h2>'.$admin->firstname.' '.$admin->lastname.'</h2>', true, false, true, false, '');
+    //   $pdf->writeHTML('<h3>'.$args['datestart'].' - '.$args['dateend'].'</h3>', true, false, true, false, '');
+    
+    //   $pdf->SetFillColor(255, 0, 0);
+    //     $pdf->SetTextColor(255);
+    //     $pdf->SetDrawColor(128, 0, 0);
+    //     $pdf->SetLineWidth(0.3);
+    //     $pdf->SetFont('', 'B');
+    //     // Header
+    //     $w = 28;
+
+    //     $num_headers = count($header);
+    //     for($i = 0; $i < $num_headers; ++$i) {
+    //         $pdf->Cell($w, 7, $dates[$i], 1, 0, 'C', 1);
+    //     }
+    //     $pdf->Ln();
+    //     $pdf->SetFillColor(224, 235, 255);
+    //     $pdf->SetTextColor(0);
+    //     $pdf->SetFont('');
+    //     $fill = 0;
+    //     foreach($data as $row) {
+    //       for($i = 0; $i < $num_headers; ++$i) {
+    //         $pdf->Cell($w, 7, $row[$i], 1, 0, 'C', $fill);
+    //     }
+    //       $pdf->Ln();
+    //       $fill=!$fill;
+    //   }
+    //     // Color and font restoration
+    //     $pdf->SetFillColor(224, 235, 255);
+    //     $pdf->SetTextColor(0);
+    //     $pdf->SetFont('');
+
+    //   $pdf->Output('report.pdf'); 
   }
 }

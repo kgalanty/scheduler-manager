@@ -8,19 +8,22 @@ use App\Functions\DatesHelper;
 use WHMCS\Database\Capsule as DB;
 class createTplConfirmLog implements ILogs
 {
-    public $tplid, $dates, $overwrite;
+    public $tplid, $dates, $overwrite, $groups;
     public function __construct($tplid, $datesParsed, $overwrite)
     {
         $this->tplid = $tplid;
         $this->dates = $datesParsed;
         $this->overwrite = $overwrite;
+        $this->groups = collect(DB::table('schedule_agentsgroups')->get())->keyBy('id');
     }
     public function getLog()
     {
-        $tpl_details = DB::table('schedule_templates as t')->join('schedule_agentsgroups as g', 'g.id', '=', 't.group_id')->first(['g.group', 't.name']);
+        $tpl_details = DB::table('schedule_templates as t')->join('schedule_agentsgroups as g', 'g.id', '=', 't.group_id')->first(['g.group', 't.name', 't.group_id']);
         $overwritten = $this->overwrite ? ' with overwriting ' : '';
         $log_entry = 'Inserting template ' . $this->tplid . ' ' . $tpl_details->name . '' . $overwritten . '(' . $tpl_details->group . ') for ' . $this->dates[0] . '-' . $this->dates[1];
-        $log = ['author' => AgentConstants::adminid(), 'log' => $log_entry, 'action' => 'Added', 'date' => DB::raw('NOW()')];
+        $log = ['author' => AgentConstants::adminid(), 'log' => $log_entry, 'action' => 'Added', 
+        'path' => '/schedule/'.$this->groups[$tpl_details->group_id]->group.'/'.DatesHelper::CreateDateToPathFromOneDate($this->dates[0]),
+        'date' => DB::raw('NOW()')];
 
         return $log;
     }

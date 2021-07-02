@@ -7,11 +7,14 @@ class LogsController
 {
     public function get($request, $response, $args)
     {
+        //$group = (int)$args['groupid'];
+
     $results = DB::table("schedule_eventslog as et")
         ->join('tbladmins as a', 'a.id', '=', 'et.author')
+        ->leftJoin('schedule_agents_details as ad', 'ad.agent_id', '=', 'et.author')
+        ->whereBetween('et.date', [$_GET['datefrom'], $_GET['dateto']])
         ->orderBy('et.id', 'DESC')
-        ->limit(20)
-        ->get(['et.log', 'et.event_date', 'et.action', 'et.path', 'et.date', 'a.firstname', 'a.lastname', 'et.author']);
+        ->get(['et.log', 'et.event_date', 'et.action', 'et.path', 'et.date', 'a.firstname', 'a.lastname', 'et.author', 'ad.color', 'ad.bg']);
 
         return Response::json($results, $response);
         // $payload = json_encode($results);
