@@ -30,7 +30,10 @@ export default {
   methods: {
     openSchedule(path, log) {
      var shift = log.log.split('Shift: ')[1]
+     if(shift)
+     {
         this.$store.dispatch("setItemKey", {shift: shift, date:log.event_date});
+     }
       // console.log(name);
       this.$router.push({
         path: `${path}`,

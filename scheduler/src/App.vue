@@ -3,7 +3,7 @@
     
     <Header />
 
-    <SidebarRight v-if="$route.matched.some(({ name }) => name.includes('Schedule'))"></SidebarRight >
+    <SidebarRight v-if="$route.matched.some(({ name }) => name.includes('Vacationing')||name.includes('Schedule') )"></SidebarRight >
     <TemplatesSidebar v-if="$route.matched.some(({ name }) => name.includes('Schedule'))"></TemplatesSidebar >
     <div class="container is-fullhd notification">
       <router-view/>

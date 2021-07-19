@@ -49,28 +49,34 @@
         </ul>
       </div>
     </div>
-    <h2 class="groupname">
-      <span
-        style="
-          vertical-align: text-top;
-          display: inline-flex;
-          margin-right: 5px;
-        "
-        >{{ groupname }}</span
-      >
-      <b-taglist attached style="display: inline-flex">
-        <b-tag type="is-dark">{{ days[0] }}</b-tag>
-        <b-tag type="is-info">{{ days[6] }}</b-tag>
-      </b-taglist>
-    </h2>
-    <div v-if="shiftsTimetable.length > 0" class="weekmovingActions">
+    <strong
+      style="
+        margin: 0 auto;
+        text-align: center;
+        display: block;
+        margin: 0 auto;
+        width: 100%;
+        font-weght: bold;
+        font-size: 26px;
+      "
+    >
+      <h1 style="color: black; display: inline-flex">
+        Vacationing
+        <b-taglist attached style="display: inline-flex">
+          <b-tag type="is-dark">{{ days[0] }}</b-tag>
+          <b-tag type="is-info">{{ days[6] }}</b-tag>
+        </b-taglist>
+      </h1>
+    </strong>
+    <p></p>
+    <div class="weekmovingActions">
       <b-button
         @click="moveWeek(-1)"
         type="is-primary"
         icon-left="angle-double-left"
         >1 week back</b-button
       >
-      <b-button @click="readAPI" type="is-info" icon-left="sync-alt"></b-button>
+      <!-- <b-button @click="readAPI" type="is-info" icon-left="sync-alt"></b-button> -->
       <b-button
         @click="CalendarOpened = !CalendarOpened"
         type="is-info"
@@ -98,91 +104,46 @@
           ref="calendar"
         ></vc-calendar>
       </b-notification>
+
       <div class="schedulerow">
-        <div v-for="(shift, index) in shiftsTimetable" :key="index + 'tt'">
-          <strong
-            style="
-              display: block;
-              width: 100%;
-              font-weght: bold;
-              font-size: 20px;
-            "
-          >
-            <h1 style="margin-right: 10px; color: black; display: inline-flex">
-              <b-taglist
-                attached
-                v-if="shift.from === 'on' && shift.to === 'call'"
-              >
-                <b-tag type="is-dark"
-                  ><b-icon icon="phone-volume" size="is-small"></b-icon
-                ></b-tag>
-                <b-tag type="is-success" style="color: black">On Call</b-tag>
-              </b-taglist>
-              <b-taglist attached v-else >
-                <b-tag type="is-dark" size="is-medium"
-                  ><b-icon icon="user-clock" size="is-small"></b-icon
-                ></b-tag>
-                <b-tag type="is-primary" size="is-medium"
-                  >{{ shift.from }} - {{ shift.to }}</b-tag
-                >
-              </b-taglist>
-            </h1>
-          </strong>
-          <p></p>
-          <div class="columns">
-            <scheduleColumn
-              :ref="day + '-' + shift.id"
-              class="graphcolumn"
-              v-for="(day, index) in days"
-              :key="day + '-' + shift.id"
-              :ind="index"
-              :day="day"
-              :shift="shift.id"
-              :group="shiftsTimetable[0].group_id"
-              :refdate="referenceDate"
-            ></scheduleColumn>
-          </div>
+        <div class="columns" v-if="days">
+          <vacationcolumn
+            :ref="day"
+            class="graphcolumn"
+            v-for="(day, index) in days"
+            :key="day"
+            :ind="index"
+            :day="day"
+           
+          ></vacationcolumn>
         </div>
       </div>
     </div>
-    <div
-      v-show="shiftsTimetable.length == 0 && this.loading == null"
-      style="text-align: center"
-    >
-      <b-message title="Info" type="is-info" has-icon :closable="false">
-        No shifts defined for this team yet.
-        <router-link :to="`/admin`">Add one.</router-link>
-      </b-message>
-    </div>
-    <b-skeleton
-      style="float: left"
-      animated
-      v-if="this.loading != null"
-    ></b-skeleton>
   </div>
 </template>
-
 <script>
-import scheduleColumn from "../components/schedulecolumn.vue";
-
+//import SidebarRight from '../components/SidebarRight.vue'
+import vacationcolumn from "../components/vacationcolumn.vue";
 export default {
-  components: {
-    scheduleColumn,
+  components: { vacationcolumn },
+  data() {
+    return {
+      activeTab: null,
+      CalendarOpened: false,
+      selectedDate: "",
+      calendardates: [
+        {
+          key: "2021-06-01",
+          highlight: true,
+          dates: new Date("2021-06-01"),
+        },
+      ],
+      masks: {
+        weekdays: "WWW",
+      },
+      referenceDate: this.moment(this.$store.state.refDate),
+    };
   },
-  name: "GroupSchedule",
-  props: ["team_id"],
-  mounted() {
-    // console.log(this.$route.params.date)
-    var interval = setInterval(() => {
-      if (this.$refs.calendar) {
-        this.loadCalendar();
-        clearInterval(interval);
-      }
-    }, 100);
-    this.readAPI();
-    
-  },
-
   computed: {
     attributes() {
       return [
@@ -217,6 +178,7 @@ export default {
     days() {
       let days = [];
       var reference = this.moment(this.referenceDate);
+      if (!reference.isValid()) return [];
       days.push(reference.format("ddd DD.MM"));
       for (var i = 1; i < 7; i++) {
         reference = reference.add(1, "day");
@@ -224,146 +186,39 @@ export default {
       }
       return days;
     },
-    timetable() {
-      return this.$store.state.timetable[
-        this.moment(this.$store.state.refDate).format("YYYY-MM-DD")
-      ].t;
-    },
-    shifts() {
-      if (
-        this.$store.state.timetable[this.referenceDate.format("YYYY-MM-DD")] &&
-        this.$store.state.timetable[this.referenceDate.format("YYYY-MM-DD")]
-          .shifts
-      )
-        return this.$store.state.timetable[
-          this.referenceDate.format("YYYY-MM-DD")
-        ].shifts;
-      return [];
-    },
-    //   shiftsTimetable()
-    // {
-    //   return this.$store.state.shiftsTimetable
-    // }
-    // referenceDate()
-    // {
-    //   return this.moment(this.$store.state.refDate)
-    // }
   },
-  data() {
-    return {
-      CalendarOpened: false,
-      selectedDate: "",
-      calendardates: [
-        {
-          key: "2021-06-01",
-          highlight: true,
-          dates: new Date("2021-06-01"),
-        },
-      ],
-      masks: {
-        weekdays: "WWW",
-      },
-      
-      teams: [],
-      schedule: [],
-      loading: null,
-      group_name: "",
-      pendingchangeswidget: false,
-      referenceDate: this.moment(this.$store.state.refDate),
-      shiftsTimetable: [],
-    };
+  mounted() {
+    //this.activeTab = Object.keys(this.teams)[0]
+    // console.log(this.$route.params)
+    this.checkpointDate("vacationing"); ///mixin
+    this.referenceDate = this.moment();
+    this.readVacationAPI()
   },
   methods: {
-    markShift() {
-
-      if (this.$store.state.shiftToHighlight) {
-        //console.log( this.$refs )
-       // console.log(this.$store.getters.currentShifts)
-        let shiftinfo = this.$store.state.shiftToHighlight.shift.split("-");
-        let shiftid = this.$store.getters.currentShifts.filter(
-          (x) => x.from == shiftinfo[0] && x.to == shiftinfo[1]
-        );
-        let dateSchedule = this.moment(
-          this.$store.state.shiftToHighlight.date
-        ).format("ddd DD.MM");
-        let refname = dateSchedule + "-" + shiftid[0].id;
-        // console.log(this.moment(this.$store.state.shiftToHighlight.date).format("ddd DD.MM"))
-         console.log( this.$refs ) 
-         if(! this.$refs[refname]) {
-        setTimeout(() => {
-          this.$refs[refname][0].$el.classList.add("graphcolumnanimation");
-          setTimeout(() => {
-            this.$refs[refname][0].$el.classList.remove("graphcolumnanimation");
-          }, 1500); // 2s
-        }, 3000);
-        }
-        this.$store.dispatch("setItemKey", "");
-      }
-    },
-    apply() {
-      this.$http.post("./scheduleapi/shifts/commit").then((response) => {
-        if (response.data.response == "success") {
-          this.$buefy.toast.open({
-            message: "Done",
-            type: "is-success",
-          });
-          this.readAPI();
-        } else {
-          this.$buefy.toast.open({
-            message: response.data.response,
-            type: "is-danger",
-          });
-        }
-      });
-    },
-    revert() {
-      this.$http.post("./scheduleapi/shifts/revert").then((response) => {
-        if (response.data.response == "success") {
-          this.$buefy.toast.open({
-            message: "Done",
-            type: "is-success",
-          });
-          this.readAPI();
-        } else {
-          this.$buefy.toast.open({
-            message: response.data.response,
-            type: "is-danger",
-          });
-        }
-      });
-    },
-    loadCalendar() {
-      const c = this.$refs.calendar;
-      //console.log(c)
-      if (c) {
-        c.move(this.referenceDate.format("YYYY-MM-DD"));
-      }
-    },
-    readAPI() {
+    readVacationAPI() {
       this.loading = this.$buefy.loading.open({
         container: null,
       });
 
       this.$store
-        .dispatch("loadFromAPI", {
+        .dispatch("loadVacationings", {
           //  team: this.team_id,
-          teamroute: this.$route.params.team,
-          refdateroute: this.$route.params.date,
+          startdate: this.$route.params.date,
+          //refdateroute: this.$route.params.date,
           //refdate: this.referenceDate.format("YYYY-MM-DD"),
         })
         .then(
           () => {
-            this.group_name = this.$store.state?.group?.group;
             this.loading.close();
             this.loading = null;
-            this.$set(
-              this,
-              "shiftsTimetable",
-              this.$store.state.shiftsTimetable
-            );
+            // this.$set(
+            //   this,
+            //   "shiftsTimetable",
+            //   this.$store.state.shiftsTimetable
+            // );
             this.referenceDate = this.moment(this.$store.state.refDate);
-            this.loadCalendar();
-            this.markShift();
+            // this.loadCalendar();
+            // this.markShift();
           },
           (reason) => {
             this.loading.close();
@@ -391,6 +246,9 @@ export default {
       //     loadingComponent.close();
       //   });
     },
+    getFirstDay() {
+      this.moment();
+    },
     moveWeek(direction) {
       if (direction == -1) {
         this.referenceDate = this.moment(this.referenceDate).subtract(
@@ -401,7 +259,7 @@ export default {
         this.referenceDate = this.moment(this.referenceDate).add(1, "week");
       }
 
-      this.loadCalendar();
+     // this.loadCalendar();
       let alreadyInStore = false;
       if (
         this.$store.state.timetable[
@@ -421,7 +279,7 @@ export default {
       }
 
       this.$router.push({
-        path: `/schedule/${this.$route.params.team}/${this.moment(
+        path: `/vacationing/${this.moment(
           this.referenceDate
         ).format("MMMDD")}-${this.moment(this.referenceDate)
           .add(6, "day")
@@ -429,7 +287,7 @@ export default {
       });
 
       if (!alreadyInStore) {
-        this.readAPI();
+        this.readVacationAPI();
       } else {
         this.$store.commit("setRefdate", this.referenceDate);
       }
@@ -437,9 +295,22 @@ export default {
   },
 };
 </script>
+<style>
+.columndragenter {
+  border-style: dashed;
+  opacity: 0.5;
+}
+.column li {
+  border: 1px solid black;
+  border-bottom: 0;
+}
+.column li:last-child {
+  border: 1px solid black;
+}
 
-<!-- Add "scoped" attribute to limit CSS to this component only -->
-<style scoped>
+.table tr {
+  height: 40px;
+}
 .weekmovingActions button {
   margin-left: 5px;
 }
@@ -495,10 +366,5 @@ export default {
   background: rgb(206, 206, 206);
   border-radius: 10px;
   box-shadow: 6px 3px 3px rgb(179, 179, 179);
-}
-</style>
-<style scoped>
-.graphcolumnanimation {
-  background-position: 300px 190px;
 }
 </style>

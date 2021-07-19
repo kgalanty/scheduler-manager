@@ -11,12 +11,12 @@
                 size="is-medium">
             </b-icon>
       </router-link>
-       <router-link class="navbar-item" :to="`/assigneditors`" v-if="canAssignEditors==1">
+       <!-- <router-link class="navbar-item" :to="`/assigneditors`" v-if="canAssignEditors==1">
        <b-icon
                 icon="clipboard-list"
                 size="is-medium">
             </b-icon>
-      </router-link>
+      </router-link> -->
              <router-link class="navbar-item" :to="`/admin`" v-if="canAssignEditors==1">
        <b-icon
                 icon="cogs"
@@ -26,6 +26,12 @@
         <router-link class="navbar-item" :to="`/stats`" >
        <b-icon
                 icon="chart-bar"
+                size="is-medium">
+            </b-icon>
+      </router-link>
+              <router-link class="navbar-item" :to="`/logs`" >
+       <b-icon
+                icon="file-alt"
                 size="is-medium">
             </b-icon>
       </router-link>

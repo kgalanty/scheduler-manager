@@ -20,7 +20,8 @@
     <div class="tile is-ancestor" >
       <GroupTile label="Feedback" icon="meh" />
       <GroupTile label="Trainings" icon="graduation-cap" />
-      <GroupTile label="Vacationing" icon="sun" />
+      <GroupTile label="Vacationing" icon="sun" 
+      :path="'/vacationing/'+dateStart+'-'+dateEnd"/>
     </div>
   </div>
 </template>

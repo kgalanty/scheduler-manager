@@ -36,6 +36,7 @@
       <b-message type="is-info" has-icon style="margin:0px 10px">
             To edit members and manage shifts & groups, <router-link :to="`/admin`">navigate here</router-link>.
         </b-message>
+        <span class="teamlist">
       <div class="p-3" v-for="(team, team_i) in teams" :key="'teams' + team_i">
         <span class="team_name">#{{team_i}} {{team.name}}</span>
         <b-table :data="team.members" narrowed bordered mobile-cards> 
@@ -69,7 +70,7 @@
           </b-table-column> -->
         </b-table>
       </div>
-    
+    </span>
       <!-- </b-sidebar> -->
     </div>
 
@@ -102,6 +103,11 @@ export default {
     },
     teams() {
      // console.log(this.$filterObject(this.$store.state.schedule_teams, "name", this.$route.params.team))
+     console.log(this.$route.name);
+     if(this.$route.name == 'Vacationing')
+     {
+ return this.$store.state.schedule_teams
+     }
       return this.$filterObject(this.$store.state.schedule_teams, "name", this.$route.params.team);
     },
     days() {
@@ -185,6 +191,12 @@ export default {
 };
 </script>
 <style scoped>
+.teamlist
+{
+  height:calc(100vh - 200px);
+   overflow-y: scroll;
+   display:block;
+}
 .agentName
 {
   padding: 5px 10px;

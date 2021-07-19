@@ -9,12 +9,12 @@
   >
     <span class="columnday">{{ day }}</span>
     <ul
-      v-if="today && today[shift] && today[shift][date]"
+      v-if="dataForToday"
       style="background-color: white"
     >
       <li
         :style="{ backgroundColor: item.bg, color: item.color }"
-        v-for="(item, i) in today[shift][date]"
+        v-for="(item, i) in dataForToday"
         :key="'dt' + date + '-' + i"
         class="agentitem"
         :class="[item.draft == 1 || item.deldraftauthor ? 'draftCell' : '']"
@@ -55,36 +55,29 @@
 </template>
 <script>
 export default {
-  props: ["ind", "day", "shift", "group", "refdate"],
+  props: ["ind", "day", "shift", "group"],
   computed: {
     // todaydate()
     // {
 
     // },
+    refdate()
+    {
+        return this.moment(this.$store.state.refDate).format("YYYY-MM-DD")
+    },
     showDelBtn() {
       return this.$store.state.showDel;
     },
-    ref() {
-      return this.refdate.format("YYYY-MM-DD");
+    today()
+    {
+      console.log(this.$route.params.date.split('-')[2])
+      return this.moment(this.refdate).add(this.ind, 'day').format("YYYY-MM-DD")
     },
-    date() {
-      //console.log(this.day)
-      return this.moment(this.ref)
-        .day(this.ind + 1)
-        .format("YYYY-MM-DD");
-    },
-    shifts() {
-      return this.$store.state.timetable[this.date].shifts;
-    },
-    today() {
-      if (
-        !this.$store.state.timetable[this.ref] ||
-        typeof this.$store.state.timetable[this.ref].t == "undefined"
-      ) {
-        return [];
-      }
-      return this.$store.state.timetable[this.ref].t;
-    },
+    dataForToday()
+    {
+      return this.$store.state.vacationings[this.today]
+    }
+   
   },
   data() {
     return {

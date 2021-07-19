@@ -43,7 +43,8 @@ export default new Vuex.Store({
     refDate: '',
     templates: {},
     shiftsTimetable: [],
-    shiftToHighlight: ''
+    shiftToHighlight: '',
+    vacationings:[]
   },
   getters: {
     currentShifts: state => {
@@ -150,6 +151,11 @@ export default new Vuex.Store({
     {
       //console.log(val)
       state.shiftToHighlight = val
+    },
+    setVacationings(state, val)
+    {
+      console.log(val)
+      state.vacationings = {...state.vacationings, ...val.vacationing}
     }
 
   },
@@ -196,6 +202,28 @@ export default new Vuex.Store({
             context.commit('setDrafts', {draftexists: response.data.drafts.length > 0 ? true : false, draftentries:response.data.drafts})
           })
       },
+      loadVacationings(context, payload)
+      {
+        return new Promise((resolve, reject) => {
+          const refdate = payload.startdate
+        axios
+          .get(
+            "./scheduleapi/vacationing" +
+              "?startdate=" +
+              refdate
+          )
+          .then((response) => {
+            //console.log(response.data)
+            if(response.data.response)
+            {
+              reject(response.data.response)
+              return;
+            }
+            context.commit('setVacationings', response.data)
+            resolve()
+          });
+        })
+      },
       loadFromAPI(context, payload)
       {
         return new Promise((resolve, reject) => {
@@ -227,11 +255,11 @@ export default new Vuex.Store({
       {
         context.commit('setShowDel', payload.val)
       },
-      getLogs(context)
+      getLogs(context, payload)
       {
         axios
         .get(
-          "./scheduleapi/logs"
+          "./scheduleapi/logs?datefrom=" + payload.datefrom + "&dateto="+ payload.dateto
         )
         .then((response) => {
           context.commit('setLogs', response.data)

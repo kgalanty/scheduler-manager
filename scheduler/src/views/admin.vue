@@ -29,7 +29,7 @@
         </section>
         <section class="section adminsection">
           <h1 class="title">Add New Shift</h1>
-          <h2 class="subtitle" style="    align-items: end !important;">
+          <h2 class="subtitle" style="align-items: end !important;">
             <b-field
               label="Team"
               style="margin-right: 20px;"
@@ -86,6 +86,16 @@
           </div>
         </section>
       </b-tab-item>
+       <b-tab-item label="Reports">
+ <section class="section adminsection">
+
+   <div class="container">
+     <ReportsForm />
+
+</div>
+</section>
+
+       </b-tab-item>
       <!-- <b-tab-item label="Agents Groups">
     <section class="section">
       <h1 class="title">Assign a person to a shift</h1>
@@ -112,11 +122,14 @@
 <script>
 import ShiftsList from "../components/ShiftsList.vue";
 import AgentsList from "../components/AgentsList.vue";
+import ReportsForm from "../components/ReportsForm.vue";
+
 export default {
   name: "admin",
   components: {
     ShiftsList,
     AgentsList,
+    ReportsForm
   },
   data() {
     const data = [
@@ -149,6 +162,8 @@ export default {
       timeto: null,
       team_id: null,
       new_team: "",
+      datefrom: '',
+      dateto: ''
     };
   },
   computed: {
@@ -188,6 +203,7 @@ export default {
 
   },
   methods: {
+
     formatter(d) {
       return d.toLocaleDateString();
     },
