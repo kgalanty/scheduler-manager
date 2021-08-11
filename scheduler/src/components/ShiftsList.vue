@@ -1,6 +1,9 @@
 <template>
   <div>
     <b-table :data="shifts" striped narrowed bordered mobile-cards class="shiftstable">
+       <template #empty>
+            <div class="has-text-centered">No records</div>
+          </template>
       <b-table-column field="Shift" centered label="Teams" v-slot="props">
         <strong>#{{ props.row.group_id }} {{ props.row.team }}</strong>
         <p></p>
@@ -54,7 +57,7 @@
 
 <script>
 export default {
-  name: "AgentsList",
+  name: "ShiftsList",
   computed: {
     shifts() {
       return this.$store.state.shifts;

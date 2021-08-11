@@ -15,7 +15,7 @@
       <li
         :style="{ backgroundColor: item.bg, color: item.color }"
         v-for="(item, i) in dataForToday"
-        :key="'dt' + date + '-' + i"
+        :key="'dt' + day + '-' + i"
         class="agentitem"
         :class="[item.draft == 1 || item.deldraftauthor ? 'draftCell' : '']"
       >
@@ -70,7 +70,7 @@ export default {
     },
     today()
     {
-      console.log(this.$route.params.date.split('-')[2])
+      //console.log(this.$route.params.date.split('-')[2])
       return this.moment(this.refdate).add(this.ind, 'day').format("YYYY-MM-DD")
     },
     dataForToday()
@@ -146,31 +146,51 @@ export default {
       //console.log(day)
       // console.log(this.date);
       // console.log(itemID)
-      if (typeof this.today == "undefined") {
-        this.today = [];
-      }
-      if (typeof this.today[this.date] == "undefined") {
-        this.today[this.date] = [];
-      }
+      // if (typeof this.today == "undefined") {
+      //   this.today = [];
+      // }
+      // if (typeof this.today[this.date] == "undefined") {
+      //   this.today[this.date] = [];
+      // }
+     // console.log(AgentItem)
       const loadingComponent = this.$buefy.loading.open({
         container: null,
       });
       this.$http
-        .post("./scheduleapi/shifts/timetable", {
-          date: this.date,
+        .post("./scheduleapi/vacationing", {
+          date: this.today,
           agent_id: AgentItem.agent_id,
-          shift_id: this.shift,
-          group_id: this.group,
+          group_id: AgentItem.team_i
         })
         .then((r) => {
           if (r.data.response === "success") {
             loadingComponent.close();
             //this.today[this.date].push({'agent':AgentItem.name, 'bg':AgentItem.bg, 'color':AgentItem.color})
-            this.$store.dispatch("loadFromAPI", {
-              teamroute: this.$route.params.team,
-              refdate: this.ref,
-              refdateroute: this.$route.params.date,
+      this.$store
+        .dispatch("loadVacationings", {
+          //  team: this.team_id,
+          startdate: this.$route.params.date,
+          //refdateroute: this.$route.params.date,
+          //refdate: this.referenceDate.format("YYYY-MM-DD"),
+        })
+        .then(
+          () => {
+           
+            this.referenceDate = this.moment(this.$store.state.refDate);
+
+          },
+          (reason) => {
+            this.$router.push({ path: `/schedule` });
+
+            this.$buefy.snackbar.open({
+              duration: 5000,
+              message: reason,
+              type: "is-danger",
+              position: "is-bottom-left",
+              queue: false,
             });
+          }
+        );
           } else {
             this.$buefy.toast.open({
               message: r.data.response,

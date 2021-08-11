@@ -192,6 +192,7 @@ export default {
     // console.log(this.$route.params)
     this.checkpointDate("vacationing"); ///mixin
     this.referenceDate = this.moment();
+    console.log(this.referenceDate)
     this.readVacationAPI()
   },
   methods: {
@@ -260,23 +261,23 @@ export default {
       }
 
      // this.loadCalendar();
-      let alreadyInStore = false;
-      if (
-        this.$store.state.timetable[
-          this.moment(this.referenceDate).format("YYYY-MM-DD")
-        ]
-      ) {
-        alreadyInStore = true;
-      }
-      for (var i = 1; i < 8; i++) {
-        if (
-          this.$store.state.timetable[
-            this.moment(this.referenceDate).add(1, "day").format("YYYY-MM-DD")
-          ]
-        ) {
-          alreadyInStore = true;
-        }
-      }
+      // let alreadyInStore = false;
+      // if (
+      //   this.$store.state.timetable[
+      //     this.moment(this.referenceDate).format("YYYY-MM-DD")
+      //   ]
+      // ) {
+      //   alreadyInStore = true;
+      // }
+      // for (var i = 1; i < 8; i++) {
+      //   if (
+      //     this.$store.state.timetable[
+      //       this.moment(this.referenceDate).add(1, "day").format("YYYY-MM-DD")
+      //     ]
+      //   ) {
+      //     alreadyInStore = true;
+      //   }
+      // }
 
       this.$router.push({
         path: `/vacationing/${this.moment(
@@ -286,11 +287,11 @@ export default {
           .format("MMMDD")}-${this.moment(this.referenceDate).format("YYYY")}`,
       });
 
-      if (!alreadyInStore) {
+     // if (!alreadyInStore) {
         this.readVacationAPI();
-      } else {
-        this.$store.commit("setRefdate", this.referenceDate);
-      }
+     // } else {
+     //   this.$store.commit("setRefdate", this.referenceDate);
+    //  }
     },
   },
 };
@@ -352,7 +353,6 @@ export default {
     rgba(58, 97, 180, 1) 0%,
     rgba(72, 171, 255, 1) 100%
   );
-  background-size: 300px;
   color: white;
 }
 

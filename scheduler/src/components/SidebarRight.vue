@@ -45,9 +45,9 @@
             </template>
           <b-table-column field="Agent" centered label="Agent" v-slot="props" header-class="headerclass">
             <b-button size="is-small" :style="getStyle(props.row.bg, props.row.color)"
-            @dragstart="startDrag($event, props.row)"
+            @dragstart="startDrag($event, props.row, team_i)"
             draggable
-              @dragend.prevent="dragEnd($event)"
+             @dragend.prevent="dragEnd($event)"
             >{{ props.row.name }}</b-button>
               <!-- draggable
               class="agentName"
@@ -103,10 +103,10 @@ export default {
     },
     teams() {
      // console.log(this.$filterObject(this.$store.state.schedule_teams, "name", this.$route.params.team))
-     console.log(this.$route.name);
+    // console.log(this.$route.name);
      if(this.$route.name == 'Vacationing')
      {
- return this.$store.state.schedule_teams
+        return this.$store.state.schedule_teams
      }
       return this.$filterObject(this.$store.state.schedule_teams, "name", this.$route.params.team);
     },
@@ -166,10 +166,11 @@ export default {
       console.log(row)
       console.log(index)
     },
-    startDrag: (evt, item) => {
+    startDrag: (evt, item, team_i) => {
       evt.target.style.opacity = 0.5;
       evt.dataTransfer.dropEffect = "move";
       evt.dataTransfer.effectAllowed = "move";
+      item.team_i = parseInt(team_i)
      // console.log(item)
       evt.dataTransfer.setData("agentItem", JSON.stringify(item));
     },

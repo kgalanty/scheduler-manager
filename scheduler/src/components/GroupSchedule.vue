@@ -122,10 +122,17 @@
                 <b-tag type="is-dark" size="is-medium"
                   ><b-icon icon="user-clock" size="is-small"></b-icon
                 ></b-tag>
+             
                 <b-tag type="is-primary" size="is-medium"
                   >{{ shift.from }} - {{ shift.to }}</b-tag
                 >
               </b-taglist>
+              <b-tooltip label="Add a shift">
+                 <b-button type="is-success" size="is-small" @click="OpenAddAgentModal(shift.id, shift.group_id)"
+                icon-right="plus"><b-icon
+                icon="user-clock"
+                size="is-small">
+            </b-icon></b-button></b-tooltip>
             </h1>
           </strong>
           <p></p>
@@ -164,10 +171,10 @@
 
 <script>
 import scheduleColumn from "../components/schedulecolumn.vue";
-
+import AddAgentToShiftForm from "../forms/AddAgentToShiftForm.vue"
 export default {
   components: {
-    scheduleColumn,
+    scheduleColumn
   },
   name: "GroupSchedule",
   props: ["team_id"],
@@ -215,14 +222,8 @@ export default {
       return this.$store.state.groupname;
     },
     days() {
-      let days = [];
-      var reference = this.moment(this.referenceDate);
-      days.push(reference.format("ddd DD.MM"));
-      for (var i = 1; i < 7; i++) {
-        reference = reference.add(1, "day");
-        days.push(reference.format("ddd DD.MM"));
-      }
-      return days;
+
+      return this.expandDaysWeekMixin(this.referenceDate)
     },
     timetable() {
       return this.$store.state.timetable[
@@ -274,6 +275,21 @@ export default {
     };
   },
   methods: {
+    OpenAddAgentModal(shift_id, group_id)
+    {
+            const modal = this.$buefy.modal.open({
+                    parent: this,
+                    component: AddAgentToShiftForm,
+                    hasModalCard: true,
+                    trapFocus: true,
+                    props: {"shift_id":shift_id, 'group_id' : group_id},
+      })
+      modal.$on('reloadapi', () =>
+      {
+          this.readAPI()
+
+      })
+    },
     markShift() {
 
       if (this.$store.state.shiftToHighlight) {
@@ -481,7 +497,6 @@ export default {
     rgba(58, 97, 180, 1) 0%,
     rgba(72, 171, 255, 1) 100%
   );
-  background-size: 300px;
   color: white;
 }
 

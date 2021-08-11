@@ -12,7 +12,7 @@ class ReportsPDFWrapper
         $this->admins = $admins;
         $this->config = $config;
         $this->fillPages();
-        $this->releasePDF();
+       
     }
     public function fillPages()
     {
@@ -106,6 +106,8 @@ class ReportsPDFWrapper
     }
     public function releasePDF()
     {
-        $this->pdf->Output('report.pdf');
+        $attachment_path = tempnam(sys_get_temp_dir(), 'report.pdf');
+        $this->pdf->Output($attachment_path, 'F');
+        return $attachment_path;
     }
 }

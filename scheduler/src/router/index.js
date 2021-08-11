@@ -7,6 +7,30 @@ Vue.use(VueRouter)
 
 Vue.mixin({
   methods: {
+    expandDaysWeekMixin(referenceDate, format = 'ddd DD.MM', giveobject = false) {
+      let days = [];
+      var reference = this.moment(referenceDate);
+      if(giveobject=== true )
+      {
+          days.push({'show':reference.format(format),'date':reference.format('YYYY-MM-DD')})
+      }
+      else
+      {
+        days.push(reference.format(format));
+      }
+      for (var i = 1; i < 7; i++) {
+        reference = reference.add(1, "day");
+        if(giveobject=== true )
+        {
+          days.push({'show':reference.format(format),'date':reference.format('YYYY-MM-DD')})
+        }
+        else
+        {
+         days.push(reference.format(format));
+      }
+      }
+      return days;
+    },
     checkpointDate(defpath = 'schedule') {
       let dateparams = this.$route.params.date.split('-')
       // console.log(this.moment(dateparams[0]+'-'+dateparams[2], 'MMMDD-YYYY'))

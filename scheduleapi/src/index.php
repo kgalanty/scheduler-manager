@@ -51,7 +51,7 @@ $app->get(ROUTE_PREFIX.'/', function (Request $request, Response $response, $arg
     return $response;
 });
 $app->get(ROUTE_PREFIX.'/home','App\Controllers\HomeController:home');
-
+$app->get(ROUTE_PREFIX.'/dbmigration','App\Controllers\MigrationController:home');
 $app->get(ROUTE_PREFIX.'/agents','App\Controllers\AgentsController:agents');
 $app->get(ROUTE_PREFIX.'/agents/myinfo','App\Controllers\AgentsController:myinfo');
 $app->get(ROUTE_PREFIX.'/shifts','App\Controllers\ShiftsController:getShifts');
@@ -69,6 +69,7 @@ $app->post(ROUTE_PREFIX.'/shifts/commit','App\Controllers\TimetableController:co
 $app->post(ROUTE_PREFIX.'/shifts/revert','App\Controllers\TimetableController:revertDrafts');
 $app->post(ROUTE_PREFIX.'/editors/add','App\Controllers\EditorsController:add')->add(new JsonMiddleware());
 $app->post(ROUTE_PREFIX.'/editors/delete','App\Controllers\EditorsController:delete')->add(new JsonMiddleware());
+$app->post(ROUTE_PREFIX.'/shifts/reorder/{direction}','App\Controllers\ShiftsController:reorder')->add(new JsonMiddleware());
 
 $app->post(ROUTE_PREFIX.'/templates/add','App\Controllers\TemplatesController:add')->add(new JsonMiddleware());
 $app->get(ROUTE_PREFIX.'/templates/{groupid}','App\Controllers\TemplatesController:list');
@@ -85,6 +86,7 @@ $app->get(ROUTE_PREFIX.'/logs','App\Controllers\LogsController:get');
 $app->get(ROUTE_PREFIX.'/verify','App\Controllers\AgentsController:verifyAgent');
 $app->get(ROUTE_PREFIX.'/report/{datestart}/{dateend}','App\Controllers\TimetableController:scheduleForWorker');
 $app->get(ROUTE_PREFIX.'/vacationing','App\Controllers\TimetableController:vacationing');
+$app->post(ROUTE_PREFIX.'/vacationing','App\Controllers\TimetableController:vacationingStore')->add(new JsonMiddleware());
 // $app->post(ROUTE_PREFIX.'/assignshift','App\Controllers\ShiftsController:assignToShift');
 //$app->add($beforeMiddleware);
 $app->run();

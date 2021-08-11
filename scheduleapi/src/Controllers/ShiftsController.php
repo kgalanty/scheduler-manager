@@ -63,6 +63,58 @@ class ShiftsController
         // return $response
         //     ->withHeader('Content-Type', 'application/json');
     }
+    public function reorder($request, $response, $args)
+    {
+        $dir = $args['direction'];
+        if($dir == 'up' || $dir == 'down')
+        {
+            $id =  $request->getParsedBody()['id'];
+            $itemToMove = DB::table('schedule_timetable')->where('id', $id)->first();
+
+            if($dir=='up')
+            {
+                $itemToExchange = DB::table('schedule_timetable')->where(
+                    [
+                        'group_id' => $itemToMove->group_id,
+                        'shift_id' => $itemToMove->shift_id,
+                        'day' => $itemToMove->day,
+                        'draft'=>0,
+                        'order'=>($itemToMove->order)-1
+                    ])->update([
+                        'order' => $itemToMove->order
+                    ]);
+                    DB::table('schedule_timetable')->where('id', $id)->update(['order'=> $itemToMove->order-1]);
+
+            }
+            elseif($dir=='down')
+            {
+                $itemToExchange = DB::table('schedule_timetable')->where(
+                    [
+                        'group_id' => $itemToMove->group_id,
+                        'shift_id' => $itemToMove->shift_id,
+                        'day' => $itemToMove->day,
+                        'draft'=>0,
+                        'order'=>($itemToMove->order)+1
+                    ])->update([
+                        'order' => $itemToMove->order
+                    ]);
+                    DB::table('schedule_timetable')->where('id', $id)->update(['order'=> $itemToMove->order+1]);
+            }
+           
+            $resp = ['response' => 'success'];
+            return Response::json($resp, $response);
+        }
+        else
+        {
+            $resp = ['response' => 'Wrong argument'];
+            return Response::json($resp, $response);
+        }
+
+   
+        // $response->getBody()->write(json_encode($resp));
+        // return $response
+        //     ->withHeader('Content-Type', 'application/json');
+    }
     public function deleteShift($request, $response, $args)
     {
         $id =  $request->getParsedBody()['id'];
@@ -163,6 +215,7 @@ class ShiftsController
                 $query->where('t.draft', '0');
                 $query->orWhere(['t.draft' => 1, 't.author' => $author]);
             })
+            ->orderBy('t.shift_id')->orderBy('t.order', 'ASC')
             ->get([
                 't.id', 't.shift_id', 't.day', 'a.firstname', 'a.lastname', 'd.color', 'd.bg', 't.draft', 't.author',
                 'dr.author AS draftauthor',

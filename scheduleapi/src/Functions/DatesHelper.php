@@ -8,6 +8,16 @@ use App\Constants\AgentConstants;
 class DatesHelper
 {
     /**
+     * string $startdate Date pointing to monday 
+     * returns 2 elements array with Y-m-d monday date and sunday date
+     */
+    public static function getWeekRangeBasedOnDay(string $startdate)
+	{
+        $monday = date('Y-m-d', strtotime($startdate.' -'.(date('N', strtotime($startdate))-1).' days'));
+        $sunday = date('Y-m-d', strtotime($startdate.' +'.(7-date('N', strtotime($startdate))).' days'));
+       return [$monday, $sunday];
+	}
+        /**
      * int $weekday number from 1-7 range, 1 for monday, 7 for sunday
      * string $startdate Date pointing to monday 
      * 
