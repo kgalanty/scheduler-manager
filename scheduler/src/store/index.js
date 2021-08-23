@@ -39,12 +39,13 @@ export default new Vuex.Store({
     draftexists: false,
     draftentries: [],
     logs: [],
-    canassigneditors: '',
+    //canassigneditors: '',
     refDate: '',
     templates: {},
     shiftsTimetable: [],
     shiftToHighlight: '',
-    vacationings:[]
+    vacationings:[],
+    editorPermission:0
   },
   getters: {
     currentShifts: state => {
@@ -134,10 +135,6 @@ export default new Vuex.Store({
     setLogs(state, val) {
       state.logs = val
     },
-    setCanAssignEditors(state, val)
-    {
-      state.canassigneditors = val
-    },
     setTemplates(state, val)
     {
     //  var ar = new Array([state.groupid]: val)
@@ -154,12 +151,30 @@ export default new Vuex.Store({
     },
     setVacationings(state, val)
     {
-      console.log(val)
       state.vacationings = {...state.vacationings, ...val.vacationing}
+    },
+    editorPermissions(state, val)
+    {
+      state.editorPermission = parseInt(val)
     }
 
   },
   actions: {
+    loadEditorPermissions(context)
+    {
+       axios.get("./scheduleapi/verify", { withCredentials: true })
+       .then((r) => 
+       {
+        if (r.data.response === "success") {
+          context.commit('editorPermissions', 1)
+        }
+        else
+        {
+          context.commit('editorPermissions', 0)
+        }
+       })
+      
+    },
     setItemKey(context,payload)
     {
       context.commit('setItemKey', payload)

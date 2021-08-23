@@ -15,18 +15,9 @@ if(!($_SESSION['adminid'] && $_SESSION['adminpw']))
 {
    // die('Unauthorized');
 }
-define('ROUTE_PREFIX', '/710/schedule/scheduleapi');
+define('ROUTE_PREFIX', '/schedule/scheduleapi');
 
 
-$app->get(ROUTE_PREFIX.'/hello/{name}', function (Request $request, Response $response, $args) {
-    $name = $args['name'];
-    $data = ['test' => $name];
-    $payload = json_encode($data);
-
-        $response->getBody()->write($payload);
-        return $response
-          ->withHeader('Content-Type', 'application/json');
-});
 $app->get('/agents', function ($request, $response, $args) {
     $data = [];
     
@@ -77,6 +68,9 @@ $app->post(ROUTE_PREFIX.'/templates/confirm','App\Controllers\TemplatesControlle
 $app->post(ROUTE_PREFIX.'/templates/delete','App\Controllers\TemplatesController:delete')->add(new JsonMiddleware());
 
 $app->get(ROUTE_PREFIX.'/stats','App\Controllers\StatsController:get');
+
+$app->get(ROUTE_PREFIX.'/calendar/generate','App\Controllers\CalendarController:create');
+$app->get(ROUTE_PREFIX.'/calendar/{agenthash}','App\Controllers\CalendarController:calendar');
 
 $app->get(ROUTE_PREFIX.'/editors/list','App\Controllers\EditorsController:list');
 $app->get(ROUTE_PREFIX.'/shifts/teams','App\Controllers\AgentsController:teamsMembers');

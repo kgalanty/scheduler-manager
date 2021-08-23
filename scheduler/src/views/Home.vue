@@ -22,17 +22,6 @@ export default {
     Browser,
   },
   mounted() {
-    if (this.$store.state.canassigneditors == "") {
-      this.$http
-        .get("./scheduleapi/verify", { withCredentials: true })
-        .then((r) => {
-          if (r.data.response === "success") {
-            this.$store.commit("setCanAssignEditors", 1);
-          } else {
-            this.$store.commit("setCanAssignEditors", 0);
-          }
-        });
-    }
   },
 };
 </script>

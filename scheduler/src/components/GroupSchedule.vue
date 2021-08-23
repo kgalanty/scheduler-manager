@@ -127,7 +127,7 @@
                   >{{ shift.from }} - {{ shift.to }}</b-tag
                 >
               </b-taglist>
-              <b-tooltip label="Add a shift">
+              <b-tooltip label="Add a shift" v-if="editorPermission===1">
                  <b-button type="is-success" size="is-small" @click="OpenAddAgentModal(shift.id, shift.group_id)"
                 icon-right="plus"><b-icon
                 icon="user-clock"
@@ -170,6 +170,7 @@
 </template>
 
 <script>
+import { mapState } from 'vuex'
 import scheduleColumn from "../components/schedulecolumn.vue";
 import AddAgentToShiftForm from "../forms/AddAgentToShiftForm.vue"
 export default {
@@ -179,6 +180,14 @@ export default {
   name: "GroupSchedule",
   props: ["team_id"],
   mounted() {
+    var that = this
+    document.addEventListener("visibilitychange", function() {
+      if (document.visibilityState === 'visible') {
+        that.readAPI();
+      } 
+    });
+
+
     // console.log(this.$route.params.date)
     var interval = setInterval(() => {
       if (this.$refs.calendar) {
@@ -187,10 +196,13 @@ export default {
       }
     }, 100);
     this.readAPI();
-    
+                 
   },
 
   computed: {
+     ...mapState(
+       ['editorPermission']
+      ),
     attributes() {
       return [
         // Attributes for todos

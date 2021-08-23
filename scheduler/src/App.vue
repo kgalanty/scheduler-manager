@@ -3,14 +3,15 @@
     
     <Header />
 
-    <SidebarRight v-if="$route.matched.some(({ name }) => name.includes('Vacationing')||name.includes('Schedule') )"></SidebarRight >
-    <TemplatesSidebar v-if="$route.matched.some(({ name }) => name.includes('Schedule'))"></TemplatesSidebar >
+    <SidebarRight v-if="editorPermission===1 && $route.matched.some(({ name }) => name.includes('Vacationing')||name.includes('Schedule') )"></SidebarRight >
+    <TemplatesSidebar v-if="editorPermission===1 && $route.matched.some(({ name }) => name.includes('Schedule'))"></TemplatesSidebar >
     <div class="container is-fullhd notification">
       <router-view/>
     </div>
   </div>
 </template>
 <script>
+import { mapState } from 'vuex'
 import Header from './components/Header.vue'
 import SidebarRight from './components/SidebarRight.vue'
 import TemplatesSidebar from './components/TemplatesSidebar.vue'
@@ -19,6 +20,12 @@ export default {
   components: {
     Header, SidebarRight,TemplatesSidebar
    
+  },
+  computed:
+  {
+    ...mapState([
+      'editorPermission'
+    ])
   }
 }
 </script>

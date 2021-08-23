@@ -5,7 +5,7 @@ namespace App\Controllers;
 use WHMCS\Database\Capsule as DB;
 use App\Constants\AgentConstants;
 use App\Responses\Response;
-
+use App\Functions\EditorsAuth;
 class ShiftsController
 {
     public function getShifts($request, $response, $args)
@@ -20,7 +20,7 @@ class ShiftsController
             // $data['groups'][$result->group_id] = ['id' => $result->group_id, 'name' => $result->group];
             if (!$data[$result->group_id]) {
 
-                $shift = $result->from && $result->to ? [['from' => $result->from, 'to' => $result->to,'shiftid' => $result->id]] : [];
+                $shift = $result->from && $result->to ? [['from' => $result->from, 'to' => $result->to, 'shiftid' => $result->id]] : [];
                 $data[$result->group_id] = ['group_id' => $result->group_id, 'team' => $result->group, 'shifts' => $shift];
             } else {
                 $data[$result->group_id]['shifts'][] = ['from' => $result->from, 'to' => $result->to, 'shiftid' => $result->id];
@@ -40,17 +40,14 @@ class ShiftsController
         $to = $request->getParsedBody()['to'];
         $team = $request->getParsedBody()['team_id'];
         $oncall = $request->getParsedBody()['oncall'];
-        if($oncall)
-        {
+        if ($oncall) {
             if (DB::table('schedule_shifts')->where(['from' => 'on', 'to' => 'call', 'group_id' => $team])->count() == 0) {
                 DB::table('schedule_shifts')->insert(['from' => 'on', 'to' => 'call', 'group_id' => $team]);
                 $resp = ['response' => 'success'];
             } else {
                 $resp = ['response' => 'This shift already exists'];
             }
-        }
-        else 
-        {
+        } else {
             if (DB::table('schedule_shifts')->where(['from' => $from, 'to' => $to, 'group_id' => $team])->count() == 0) {
                 DB::table('schedule_shifts')->insert(['from' => $from, 'to' => $to, 'group_id' => $team]);
                 $resp = ['response' => 'success'];
@@ -65,52 +62,53 @@ class ShiftsController
     }
     public function reorder($request, $response, $args)
     {
-        $dir = $args['direction'];
-        if($dir == 'up' || $dir == 'down')
-        {
-            $id =  $request->getParsedBody()['id'];
-            $itemToMove = DB::table('schedule_timetable')->where('id', $id)->first();
+        if (!EditorsAuth::isEditor()) {
+            $resp = ['response' => 'No permission for this operation'];
+        } else {
 
-            if($dir=='up')
-            {
-                $itemToExchange = DB::table('schedule_timetable')->where(
-                    [
-                        'group_id' => $itemToMove->group_id,
-                        'shift_id' => $itemToMove->shift_id,
-                        'day' => $itemToMove->day,
-                        'draft'=>0,
-                        'order'=>($itemToMove->order)-1
-                    ])->update([
+            $dir = $args['direction'];
+            if ($dir == 'up' || $dir == 'down') {
+                $id =  $request->getParsedBody()['id'];
+                $itemToMove = DB::table('schedule_timetable')->where('id', $id)->first();
+
+                if ($dir == 'up') {
+                    $itemToExchange = DB::table('schedule_timetable')->where(
+                        [
+                            'group_id' => $itemToMove->group_id,
+                            'shift_id' => $itemToMove->shift_id,
+                            'day' => $itemToMove->day,
+                            'draft' => 0,
+                            'order' => ($itemToMove->order) - 1
+                        ]
+                    )->update([
                         'order' => $itemToMove->order
                     ]);
-                    DB::table('schedule_timetable')->where('id', $id)->update(['order'=> $itemToMove->order-1]);
-
-            }
-            elseif($dir=='down')
-            {
-                $itemToExchange = DB::table('schedule_timetable')->where(
-                    [
-                        'group_id' => $itemToMove->group_id,
-                        'shift_id' => $itemToMove->shift_id,
-                        'day' => $itemToMove->day,
-                        'draft'=>0,
-                        'order'=>($itemToMove->order)+1
-                    ])->update([
+                    DB::table('schedule_timetable')->where('id', $id)->update(['order' => $itemToMove->order - 1]);
+                } elseif ($dir == 'down') {
+                    $itemToExchange = DB::table('schedule_timetable')->where(
+                        [
+                            'group_id' => $itemToMove->group_id,
+                            'shift_id' => $itemToMove->shift_id,
+                            'day' => $itemToMove->day,
+                            'draft' => 0,
+                            'order' => ($itemToMove->order) + 1
+                        ]
+                    )->update([
                         'order' => $itemToMove->order
                     ]);
-                    DB::table('schedule_timetable')->where('id', $id)->update(['order'=> $itemToMove->order+1]);
+                    DB::table('schedule_timetable')->where('id', $id)->update(['order' => $itemToMove->order + 1]);
+                }
+
+                $resp = ['response' => 'success'];
+                return Response::json($resp, $response);
             }
-           
-            $resp = ['response' => 'success'];
-            return Response::json($resp, $response);
-        }
-        else
-        {
+
             $resp = ['response' => 'Wrong argument'];
-            return Response::json($resp, $response);
         }
 
-   
+        return Response::json($resp, $response);
+
+
         // $response->getBody()->write(json_encode($resp));
         // return $response
         //     ->withHeader('Content-Type', 'application/json');
@@ -224,12 +222,12 @@ class ShiftsController
         $days = [];
         foreach ($timetable as $t) {
             $days[$t->shift_id][$t->day][] = [
-                'id' => $t->id, 
-                'agent' => $t->firstname . ' ' . $t->lastname, 
-                'color' => $t->color ?? '#000', 
-                'bg' => $t->bg ?? 'rgb(202 202 202)', 
-                'author' => $t->author, 
-                'draft' => $t->draft, 
+                'id' => $t->id,
+                'agent' => $t->firstname . ' ' . $t->lastname,
+                'color' => $t->color ?? '#000',
+                'bg' => $t->bg ?? 'rgb(202 202 202)',
+                'author' => $t->author,
+                'draft' => $t->draft,
                 'deldraftauthor' => $t->draftauthor ?? false,
                 'shift' => $t->from . '-' . $t->to,
                 'date' => $t->day

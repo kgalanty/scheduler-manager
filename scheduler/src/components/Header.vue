@@ -17,7 +17,7 @@
                 size="is-medium">
             </b-icon>
       </router-link> -->
-             <router-link class="navbar-item" :to="`/admin`" v-if="canAssignEditors==1">
+             <router-link class="navbar-item" :to="`/admin`" v-if="editorPermission===1">
        <b-icon
                 icon="cogs"
                 size="is-medium">
@@ -35,6 +35,13 @@
                 size="is-medium">
             </b-icon>
       </router-link>
+   <router-link class="navbar-item" :to="`/calendar`" >
+       <b-icon
+                icon="calendar-week"
+                size="is-medium">
+            </b-icon>
+      </router-link>
+
   </div><div class="navbar-end">
      <a class="navbar-item" href="https://my.tmdhosting.com/admin/">
        <b-icon
@@ -59,14 +66,18 @@
 </template>
 
 <script>
+import { mapState } from 'vuex'
 export default {
   name: 'Header',
   computed:
   {
-    canAssignEditors()
-    {
-      return this.$store.state.canassigneditors
-    }
+     ...mapState(
+       ['editorPermission']
+      )
+  
+  },
+  mounted() {
+    this.$store.dispatch("loadEditorPermissions")
   }
 }
   document.addEventListener('DOMContentLoaded', () => {

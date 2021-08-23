@@ -70,11 +70,15 @@ class TimetableController
 
       if (DB::table("schedule_timetable")->where([
         'agent_id' =>  $agent,
-        'shift_id' => $shift,
         'day' => $day,
         'draft' => '0'
+      ])->count() > 0 || DB::table("schedule_timetable")->where([
+        'agent_id' =>  $agent,
+        'day' => $day,
+        'draft' => '1',
+        'author' => $author
       ])->count() > 0) {
-        $data['response'] = 'This Agent has a duty in '.$day;
+        $data['response'] = 'This Agent has a duty (planned or confirmed) in '.$day.'.';
         return Response::json($data, $response);
       }
       $weekRange = DatesHelper::getWeekRangeBasedOnDay($day);
@@ -128,7 +132,12 @@ class TimetableController
     if (!EditorsAuth::isEditor()) {
       $data['response'] = 'No permission for this operation';
     } else {
-
+      $sameDaysEntries = DB::table('schedule_timetable')->where('draft', 1)->where('author', $author)->groupBy('day')->having('c', '>', '1')->selectRaw('count(*) as c, day')->get();
+      if(count($sameDaysEntries) > 0)
+      {
+        $data['response'] = 'There is at least one duplicated shift on the same day. Remove it to proceed.';
+        return Response::json($data, $response);
+      }
       $entries = DB::table('schedule_timetable')->where(['author' => $author, 'draft' => 1])->get();
 
       $logs = (new AddEntryLog($entries));
@@ -299,27 +308,33 @@ class TimetableController
   }
   public function changeOrder($request, $response, $args)
   {
-    $body =  $request->getParsedBody();
-    if (DB::table("schedule_vacations")->where([
-      'agent_id' =>  $body['agent_id'],
-      'group_id' => $body['group_id'],
-      'day' => $body['date'],
-      'draft' => '0',
-      'author' => AgentConstants::adminid(),
-    ])->count() == 0) {
-      DB::table("schedule_vacations")->insert(
-        [
-          'agent_id' =>  $body['agent_id'],
-          'group_id' => $body['group_id'],
-          'day' => $body['date'],
-          'draft' => '0',
-          'author' => AgentConstants::adminid(),
-        ]
-      );
-      $data['response'] = 'success';
+    $author =  AgentConstants::adminid();
+    if (!EditorsAuth::isEditor()) {
+      $data['response'] = 'No permission for this operation';
     } else {
-      $data['response'] = 'Already exist';
-    }
+
+      $body =  $request->getParsedBody();
+      if (DB::table("schedule_vacations")->where([
+        'agent_id' =>  $body['agent_id'],
+        'group_id' => $body['group_id'],
+        'day' => $body['date'],
+        'draft' => '0',
+        'author' => AgentConstants::adminid(),
+      ])->count() == 0) {
+        DB::table("schedule_vacations")->insert(
+          [
+            'agent_id' =>  $body['agent_id'],
+            'group_id' => $body['group_id'],
+            'day' => $body['date'],
+            'draft' => '0',
+            'author' => AgentConstants::adminid(),
+          ]
+        );
+        $data['response'] = 'success';
+      } else {
+        $data['response'] = 'Already exist';
+      }
+  }
     return Response::json($data, $response);
   }
 }

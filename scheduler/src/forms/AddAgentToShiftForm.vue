@@ -22,7 +22,7 @@
             </b-autocomplete>
         </b-field>
          <b-field label="Day">
-            <b-select placeholder="Select a day" expanded v-model="selectedDay">
+            <b-select placeholder="Select a day" expanded v-model="date">
                 <option
                     v-for="day in days"
                     :value="day.date"
@@ -41,14 +41,16 @@
 </template>
 
 <script>
+import AddShiftMixin from '../mixins/AddShiftMixin.js'
 export default {
+  mixins: [AddShiftMixin],
   name: "AddAgentToShiftForm",
   props: ['shift_id', 'group_id'],
   data() {
     return {
       agentsToAdd: '',
       selectedAgentId: null,
-      selectedDay: null,
+      date: null,
       error: ''
     };
   },
@@ -58,7 +60,7 @@ export default {
       return this.expandDaysWeekMixin(this.moment(this.$store.state.refDate), 'ddd DD.MM (YYYY-MM-DD)', true)
     },
     filteredMembers() {
-            return this.teams[this.shift_id].members.filter(option => {
+            return this.teams[this.group_id].members.filter(option => {
                 return (
                     option.name
                         .toString()
@@ -86,7 +88,7 @@ export default {
     addAgentToShift()
     {
      
-      if(this.selectedDay == null)
+      if(this.date == null)
       {
          this.error = 'You must select day'
         return;
@@ -100,7 +102,7 @@ export default {
      
        this.$http
         .post("./scheduleapi/shifts/timetable", {
-          date: this.selectedDay,
+          date: this.date,
           agent_id: this.selectedAgentId,
           shift_id: this.shift_id,
           group_id: this.group_id
@@ -110,10 +112,9 @@ export default {
               this.$parent.$emit('reloadapi')
               this.$emit('close')
           } else {
-            this.$buefy.toast.open({
-              message: r.data.response,
-              type: "is-danger",
-            });
+
+            this.ForceAddDutyConfirm(r, this.selectedAgentId, this.$store.state.refDate)
+            this.$emit('close')
            // loadingComponent.close();
           }
         });

@@ -52,7 +52,7 @@
         <span style="display: block; text-align: center; width: inherit">
           {{ item.agent }}
         </span>
-        <span style="display: contents; float: right; text-align: right">
+        <span style="display: contents; float: right; text-align: right" v-if="editorPermission===1">
           <b-button
             v-if="i != 0 && !item.draft && !item.deldraftauthor"
             size="is-small"
@@ -78,13 +78,19 @@
   </div>
 </template>
 <script>
+import AddShiftMixin from '../mixins/AddShiftMixin.js'
 export default {
+  mixins: [AddShiftMixin],
   props: ["ind", "day", "shift", "group", "refdate"],
   computed: {
     // todaydate()
     // {
 
     // },
+    editorPermission()
+    {
+      return this.$store.state.editorPermission
+    },
     showDelBtn() {
       return this.$store.state.showDel;
     },
@@ -139,6 +145,12 @@ export default {
                 loadingComponent.close();
               });
           } else {
+              this.$buefy.toast.open({
+                    duration: 5000,
+                    message: r.data.response,
+                    position: 'is-top',
+                    type: 'is-danger'
+                })
             loadingComponent.close();
           }
         });
@@ -165,6 +177,13 @@ export default {
                 loadingComponent.close();
               });
           } else {
+             this.$buefy.toast.open({
+                    duration: 5000,
+                    message: r.data.response,
+                    position: 'is-top',
+                    type: 'is-danger'
+                })
+
             loadingComponent.close();
           }
         });
@@ -191,6 +210,7 @@ export default {
                 loadingComponent.close();
               });
           } else {
+
             loadingComponent.close();
           }
         });
@@ -259,33 +279,34 @@ export default {
               refdateroute: this.$route.params.date,
             });
           } else {
-            this.$buefy.snackbar.open({
-                    duration: 10000,
-                    message:  r.data.response,
-                    type: 'is-danger',
-                    position: 'is-top',
-                    queue: false,
-                    actionText: r.data.action ?? null,
-                    onAction: () => {
-                      const loadingComponent = this.$buefy.loading.open({
-                        container: null,
-                      });
+            // this.$buefy.snackbar.open({
+            //         duration: 10000,
+            //         message:  r.data.response,
+            //         type: 'is-danger',
+            //         position: 'is-top',
+            //         queue: false,
+            //         actionText: r.data.action ?? null,
+            //         onAction: () => {
+            //           const loadingComponent = this.$buefy.loading.open({
+            //             container: null,
+            //           });
                     
-                       this.PostShift(AgentItem.agent_id, true)
-                       .then((r) => {
-                                        if (r.data.response === "success") {
-                                          loadingComponent.close();
-                                          //this.today[this.date].push({'agent':AgentItem.name, 'bg':AgentItem.bg, 'color':AgentItem.color})
-                                          this.$store.dispatch("loadFromAPI", {
-                                            teamroute: this.$route.params.team,
-                                            refdate: this.ref,
-                                            refdateroute: this.$route.params.date,
-                                          });
-                                        } 
+            //            this.PostShift(AgentItem.agent_id, true)
+            //            .then((r) => {
+            //                             if (r.data.response === "success") {
+            //                               loadingComponent.close();
+            //                               //this.today[this.date].push({'agent':AgentItem.name, 'bg':AgentItem.bg, 'color':AgentItem.color})
+            //                               this.$store.dispatch("loadFromAPI", {
+            //                                 teamroute: this.$route.params.team,
+            //                                 refdate: this.ref,
+            //                                 refdateroute: this.$route.params.date,
+            //                               });
+            //                             } 
                        
-                    })
-                }
-            })
+            //         })
+            //     }
+            // })
+            this.ForceAddDutyConfirm(r, AgentItem.agent_id, this.ref)
             // this.$buefy.toast.open({
             //   message: r.data.response,
             //   type: "is-danger",
