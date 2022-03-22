@@ -7,121 +7,124 @@
       </header>
 
       <section class="modal-card-body">
-         <b-message type="is-danger" has-icon v-if="error">
-           {{ error }}
+        <b-message type="is-danger" has-icon v-if="error">
+          {{ error }}
         </b-message>
-         <b-field label="Agent">
-            <b-autocomplete
-                v-model="agentsToAdd"
-                placeholder="Search for name"
-                :append-to-body="true"
-                :data="filteredMembers"
-                field="name"
-                @select="option => (selectedAgentId = option.agent_id)"
+        <b-field label="Agent">
+          <b-select
+            placeholder="Select an agent"
+            v-model="selectedAgentId"
+            expanded
+          >
+            <option
+              v-for="option in members"
+              :value="option.adminid"
+              :key="option.adminid"
             >
-            </b-autocomplete>
+              {{ option.firstname }} {{ option.lastname }}
+            </option>
+          </b-select>
         </b-field>
-         <b-field label="Day">
-            <b-select placeholder="Select a day" expanded v-model="date">
-                <option
-                    v-for="day in days"
-                    :value="day.date"
-                    :key="day.date">
-                    {{ day.show }}
-                </option>
-                </b-select>
+        <b-field label="Day">
+          <b-select placeholder="Select a day" expanded v-model="date">
+            <option v-for="day in days" :value="day.date" :key="day.date">
+              {{ day.show }}
+            </option>
+          </b-select>
         </b-field>
       </section>
-      <footer class="modal-card-foot" style="margin: unset" >
+      <footer class="modal-card-foot" style="margin: unset">
         <b-button label="Close" @click="$emit('close')" />
-        <b-button icon-left="plus" label="Add" @click="addAgentToShift" type="is-primary" />
+        <b-button
+          icon-left="plus"
+          label="Add"
+          @click="addAgentToShift"
+          type="is-primary"
+          :loading="saveInProgress"
+        />
       </footer>
     </div>
   </form>
 </template>
 
 <script>
-import AddShiftMixin from '../mixins/AddShiftMixin.js'
+import AddShiftMixin from "../mixins/AddShiftMixin.js";
 export default {
   mixins: [AddShiftMixin],
   name: "AddAgentToShiftForm",
-  props: ['shift_id', 'group_id'],
+  props: ["shift_id", "group_id"],
   data() {
     return {
-      agentsToAdd: '',
+      agentsToAdd: "",
       selectedAgentId: null,
       date: null,
-      error: ''
+      error: "",
+      saveInProgress: false
     };
   },
   computed: {
-    days()
-    {
-      return this.expandDaysWeekMixin(this.moment(this.$store.state.refDate), 'ddd DD.MM (YYYY-MM-DD)', true)
+    days() {
+      return this.expandDaysWeekMixin(
+        this.moment(this.$store.state.refDate),
+        "ddd DD.MM (YYYY-MM-DD)",
+        true
+      );
     },
-    filteredMembers() {
-            return this.teams[this.group_id].members.filter(option => {
-                return (
-                    option.name
-                        .toString()
-                        .toLowerCase()
-                        .indexOf(this.agentsToAdd.toLowerCase()) >= 0
-                )
-            })
-        },
+    members() {
+      return this.$store.state.agentsGroups.agents;
+    },
     agents() {
       return this.$store.state.admins;
     },
     teams() {
-     // console.log(this.$filterObject(this.$store.state.schedule_teams, "name", this.$route.params.team))
-    // console.log(this.$route.name);
-    
-      return this.$filterObject(this.$store.state.schedule_teams, "name", this.$route.params.team);
+      // console.log(this.$filterObject(this.$store.state.schedule_teams, "name", this.$route.params.team))
+      // console.log(this.$route.name);
+
+      return this.$filterObject(
+        this.$store.state.schedule_teams,
+        "name",
+        this.$route.params.team
+      );
     },
   },
-  mounted()
-  {
-    
+  mounted() {
+   
   },
-  methods:
-  {
-    addAgentToShift()
-    {
-     
-      if(this.date == null)
-      {
-         this.error = 'You must select day'
+  methods: {
+    addAgentToShift() {
+      
+      if (this.selectedAgentId == null) {
+        this.error = "You must select an Agent";
         return;
       }
-      if(this.selectedAgentId == null)
-      {
-        this.error = 'You must select Agent'
+      if (this.date == null) {
+        this.error = "You must select day";
         return;
       }
-      this.error = ''
-     
-       this.$http
+      this.error = "";
+      this.saveInProgress = true
+      this.$http
         .post("./scheduleapi/shifts/timetable", {
           date: this.date,
           agent_id: this.selectedAgentId,
           shift_id: this.shift_id,
-          group_id: this.group_id
+          group_id: this.group_id,
         })
         .then((r) => {
           if (r.data.response === "success") {
-              this.$parent.$emit('reloadapi')
-              this.$emit('close')
+            this.$parent.$emit("reloadapi");
+            this.$emit("close");
           } else {
-
-            this.ForceAddDutyConfirm(r, this.selectedAgentId, this.$store.state.refDate)
-            this.$emit('close')
-           // loadingComponent.close();
+            this.ForceAddDutyConfirm(
+              r,
+              this.selectedAgentId,
+              this.$store.state.refDate
+            );
+            this.$emit("close");
+            // loadingComponent.close();
           }
+           this.saveInProgress = false
         });
-
-
-
-
     },
     // addGroup()
     // {
@@ -133,7 +136,7 @@ export default {
     //           message: "Removed!",
     //           type: "is-success",
     //         });
-            
+
     //       } else {
     //         this.$buefy.toast.open({
     //           message: response.data.response,
@@ -143,13 +146,12 @@ export default {
     //       this.$emit('close')
     //     });
     // }
-  }
+  },
 };
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
-
 .dropdown-content {
   width: 100%;
   min-width: 0;

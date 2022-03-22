@@ -35,7 +35,6 @@
       <b-table-column
         field="id"
         label="Agent"
-        width="40"
         v-slot="props"
         centered
       >
@@ -44,7 +43,6 @@
       <b-table-column
         field="id"
         label="Shifts"
-        width="40"
         v-slot="props"
         centered
       >
@@ -53,7 +51,6 @@
       <b-table-column
         field="id"
         label="Days Off"
-        width="40"
         v-slot="props"
         centered
       >
@@ -62,20 +59,20 @@
       <b-table-column
         field="id"
         label="Days Working/Days Off"
-        width="40"
         v-slot="props"
         centered
       >
+      <div style="display:block;margin: 0 auto;">
         <b-progress format="raw" :max="daysSpan">
           <template #bar>
-            <b-progress-bar :value="props.row.days" show-value></b-progress-bar>
+            <b-progress-bar :value="props.row.days" show-value type="is-primary"></b-progress-bar>
             <b-progress-bar
-              :value="daysSpan - props.row.days"
-              type="is-primary"
+              :value="daysSpan-props.row.days"
               show-value
             ></b-progress-bar>
           </template>
         </b-progress>
+      </div>
       </b-table-column>
     </b-table>
   </div>
@@ -176,4 +173,7 @@ export default {
 };
 </script>
 <style scoped>
+.progress-wrapper.is-not-native {
+  position:relative;
+}
 </style>

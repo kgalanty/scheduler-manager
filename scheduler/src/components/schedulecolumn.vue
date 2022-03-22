@@ -2,9 +2,9 @@
   <div
     class="column columnclass animation"
     @drop="onDrop($event)"
-    @dragover.prevent="dragging = true"
+    @dragover="onDragging($event)"
     @dragend="dragEnd($event)"
-    @dragleave.prevent="dragging = false"
+    @dragleave="onDragLeave"
     :class="{ columndragenter: dragging }"
   >
     <span class="columnday">{{ day }}</span>
@@ -18,7 +18,7 @@
         :key="'dt' + date + '-' + item.id"
         class="agentitem"
         :class="[item.draft == 1 || item.deldraftauthor ? 'draftCell' : '']"
-        style="display: flex; width: 100%"
+        style="display: flex; width: 100%;height:40px;"
       >
         <b-tooltip
           label="Addition candidate. Undo addition"
@@ -43,23 +43,31 @@
           <a @click="undo(item.id)"
             ><b-icon icon="undo" size="is-small"></b-icon></a
         ></b-tooltip>
+
+        <span style="display: block; text-align: center; width: inherit">
+          {{ item.agent }}
+        </span>
+        <span style="margin-right:3px">
         <b-icon v-if="item.draft" icon="plus-square" class="plusicon"></b-icon>
         <b-icon
           v-if="item.deldraftauthor"
           icon="minus-square"
           class="minusicon"
         ></b-icon>
-        <span style="display: block; text-align: center; width: inherit">
-          {{ item.agent }}
         </span>
-        <span style="display: contents; float: right; text-align: right" v-if="editorPermission===1">
+        <span
+          style="display: contents; float: right; text-align: right"
+          v-if="editorPermission === 1"
+        >
           <b-button
+            class="arrowupdownbtn"
             v-if="i != 0 && !item.draft && !item.deldraftauthor"
             size="is-small"
             icon-left="arrow-up"
             @click="moveItemUp(item.id)"
           />
           <b-button
+            class="arrowupdownbtn"
             size="is-small"
             v-if="
               i != today[shift][date].length - 1 &&
@@ -78,7 +86,7 @@
   </div>
 </template>
 <script>
-import AddShiftMixin from '../mixins/AddShiftMixin.js'
+import AddShiftMixin from "../mixins/AddShiftMixin.js";
 export default {
   mixins: [AddShiftMixin],
   props: ["ind", "day", "shift", "group", "refdate"],
@@ -87,9 +95,8 @@ export default {
     // {
 
     // },
-    editorPermission()
-    {
-      return this.$store.state.editorPermission
+    editorPermission() {
+      return this.$store.state.editorPermission;
     },
     showDelBtn() {
       return this.$store.state.showDel;
@@ -145,12 +152,12 @@ export default {
                 loadingComponent.close();
               });
           } else {
-              this.$buefy.toast.open({
-                    duration: 5000,
-                    message: r.data.response,
-                    position: 'is-top',
-                    type: 'is-danger'
-                })
+            this.$buefy.toast.open({
+              duration: 5000,
+              message: r.data.response,
+              position: "is-top",
+              type: "is-danger",
+            });
             loadingComponent.close();
           }
         });
@@ -177,12 +184,12 @@ export default {
                 loadingComponent.close();
               });
           } else {
-             this.$buefy.toast.open({
-                    duration: 5000,
-                    message: r.data.response,
-                    position: 'is-top',
-                    type: 'is-danger'
-                })
+            this.$buefy.toast.open({
+              duration: 5000,
+              message: r.data.response,
+              position: "is-top",
+              type: "is-danger",
+            });
 
             loadingComponent.close();
           }
@@ -210,7 +217,6 @@ export default {
                 loadingComponent.close();
               });
           } else {
-
             loadingComponent.close();
           }
         });
@@ -241,22 +247,20 @@ export default {
           }
         });
     },
-    PostShift(agent_id, force)
-    {
-      return     this.$http
-        .post("./scheduleapi/shifts/timetable", {
-          date: this.date,
-          agent_id: agent_id,
-          shift_id: this.shift,
-          group_id: this.group,
-          force: force
-        })
+    PostShift(agent_id, force) {
+      return this.$http.post("./scheduleapi/shifts/timetable", {
+        date: this.date,
+        agent_id: agent_id,
+        shift_id: this.shift,
+        group_id: this.group,
+        force: force,
+      });
     },
-    onDrop(evt, force=false) {
+    onDrop(evt, force = false) {
       this.dragging = false;
       //console.log(evt.dataTransfer.getData("agentItem"))
       const AgentItem = JSON.parse(evt.dataTransfer.getData("agentItem"));
-      //console.log(day)
+      console.log(AgentItem)
       // console.log(this.date);
       // console.log(itemID)
       if (typeof this.today == "undefined") {
@@ -268,52 +272,51 @@ export default {
       const loadingComponent = this.$buefy.loading.open({
         container: null,
       });
-      this.PostShift(AgentItem.agent_id, force)
-        .then((r) => {
-          if (r.data.response === "success") {
-            loadingComponent.close();
-            //this.today[this.date].push({'agent':AgentItem.name, 'bg':AgentItem.bg, 'color':AgentItem.color})
-            this.$store.dispatch("loadFromAPI", {
-              teamroute: this.$route.params.team,
-              refdate: this.ref,
-              refdateroute: this.$route.params.date,
-            });
-          } else {
-            // this.$buefy.snackbar.open({
-            //         duration: 10000,
-            //         message:  r.data.response,
-            //         type: 'is-danger',
-            //         position: 'is-top',
-            //         queue: false,
-            //         actionText: r.data.action ?? null,
-            //         onAction: () => {
-            //           const loadingComponent = this.$buefy.loading.open({
-            //             container: null,
-            //           });
-                    
-            //            this.PostShift(AgentItem.agent_id, true)
-            //            .then((r) => {
-            //                             if (r.data.response === "success") {
-            //                               loadingComponent.close();
-            //                               //this.today[this.date].push({'agent':AgentItem.name, 'bg':AgentItem.bg, 'color':AgentItem.color})
-            //                               this.$store.dispatch("loadFromAPI", {
-            //                                 teamroute: this.$route.params.team,
-            //                                 refdate: this.ref,
-            //                                 refdateroute: this.$route.params.date,
-            //                               });
-            //                             } 
-                       
-            //         })
-            //     }
-            // })
-            this.ForceAddDutyConfirm(r, AgentItem.agent_id, this.ref)
-            // this.$buefy.toast.open({
-            //   message: r.data.response,
-            //   type: "is-danger",
-            // });
-            loadingComponent.close();
-          }
-        });
+      this.PostShift(AgentItem.adminid, force).then((r) => {
+        if (r.data.response === "success") {
+          loadingComponent.close();
+          //this.today[this.date].push({'agent':AgentItem.name, 'bg':AgentItem.bg, 'color':AgentItem.color})
+          this.$store.dispatch("loadFromAPI", {
+            teamroute: this.$route.params.team,
+            refdate: this.ref,
+            refdateroute: this.$route.params.date,
+          });
+        } else {
+          // this.$buefy.snackbar.open({
+          //         duration: 10000,
+          //         message:  r.data.response,
+          //         type: 'is-danger',
+          //         position: 'is-top',
+          //         queue: false,
+          //         actionText: r.data.action ?? null,
+          //         onAction: () => {
+          //           const loadingComponent = this.$buefy.loading.open({
+          //             container: null,
+          //           });
+
+          //            this.PostShift(AgentItem.agent_id, true)
+          //            .then((r) => {
+          //                             if (r.data.response === "success") {
+          //                               loadingComponent.close();
+          //                               //this.today[this.date].push({'agent':AgentItem.name, 'bg':AgentItem.bg, 'color':AgentItem.color})
+          //                               this.$store.dispatch("loadFromAPI", {
+          //                                 teamroute: this.$route.params.team,
+          //                                 refdate: this.ref,
+          //                                 refdateroute: this.$route.params.date,
+          //                               });
+          //                             }
+
+          //         })
+          //     }
+          // })
+          this.ForceAddDutyConfirm(r, AgentItem.agent_id, this.ref);
+          // this.$buefy.toast.open({
+          //   message: r.data.response,
+          //   type: "is-danger",
+          // });
+          loadingComponent.close();
+        }
+      });
       //const item = this.items.find(item => item.id == itemID)
       //item.list = list
       evt.target.style.opacity = 1;
@@ -321,6 +324,18 @@ export default {
     dragEnd: function (e) {
       e.target.style.opacity = 1;
       this.dragging = false;
+    },
+    onDragLeave(ev) {
+      ev.preventDefault();
+      // ev.target.style.marginTop = ''
+      //  ev.target.style.marginBottom = ''
+      this.dragging = false;
+    },
+    onDragging(ev) {
+      this.dragging = true;
+      ev.preventDefault();
+      //
+      // console.log(ev)
     },
   },
 };
@@ -366,6 +381,14 @@ export default {
   text-align: center;
   font-weight: bold;
 }
+.agentitemplaceholder {
+  padding: 2px 0;
+  font-size: 14px;
+  text-align: center;
+  font-weight: bold;
+  height: 30px !important;
+  border: 3px dashed grey !important;
+}
 .columnday {
   font-weight: bold;
   text-align: center;
@@ -373,5 +396,9 @@ export default {
   display: block;
   margin: 2px 2px;
   font-size: 18px;
+}
+.arrowupdownbtn:hover {
+  opacity: 0.6;
+  transition: opacity 0.5s cubic-bezier(0.19, 0.64, 0.55, 0.93);
 }
 </style>

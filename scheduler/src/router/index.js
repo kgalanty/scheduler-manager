@@ -91,6 +91,11 @@ const routes = [
     component: () => import(/* webpackChunkName: "vacationing" */ '../views/vacationing.vue')
   },
   {
+    path: '/daysoff/:agentid',
+    name: 'DaysOff',
+    component: () => import(/* webpackChunkName: "vacationing" */ '../views/daysoff.vue')
+  },
+  {
     path: '/calendar',
     name: 'Calendar',
     component: () => import(/* webpackChunkName: "calendar" */ '../views/calendar.vue')
@@ -110,5 +115,12 @@ const routes = [
 const router = new VueRouter({
   routes
 })
-
+router.beforeEach((to, from, next) => {
+  if(document && document.getElementById("mainwindow"))
+  {
+    document.getElementById("mainwindow").style.marginLeft = ""
+    document.getElementById("mainwindow").style.width = ""
+  }
+  next()
+})
 export default router

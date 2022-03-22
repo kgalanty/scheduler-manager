@@ -26,18 +26,21 @@
         <b-select
           placeholder="Assign a team"
           v-model="adminteams[props.row.id]"
-          @input="setTeam(props.row.id)"
+          @input="setTeam(props.row.id)"  expanded
         >
           <option
             v-for="team in teams"
             :value="team.groupid"
             :key="team.groupid"
           >
-            {{ team.name }}
+           <span v-if="team.parent > 0">- </span> {{ team.name }}
           </option>
         </b-select>
       </b-table-column>
-
+      <b-table-column field="daysoff" centered label="Days Off" v-slot="props">
+                <b-button type="is-primary"  outlined @click="OpenDaysOffManagement(props.row.id)">Open Days-Off Management</b-button>
+      </b-table-column>
+<!-- 
       <b-table-column field="color" centered label="Text Color" v-slot="props">
         <b-tooltip position="is-bottom" label="Color is not set">
           <b-icon
@@ -72,7 +75,7 @@
           @change="setcolor('bg', $event.target.value, props.row.id)"
           :value="getColor(props.row.bg)"
         />
-      </b-table-column>
+      </b-table-column> -->
     </b-table>
   </div>
 </template>
@@ -86,6 +89,19 @@ export default {
       return this.$store.state.admins;
     },
     teams() {
+    //   let teams = this.$store.state.schedule_teams
+    //     for (const [value] of Object.entries(teams)) {
+    //       if(value.parent > 0)
+    //       {
+    //          if(! teams[value.parent].subteams)
+    //          {
+    //            teams[value.parent].subteams = []
+    //          }
+    //          teams[value.parent].subteams.push(value)
+    //       }
+              
+    //       }
+    //  console.log(teams);
       return this.$store.state.schedule_teams;
     },
   },
@@ -106,6 +122,13 @@ export default {
     },
   },
   methods: {
+    OpenDaysOffManagement(id)
+    {
+      console.log(id)
+       this.$router.push({
+        path: `/daysoff/${id}`,
+      });
+    },
     setTeam(admin) {
       this.$http
         .post("./scheduleapi/agents/assigntogroup", {

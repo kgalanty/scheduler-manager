@@ -5,7 +5,7 @@
 
     <SidebarRight v-if="editorPermission===1 && $route.matched.some(({ name }) => name.includes('Vacationing')||name.includes('Schedule') )"></SidebarRight >
     <TemplatesSidebar v-if="editorPermission===1 && $route.matched.some(({ name }) => name.includes('Schedule'))"></TemplatesSidebar >
-    <div class="container is-fullhd notification">
+    <div class="container is-fullhd notification" id="mainwindow">
       <router-view/>
     </div>
   </div>

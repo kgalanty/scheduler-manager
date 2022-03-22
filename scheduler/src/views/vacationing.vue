@@ -192,7 +192,7 @@ export default {
     // console.log(this.$route.params)
     this.checkpointDate("vacationing"); ///mixin
     this.referenceDate = this.moment();
-    console.log(this.referenceDate)
+    this.loadAgentsTeams()
     this.readVacationAPI()
   },
   methods: {
@@ -218,6 +218,7 @@ export default {
             //   this.$store.state.shiftsTimetable
             // );
             this.referenceDate = this.moment(this.$store.state.refDate);
+            this.loadAgentsTeams()
             // this.loadCalendar();
             // this.markShift();
           },
@@ -247,19 +248,24 @@ export default {
       //     loadingComponent.close();
       //   });
     },
+    loadAgentsTeams() {
+      this.$store
+        .dispatch("loadAgentsForGroupAll")
+        .then(() => {});
+    },
     getFirstDay() {
       this.moment();
     },
-    moveWeek(direction) {
+    async moveWeek(direction) {
       if (direction == -1) {
-        this.referenceDate = this.moment(this.referenceDate).subtract(
+        this.referenceDate = await this.moment(this.referenceDate).subtract(
           1,
           "week"
         );
       } else {
-        this.referenceDate = this.moment(this.referenceDate).add(1, "week");
+        this.referenceDate = await this.moment(this.referenceDate).add(1, "week");
       }
-
+      
      // this.loadCalendar();
       // let alreadyInStore = false;
       // if (
@@ -279,7 +285,7 @@ export default {
       //   }
       // }
 
-      this.$router.push({
+      await this.$router.push({
         path: `/vacationing/${this.moment(
           this.referenceDate
         ).format("MMMDD")}-${this.moment(this.referenceDate)
@@ -288,7 +294,10 @@ export default {
       });
 
      // if (!alreadyInStore) {
+        this.$store.commit("setRefdate", this.referenceDate);
+
         this.readVacationAPI();
+        
      // } else {
      //   this.$store.commit("setRefdate", this.referenceDate);
     //  }

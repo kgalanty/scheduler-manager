@@ -30,13 +30,20 @@
             </b-taglist>
           </li>
 
-          <li style="border-top: 1px dashed black; padding: 5px 0">
+          <li style="border-top: 1px dashed black; padding: 5px 5px">
             <b-button
-              @click="apply"
+              @click="apply(true)"
               style="float: left"
               type="is-primary"
               icon-left="check"
               >Commit all</b-button
+            >
+            <b-button
+              @click="apply(false)"
+              style="float: left; margin-left: 5px"
+              type="is-warning"
+              icon-left="check"
+              >Commit all (no notifications)</b-button
             >
             <b-button
               @click="revert"
@@ -58,7 +65,7 @@
         "
         >{{ groupname }}</span
       >
-      <b-taglist attached style="display: inline-flex">
+      <b-taglist attached style="display: inline-flex" v-if="days">
         <b-tag type="is-dark">{{ days[0] }}</b-tag>
         <b-tag type="is-info">{{ days[6] }}</b-tag>
       </b-taglist>
@@ -76,6 +83,12 @@
         type="is-info"
         icon-left="calendar-alt"
       ></b-button>
+      <b-tooltip
+        label="This will send slack notifications to all people who has shifts this week"
+        ><b-button @click="confirmSchedule" type="is-success" icon-right="check"
+          >Send notifications</b-button
+        ></b-tooltip
+      >
 
       <b-button
         style="float: right"
@@ -118,21 +131,24 @@
                 ></b-tag>
                 <b-tag type="is-success" style="color: black">On Call</b-tag>
               </b-taglist>
-              <b-taglist attached v-else >
+              <b-taglist attached v-else>
                 <b-tag type="is-dark" size="is-medium"
                   ><b-icon icon="user-clock" size="is-small"></b-icon
                 ></b-tag>
-             
+
                 <b-tag type="is-primary" size="is-medium"
                   >{{ shift.from }} - {{ shift.to }}</b-tag
                 >
               </b-taglist>
-              <b-tooltip label="Add a shift" v-if="editorPermission===1">
-                 <b-button type="is-success" size="is-small" @click="OpenAddAgentModal(shift.id, shift.group_id)"
-                icon-right="plus"><b-icon
-                icon="user-clock"
-                size="is-small">
-            </b-icon></b-button></b-tooltip>
+              <b-tooltip label="Add a shift" v-if="editorPermission === 1">
+                <b-button
+                  type="is-success"
+                  size="is-small"
+                  @click="OpenAddAgentModal(shift.id, shift.group_id)"
+                  icon-right="plus"
+                  ><b-icon icon="user-clock" size="is-small">
+                  </b-icon></b-button
+              ></b-tooltip>
             </h1>
           </strong>
           <p></p>
@@ -170,24 +186,23 @@
 </template>
 
 <script>
-import { mapState } from 'vuex'
+import { mapState } from "vuex";
 import scheduleColumn from "../components/schedulecolumn.vue";
-import AddAgentToShiftForm from "../forms/AddAgentToShiftForm.vue"
+import AddAgentToShiftForm from "../forms/AddAgentToShiftForm.vue";
+
 export default {
   components: {
-    scheduleColumn
+    scheduleColumn,
   },
   name: "GroupSchedule",
   props: ["team_id"],
+
   mounted() {
-    var that = this
-    document.addEventListener("visibilitychange", function() {
-      if (document.visibilityState === 'visible') {
-        that.readAPI();
-      } 
-    });
-
-
+    //  let that = this
+    //   document.addEventListener("visibilitychange", function _listener(){
+    //     that.visibilityEvent()
+    //     document.removeEventListener('visibilitychange', _listener, true)
+    //   }, true);
     // console.log(this.$route.params.date)
     var interval = setInterval(() => {
       if (this.$refs.calendar) {
@@ -196,13 +211,10 @@ export default {
       }
     }, 100);
     this.readAPI();
-                 
   },
 
   computed: {
-     ...mapState(
-       ['editorPermission']
-      ),
+    ...mapState(["editorPermission"]),
     attributes() {
       return [
         // Attributes for todos
@@ -234,8 +246,7 @@ export default {
       return this.$store.state.groupname;
     },
     days() {
-
-      return this.expandDaysWeekMixin(this.referenceDate)
+      return this.expandDaysWeekMixin(this.referenceDate);
     },
     timetable() {
       return this.$store.state.timetable[
@@ -276,7 +287,7 @@ export default {
       masks: {
         weekdays: "WWW",
       },
-      
+
       teams: [],
       schedule: [],
       loading: null,
@@ -284,29 +295,67 @@ export default {
       pendingchangeswidget: false,
       referenceDate: this.moment(this.$store.state.refDate),
       shiftsTimetable: [],
+      group_id: 0,
     };
   },
   methods: {
-    OpenAddAgentModal(shift_id, group_id)
-    {
-            const modal = this.$buefy.modal.open({
-                    parent: this,
-                    component: AddAgentToShiftForm,
-                    hasModalCard: true,
-                    trapFocus: true,
-                    props: {"shift_id":shift_id, 'group_id' : group_id},
-      })
-      modal.$on('reloadapi', () =>
-      {
-          this.readAPI()
-
-      })
+    confirmSchedule() {
+      this.$buefy.dialog.confirm({
+        message: "Are you sure?",
+        onConfirm: () => this.confirmConfirmSchedule(),
+      });
+    },
+    confirmConfirmSchedule() {
+      this.$http
+        .post(
+          "./scheduleapi/group/" +
+            this.group_id +
+            "/notifications/" +
+            this.referenceDate.format("YYYY-MM-DD")
+        )
+        .then((response) => {
+          if (response.data.response == "success") {
+            this.$buefy.toast.open({
+              message: "Done",
+              type: "is-success",
+            });
+          } else {
+            this.$buefy.toast.open({
+              message: response.data.response,
+              type: "is-danger",
+            });
+          }
+        });
+    },
+    visibilityEvent() {
+      if (document.visibilityState === "visible" && this.$route.params?.team) {
+        this.readAPI();
+      }
+    },
+    loadAgentsTeams() {
+      this.$store
+        .dispatch("loadAgentsForGroup", {
+          //  team: this.group,
+          topteam: this.group_id,
+        })
+        .then(() => {});
+    },
+    OpenAddAgentModal(shift_id, group_id) {
+      const modal = this.$buefy.modal.open({
+        parent: this,
+        component: AddAgentToShiftForm,
+        hasModalCard: true,
+        trapFocus: true,
+        props: { shift_id: shift_id, group_id: group_id },
+      });
+      modal.$on("reloadapi", () => {
+        this.readAPI();
+      });
     },
     markShift() {
-
       if (this.$store.state.shiftToHighlight) {
         //console.log( this.$refs )
-       // console.log(this.$store.getters.currentShifts)
+        // console.log(this.$store.getters.currentShifts)
         let shiftinfo = this.$store.state.shiftToHighlight.shift.split("-");
         let shiftid = this.$store.getters.currentShifts.filter(
           (x) => x.from == shiftinfo[0] && x.to == shiftinfo[1]
@@ -316,33 +365,37 @@ export default {
         ).format("ddd DD.MM");
         let refname = dateSchedule + "-" + shiftid[0].id;
         // console.log(this.moment(this.$store.state.shiftToHighlight.date).format("ddd DD.MM"))
-         console.log( this.$refs ) 
-         if(! this.$refs[refname]) {
-        setTimeout(() => {
-          this.$refs[refname][0].$el.classList.add("graphcolumnanimation");
+        //console.log( this.$refs )
+        if (!this.$refs[refname]) {
           setTimeout(() => {
-            this.$refs[refname][0].$el.classList.remove("graphcolumnanimation");
-          }, 1500); // 2s
-        }, 3000);
+            this.$refs[refname][0].$el.classList.add("graphcolumnanimation");
+            setTimeout(() => {
+              this.$refs[refname][0].$el.classList.remove(
+                "graphcolumnanimation"
+              );
+            }, 2000); // 2s
+          }, 1000);
         }
         this.$store.dispatch("setItemKey", "");
       }
     },
-    apply() {
-      this.$http.post("./scheduleapi/shifts/commit").then((response) => {
-        if (response.data.response == "success") {
-          this.$buefy.toast.open({
-            message: "Done",
-            type: "is-success",
-          });
-          this.readAPI();
-        } else {
-          this.$buefy.toast.open({
-            message: response.data.response,
-            type: "is-danger",
-          });
-        }
-      });
+    apply(notifications = false) {
+      this.$http
+        .post("./scheduleapi/shifts/commit", { notifications: notifications })
+        .then((response) => {
+          if (response.data.response == "success") {
+            this.$buefy.toast.open({
+              message: "Done",
+              type: "is-success",
+            });
+            this.readAPI();
+          } else {
+            this.$buefy.toast.open({
+              message: response.data.response,
+              type: "is-danger",
+            });
+          }
+        });
     },
     revert() {
       this.$http.post("./scheduleapi/shifts/revert").then((response) => {
@@ -392,6 +445,8 @@ export default {
             this.referenceDate = this.moment(this.$store.state.refDate);
             this.loadCalendar();
             this.markShift();
+            this.group_id = this.shiftsTimetable[0].group_id;
+            this.loadAgentsTeams();
           },
           (reason) => {
             this.loading.close();
@@ -504,11 +559,7 @@ export default {
   transition: all 0.6s ease-in; /* Chrome 26, Firefox 16+, IE 10+, Opera 12.10+ */
   background: rgb(58, 97, 180);
   background-position: 0 -30px;
-  background: linear-gradient(
-    90deg,
-    rgba(58, 97, 180, 1) 0%,
-    rgba(72, 171, 255, 1) 100%
-  );
+  background: linear-gradient(90deg, rgb(58, 103, 201) 0%, #4062aa 100%);
   color: white;
 }
 
@@ -523,9 +574,12 @@ export default {
   border-radius: 10px;
   box-shadow: 6px 3px 3px rgb(179, 179, 179);
 }
-</style>
-<style scoped>
 .graphcolumnanimation {
-  background-position: 300px 190px;
+  background-position: 600px 190px;
+}
+</style>
+<style>
+.modal-card-foot {
+  margin: unset;
 }
 </style>

@@ -47,7 +47,7 @@
       <b-table-column
         field="id"
         label="Action"
-        width="40"
+        width="140"
         v-slot="props"
         centered
       >
@@ -56,7 +56,7 @@
       <b-table-column
         field="id"
         label="Date"
-        width="150"
+        width="200"
         v-slot="props"
         centered
       >

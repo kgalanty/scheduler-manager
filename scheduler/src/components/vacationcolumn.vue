@@ -8,10 +8,7 @@
     :class="{ columndragenter: dragging }"
   >
     <span class="columnday">{{ day }}</span>
-    <ul
-      v-if="dataForToday"
-      style="background-color: white"
-    >
+    <ul v-if="dataForToday" style="background-color: white">
       <li
         :style="{ backgroundColor: item.bg, color: item.color }"
         v-for="(item, i) in dataForToday"
@@ -19,65 +16,70 @@
         class="agentitem"
         :class="[item.draft == 1 || item.deldraftauthor ? 'draftCell' : '']"
       >
-       
-        <b-tooltip label="Addition candidate. Undo addition" position="is-top" class="undoicon" v-if="item.draft">
-          <a @click="remove(item.id)" 
-          ><b-icon
-            icon="undo"
-            size="is-small"
-          ></b-icon
-        ></a></b-tooltip>
-        <a @click="remove(item.id)" v-if="showDelBtn && !item.draft && item.deldraftauthor === false"
-          ><b-icon
-            icon="trash"
-            size="is-small"
-          ></b-icon
+        <b-tooltip
+          label="Addition candidate. Undo addition"
+          position="is-top"
+          class="undoicon"
+          v-if="item.draft"
+        >
+          <a @click="remove(item.id)"
+            ><b-icon icon="undo" size="is-small"></b-icon></a
+        ></b-tooltip>
+        <a
+          @click="remove(item.id)"
+          v-if="showDelBtn && !item.draft && item.deldraftauthor === false"
+          ><b-icon icon="trash" size="is-small"></b-icon
         ></a>
-         <b-tooltip label="Delete candidate. Undo deletion" position="is-top" class="undoicon" v-if="item.deldraftauthor !== false">
-          <a @click="undo(item.id)" 
-          ><b-icon
-          
-            icon="undo"
-            size="is-small"
-          ></b-icon
-        ></a></b-tooltip>
-         <b-icon v-if="item.draft" icon="plus-square" class="plusicon"></b-icon> 
-         <b-icon v-if="item.deldraftauthor" icon="minus-square" class="minusicon"></b-icon>
+        <b-tooltip
+          label="Delete candidate. Undo deletion"
+          position="is-top"
+          class="undoicon"
+          v-if="item.deldraftauthor !== false"
+        >
+          <a @click="undo(item.id)"
+            ><b-icon icon="undo" size="is-small"></b-icon></a
+        ></b-tooltip>
+        <b-icon v-if="item.draft" icon="plus-square" class="plusicon"></b-icon>
+        <b-icon
+          v-if="item.deldraftauthor"
+          icon="minus-square"
+          class="minusicon"
+        ></b-icon>
 
         {{ item.agent }}
-
       </li>
     </ul>
-    <ul v-else style="opacity: 0.5;text-align: center;">
-      <li style="padding:0.4rem">Empty</li>
+    <ul v-else style="opacity: 0.5; text-align: center">
+      <li style="padding: 0.4rem">Empty</li>
     </ul>
   </div>
 </template>
 <script>
 export default {
   props: ["ind", "day", "shift", "group"],
+  mounted()
+  {
+  },
   computed: {
     // todaydate()
     // {
 
     // },
-    refdate()
-    {
-        return this.moment(this.$store.state.refDate).format("YYYY-MM-DD")
+    refdate() {
+      return this.moment(this.$store.state.refDate).format("YYYY-MM-DD");
     },
     showDelBtn() {
       return this.$store.state.showDel;
     },
-    today()
-    {
+    today() {
       //console.log(this.$route.params.date.split('-')[2])
-      return this.moment(this.refdate).add(this.ind, 'day').format("YYYY-MM-DD")
+      return this.moment(this.refdate)
+        .add(this.ind, "day")
+        .format("YYYY-MM-DD");
     },
-    dataForToday()
-    {
-      return this.$store.state.vacationings[this.today]
-    }
-   
+    dataForToday() {
+      return this.$store.state.vacationings[this.today];
+    },
   },
   data() {
     return {
@@ -86,39 +88,12 @@ export default {
     };
   },
   methods: {
-    undo(id)
-    {
+    undo(id) {
       const loadingComponent = this.$buefy.loading.open({
         container: null,
       });
       this.$http
-            .post("./scheduleapi/shifts/delete_draft", {
-              id: id,
-            })
-            .then((r) => {
-              if (r.data.response === "success") {
-                //this.today[this.date].push({'agent':AgentItem.name, 'bg':AgentItem.bg, 'color':AgentItem.color})
-                this.$store
-                  .dispatch("loadFromAPI", {
-                    //  team: this.group,
-                    refdate: this.ref,
-                    teamroute: this.$route.params.team,
-                    refdateroute: this.$route.params.date,
-                  })
-                  .then(() => {
-                    loadingComponent.close();
-                  });
-              } else {
-                loadingComponent.close();
-              }
-            });
-    },
-    remove(id) {
-      const loadingComponent = this.$buefy.loading.open({
-        container: null,
-      });
-      this.$http
-        .post("./scheduleapi/shifts/delete_duty", {
+        .post("./scheduleapi/shifts/delete_draft", {
           id: id,
         })
         .then((r) => {
@@ -139,6 +114,32 @@ export default {
           }
         });
     },
+    remove(id) {
+      const loadingComponent = this.$buefy.loading.open({
+        container: null,
+      });
+      this.$http
+        .post("./scheduleapi/vacationing/delete", {
+          id: id,
+          path: 'vacationing/'+this.$route.params.date
+        })
+        .then((r) => {
+          if (r.data.response === "success") {
+            //this.today[this.date].push({'agent':AgentItem.name, 'bg':AgentItem.bg, 'color':AgentItem.color})
+            this.$store
+              .dispatch("loadVacationings", {
+                //  team: this.team_id,
+                startdate: this.$route.params.date,
+                //refdateroute: this.$route.params.date,
+                //refdate: this.referenceDate.format("YYYY-MM-DD"),
+              })
+              .then(() => {
+                loadingComponent.close();
+                 this.referenceDate = this.moment(this.$store.state.refDate);
+              });
+          }
+        });
+    },
     onDrop(evt) {
       this.dragging = false;
       //console.log(evt.dataTransfer.getData("agentItem"))
@@ -152,49 +153,49 @@ export default {
       // if (typeof this.today[this.date] == "undefined") {
       //   this.today[this.date] = [];
       // }
-     // console.log(AgentItem)
+     
       const loadingComponent = this.$buefy.loading.open({
         container: null,
       });
       this.$http
         .post("./scheduleapi/vacationing", {
           date: this.today,
-          agent_id: AgentItem.agent_id,
-          group_id: AgentItem.team_i
+          agent_id: AgentItem.adminid,
+          group_id: AgentItem.team_i,
+          path: 'vacationing/'+this.$route.params.date
         })
         .then((r) => {
           if (r.data.response === "success") {
             loadingComponent.close();
             //this.today[this.date].push({'agent':AgentItem.name, 'bg':AgentItem.bg, 'color':AgentItem.color})
-      this.$store
-        .dispatch("loadVacationings", {
-          //  team: this.team_id,
-          startdate: this.$route.params.date,
-          //refdateroute: this.$route.params.date,
-          //refdate: this.referenceDate.format("YYYY-MM-DD"),
-        })
-        .then(
-          () => {
-           
-            this.referenceDate = this.moment(this.$store.state.refDate);
+            this.$store
+              .dispatch("loadVacationings", {
+                //  team: this.team_id,
+                startdate: this.$route.params.date,
+                //refdateroute: this.$route.params.date,
+                //refdate: this.referenceDate.format("YYYY-MM-DD"),
+              })
+              .then(
+                () => {
+                  this.referenceDate = this.moment(this.$store.state.refDate);
+                },
+                (reason) => {
+                  this.$router.push({ path: `/schedule` });
 
-          },
-          (reason) => {
-            this.$router.push({ path: `/schedule` });
-
-            this.$buefy.snackbar.open({
-              duration: 5000,
-              message: reason,
-              type: "is-danger",
-              position: "is-bottom-left",
-              queue: false,
-            });
-          }
-        );
+                  this.$buefy.snackbar.open({
+                    duration: 5000,
+                    message: reason,
+                    type: "is-danger",
+                    position: "is-bottom-left",
+                    queue: false,
+                  });
+                }
+              );
           } else {
             this.$buefy.toast.open({
               message: r.data.response,
               type: "is-danger",
+              duration: 5000,
             });
             loadingComponent.close();
           }
@@ -211,10 +212,8 @@ export default {
 };
 </script>
 <style >
-
 </style>
 <style scoped >
-
 .draftCell {
   box-shadow: rgba(255, 255, 255, 0.2) 0px 0px 0px 1px inset,
     rgba(0, 0, 0, 0.9) 0px 0px 0px 1px;
@@ -222,38 +221,36 @@ export default {
   border: 3px dashed rgb(255, 2, 242) !important;
   color: black !important;
 }
-
 </style>
 <style >
-.columnclass
-{
+.columnclass {
   padding: 0.5rem 0;
 }
-.undoicon
-{
-  background: rgb(105,105,255);
-background: linear-gradient(90deg, rgba(105,105,255,1) 0%, rgba(79,158,251,1) 100%);
-padding:5px;
-border:1px solid black;
-border-radius:5px;
+.undoicon {
+  background: rgb(105, 105, 255);
+  background: linear-gradient(
+    90deg,
+    rgba(105, 105, 255, 1) 0%,
+    rgba(79, 158, 251, 1) 100%
+  );
+  padding: 5px;
+  border: 1px solid black;
+  border-radius: 5px;
 }
-.undoicon:hover
-{
-  opacity:.9;
+.undoicon:hover {
+  opacity: 0.9;
 }
-.plusicon
-{
-  color:green;
+.plusicon {
+  color: green;
 }
-.minusicon
-{
+.minusicon {
   color: red;
 }
 .agentitem {
   padding: 2px 0;
-  font-size:14px;
+  font-size: 14px;
   text-align: center;
-  font-weight:bold;
+  font-weight: bold;
 }
 .columnday {
   font-weight: bold;

@@ -6,37 +6,51 @@ use WHMCS\Database\Capsule as DB;
 use App\Constants\AgentConstants;
 use App\Responses\Response;
 use App\Functions\EditorsAuth;
-use App\Functions\TimetableHelper;
+use App\Functions\Logs\AddDaysOff;
+use App\Functions\LogsFactory;
 
-class ShiftsController
+class DaysoffController
 {
-    public function getShifts($request, $response, $args)
+    public function changeDaysOff($request, $response, $args)
+    {
+        $entryid = (int)$args['entryid'];
+        $days = $request->getParsedBody()['changedays'];
+        if ($entryid && $days) {
+            DB::table('schedule_daysoff')->where('id', $entryid)->update(['days' => $days]);
+            return Response::json(['result' => 'success'], $response);
+        }
+        return Response::json(['result' => 'error', 'msg' => 'Didnt get all necessary data'], $response);
+    }
+    public function postDaysOff($request, $response, $args)
+    {
+        $dateexp = $request->getParsedBody()['dateexp'];
+        $daysoff = $request->getParsedBody()['daysoff'];
+        $year = (int)$request->getParsedBody()['year'];
+        if (DB::table('schedule_daysoff')->where('agent_id', (int)$args['agentid'])->where('year', $year)->count() > 0) {
+            return Response::json(['result' => 'error', 'msg' => 'This agent already has days off pool in given year'], $response);
+        }
+        $r = DB::table('schedule_daysoff')->insert(
+            [
+                'agent_id' => (int)$args['agentid'],
+                'days' => (int)$daysoff,
+                'addedby' => (int)$_SESSION['adminid'],
+                'created' => date('Y-m-d H:i:s'),
+                'date_expiration' => $dateexp, 'year' => $year
+            ]
+        );
+        $log = (new AddDaysOff(['agent_id' => $args['agentid'], 'daysoff' => $daysoff, 'year' => $year]));
+        (new LogsFactory($log))->store();
+        return Response::json(['result' => $r], $response);
+    }
+    public function getDaysOff($request, $response, $args)
     {
         $data = [];
-        $results = DB::table("schedule_agentsgroups as t")
-            ->leftJoin('schedule_shifts as s', 's.group_id', '=', 't.id')
-            ->orderBy('s.from')
-            ->orderBy('t.group')
-            ->get(['s.id', 's.from', 's.to', 't.group', 't.color', 't.bgcolor', 't.id AS group_id', 't.parent']);
-        foreach ($results as $result) {
-            // if($result->from && $result->to)
-            // $data['shifts'][$result->group_id][] = ['from'=>$result->from, 'to'=>$result->to];
-            // $data['groups'][$result->group_id] = ['id' => $result->group_id, 'name' => $result->group];
-            if (!$data[$result->group_id]) {
-                //add new shift to array
-                $shift = $result->from && $result->to ? [['from' => $result->from, 'to' => $result->to, 'shiftid' => $result->id, 'group_id'=>$result->group_id]] : [];
-                //add main group entry to array
-                $data[$result->group_id] = ['group_id' => $result->group_id, 'team' => $result->group, 'shifts' => $shift, 'parent'=>$result->parent, 'color' => $result->color, 'bgcolor' => $result->bgcolor];
-            } else {
-                $data[$result->group_id]['shifts'][] = ['from' => $result->from, 'to' => $result->to, 'shiftid' => $result->id, 'group_id'=>$result->group_id];
-            }
-        }
-        $result = array_values($data);
-        return Response::json($result, $response);
-        // $payload = json_encode(array_values($data));
-        // $response->getBody()->write($payload);
-        // return $response
-        //     ->withHeader('Content-Type', 'application/json');
+        $results = DB::table("schedule_daysoff as d")
+            ->where('agent_id', $args['agentid'])
+            ->orderBy('d.id', 'DESC')
+            ->get();
+
+        return Response::json(['result' => 'success', 'data' => $results], $response);
     }
     public function insertShift($request, $response, $args)
     {
@@ -222,12 +236,22 @@ class ShiftsController
             ->get([
                 't.id', 't.shift_id', 't.day', 'a.firstname', 'a.lastname', 'd.color', 'd.bg', 't.draft', 't.author',
                 'dr.author AS draftauthor',
-                'shifts.from', 'shifts.to', 'ag.color as agcolor', 'ag.bgcolor as agbgcolor', 't.agent_id'
+                'shifts.from', 'shifts.to', 'ag.color as agcolor', 'ag.bgcolor as agbgcolor'
             ]);
-          //  echo('<pre>');var_dump($timetable);die;
+        //  echo('<pre>');var_dump($timetable);die;
         $days = [];
         foreach ($timetable as $t) {
-            $days[$t->shift_id][$t->day][] = TimetableHelper::renderTimetableRecord($t);
+            $days[$t->shift_id][$t->day][] = [
+                'id' => $t->id,
+                'agent' => $t->firstname . ' ' . $t->lastname,
+                'color' => $t->agcolor != 'null' ?  $t->agcolor : '#000',
+                'bg' => $t->agbgcolor != 'null'  ?  $t->agbgcolor : 'rgb(202 202 202)',
+                'author' => $t->author,
+                'draft' => $t->draft,
+                'deldraftauthor' => $t->draftauthor ?? false,
+                'shift' => $t->from . '-' . $t->to,
+                'date' => $t->day
+            ];
         }
         $data = ['shifts' => $shifts, 't' => $days, 'group' => $group, 'refdate' => $startdateprocessed];
         return Response::json($data, $response);

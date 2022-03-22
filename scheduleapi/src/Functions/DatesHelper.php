@@ -11,7 +11,7 @@ class DatesHelper
      * string $startdate Date pointing to monday 
      * returns 2 elements array with Y-m-d monday date and sunday date
      */
-    public static function getWeekRangeBasedOnDay(string $startdate)
+    public static function getWeekRangeBasedOnDay(string $startdate) : array
 	{
         $monday = date('Y-m-d', strtotime($startdate.' -'.(date('N', strtotime($startdate))-1).' days'));
         $sunday = date('Y-m-d', strtotime($startdate.' +'.(7-date('N', strtotime($startdate))).' days'));

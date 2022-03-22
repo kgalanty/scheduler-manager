@@ -7,12 +7,17 @@ use App\Functions\Logs\AddEntryLog;
 use App\Functions\Logs\DeleteEntryLog;
 use App\Functions\LogsFactory;
 use App\Constants\AgentConstants;
+use App\Functions\AgentsHelper;
 use App\Functions\EditorsAuth;
 use App\Responses\Response;
 use App\Functions\Reports;
 use App\Functions\DatesHelper;
 use App\Functions\ReportsPDFWrapper;
 use App\Functions\EmailHelper;
+use App\Functions\Logs\DelDaysOff;
+use App\Functions\Logs\UseDaysOff;
+use App\Functions\Notifications\commitNotify;
+use App\Functions\SlackNotifications;
 
 class TimetableController
 {
@@ -29,6 +34,37 @@ class TimetableController
     // return $response
     //   ->withHeader('Content-Type', 'application/json');
   }
+  public function deleteVacationing($request, $response, $args)
+  {
+    $author = AgentConstants::adminid();
+    if (!EditorsAuth::isEditor()) {
+      $data['response'] = 'No permission for this operation';
+    } else {
+
+      $id = $request->getParsedBody()['id'];
+      $vacation_day = DB::table('schedule_vacations')->where('id', $id)->first();
+      //$today = date('Y-m-d');
+      DB::table('schedule_vacations')->where('id', $id)->delete();
+      $log = (new DelDaysOff(['agent_id' => $vacation_day->agent_id, 'dayoff' => $vacation_day->day, 'path' => $request->getParsedBody()['path']]));
+      (new LogsFactory($log))->store();
+
+      if ($vacation_day->day > date('Y-m-d')) {
+        $update_pool = DB::table('schedule_daysoff')
+          ->where('agent_id', $vacation_day->agent_id)
+          ->where('date_expiration', '>', date('Y-m-d'))
+          ->orderBy('year', 'ASC')
+          ->first();
+
+        if ($update_pool) {
+          DB::table('schedule_daysoff')->where('id', $update_pool->id)->update(['days' => $update_pool->days + 1]);
+        }
+      } else {
+      }
+
+      $data['response'] = 'success';
+    }
+    return Response::json($data, $response);
+  }
   public function deleteDuty($request, $response, $args)
   {
     $author = AgentConstants::adminid();
@@ -38,7 +74,9 @@ class TimetableController
 
       $id = $request->getParsedBody()['id'];
       $current_entry = DB::table("schedule_timetable")->where('id', $id)->first();
-      if ($current_entry->draft == 1 && $current_entry->author == $author) {
+      //-1 is for I need help placeholders
+      //add logging
+      if (($current_entry->draft == 1 && $current_entry->author == $author) || $current_entry->agent_id == -1) {
         // DB::table('schedule_timetable')->where('id', $id)->update(['draft' => 0, 'author' => 0]);
         DB::table('schedule_timetable')->where('id', $id)->delete();
       } elseif ($current_entry->draft == 0) {
@@ -49,10 +87,6 @@ class TimetableController
       $data['response'] = 'success';
     }
     return Response::json($data, $response);
-    // $payload = json_encode($data);
-    // $response->getBody()->write($payload);
-    // return $response
-    //   ->withHeader('Content-Type', 'application/json');
   }
   public function insertDuty($request, $response, $args)
   {
@@ -67,6 +101,29 @@ class TimetableController
 
       //check if the agent is available in the same day but other shift, 
       //prevent adding it again
+      if ($agent == -1) {
+        //Agent -1 is placeholder
+        $countForCurrentDay = DB::table("schedule_timetable")->where(
+          [
+            'group_id' => $group,
+            'shift_id' => $shift,
+            'day' => $day,
+          ]
+        )->count();
+        DB::table("schedule_timetable")->insert(
+          [
+            'agent_id' =>  $agent,
+            'group_id' => $group,
+            'shift_id' => $shift,
+            'day' => $day,
+            'author' => $author,
+            'draft' => 0,
+            'order' => ++$countForCurrentDay
+          ]
+        );
+        $data['response'] = 'success';
+        return Response::json($data, $response);
+      }
 
       if (DB::table("schedule_timetable")->where([
         'agent_id' =>  $agent,
@@ -78,16 +135,24 @@ class TimetableController
         'draft' => '1',
         'author' => $author
       ])->count() > 0) {
-        $data['response'] = 'This Agent has a duty (planned or confirmed) in '.$day.'.';
+        $data['response'] = 'This Agent has a duty (planned or confirmed) in ' . $day . '.';
+        return Response::json($data, $response);
+      }
+      //check if agent has vacation on the day
+      if (DB::table('schedule_vacations')->where([
+        'agent_id' => $agent,
+        'day' => $day
+      ])->count()) {
+        $data['response'] = 'This Agent has day off planned for ' . $day . '.';
         return Response::json($data, $response);
       }
       $weekRange = DatesHelper::getWeekRangeBasedOnDay($day);
-      
+
       if (DB::table("schedule_timetable")->where([
         'agent_id' =>  $agent,
       ])->whereBetween('day', $weekRange)->count() >= 5 && !$request->getParsedBody()['force']) {
         $data['response'] = 'This Agent has already 5 or more shifts this week. Are you sure you wish to add next?';
-        $data['action']='Add it anyway';
+        $data['action'] = 'Add it anyway';
         return Response::json($data, $response);
       }
 
@@ -128,27 +193,62 @@ class TimetableController
   }
   public function commitDrafts($request, $response, $args)
   {
+    $notifications = (bool)$request->getParsedBody()['notifications'];
     $author = AgentConstants::adminid();
     if (!EditorsAuth::isEditor()) {
       $data['response'] = 'No permission for this operation';
     } else {
-      $sameDaysEntries = DB::table('schedule_timetable')->where('draft', 1)->where('author', $author)->groupBy('day')->having('c', '>', '1')->selectRaw('count(*) as c, day')->get();
-      if(count($sameDaysEntries) > 0)
-      {
+      $sameDaysEntries = DB::table('schedule_timetable')
+        ->where('draft', 1)
+        ->where('author', $author)
+        ->groupBy('day', 'shift_id', 'agent_id')
+        ->having('c', '>', '1')
+        ->selectRaw('count(*) as c, day')->get();
+      if (count($sameDaysEntries) > 0) {
         $data['response'] = 'There is at least one duplicated shift on the same day. Remove it to proceed.';
         return Response::json($data, $response);
       }
-      $entries = DB::table('schedule_timetable')->where(['author' => $author, 'draft' => 1])->get();
+
+      $entries = DB::table('schedule_timetable as t')
+        ->join('schedule_shifts as s', 's.id', '=', 't.shift_id')
+        ->join('schedule_agentsgroups as ag', 'ag.id', '=', 't.group_id')
+        ->where(['t.author' => $author, 't.draft' => 1])
+        ->get();
+      $deleteentries = DB::table('schedule_timetable_deldrafts as dd')
+        ->join('schedule_timetable as t', 't.id', '=', 'dd.entry_id')
+        ->join('schedule_shifts as s', 's.id', '=', 't.shift_id')
+        ->join('schedule_agentsgroups as ag', 'ag.id', '=', 't.group_id')
+        ->where('dd.author', $author)
+        ->get(['dd.*', 't.*', 's.from', 's.to', 'ag.group']);
+
+      if ($notifications === true) {
+        
+        
+        // $slackUsers = DB::table('schedule_slackusers')->whereIn('agent_id', $agents_id)->get();
+        // $slack = new SlackNotifications($slackUsers, $entries, $deleteentries);
+        $slack = new SlackNotifications(new commitNotify(['entries' => $entries, 'deleteentries' => $deleteentries]));
+        $slack->send();
+      }
+      foreach ($entries as $entry) {
+        //Iterate through draft entries and find if there's placeholder NEED HELP in the same day and shift
+        //If it's there, delete one placeholder per one new entry commited
+        $placeholder = DB::table('schedule_timetable')
+          ->where('group_id', $entry->group_id)
+          ->where('shift_id', $entry->shift_id)
+          ->where('day', $entry->day)
+          ->where('agent_id', '-1')
+          ->first();
+        if ($placeholder) {
+          DB::table('schedule_timetable')->where('id', $placeholder->id)->delete();
+        }
+      }
 
       $logs = (new AddEntryLog($entries));
       // $GeneratedLogs = $logs->createAddLogs($entries);
       (new LogsFactory($logs))->store();
       DB::table('schedule_timetable')->where(['author' => $author, 'draft' => 1])->update(['draft' => 0]);
 
-      $deleteentries = DB::table('schedule_timetable_deldrafts as dd')
-        ->join('schedule_timetable as t', 't.id', '=', 'dd.entry_id')
-        ->where('dd.author', $author)
-        ->get();
+
       $logs = (new DeleteEntryLog($deleteentries));
       (new LogsFactory($logs))->store();
 
@@ -206,16 +306,16 @@ class TimetableController
         $query->orWhere(['t.draft' => 1, 't.author' => $author]);
       })
       ->get([
-        't.id',  't.day', 'a.firstname', 'a.lastname', 'd.color', 'd.bg', 't.draft', 't.author',
-        'agr.group', 'agr.id AS group_id'
+        't.id',  't.day', 'a.firstname', 'a.lastname', 't.draft', 't.author',
+        'agr.group', 'agr.id AS group_id', 'agr.color', 'agr.bgcolor'
       ]);
     $days = [];
     foreach ($timetable as $t) {
       $days[$t->day][] = [
         'id' => $t->id,
         'agent' => $t->firstname . ' ' . $t->lastname,
-        'color' => $t->color ?? '#000',
-        'bg' => $t->bg ?? 'rgb(202 202 202)',
+        'color' => $t->color != 'null' ? $t->color : '#000',
+        'bg' => $t->bgcolor != 'null' ? $t->bgcolor : 'rgb(202 202 202)',
         'author' => $t->author,
         'draft' => $t->draft,
         'deldraftauthor' => $t->draftauthor ?? false,
@@ -230,6 +330,14 @@ class TimetableController
   public function vacationingStore($request, $response, $args)
   {
     $body =  $request->getParsedBody();
+
+    //Disable storing placeholders in vacations
+    if ($body['agent_id'] == -1) {
+      return Response::json(['response' => 'Placeholders cannot be stored in vacationing.'], $response);
+    }
+    if (DB::table('schedule_timetable')->where('agent_id', $body['agent_id'])->where('day', $body['date'])->count() > 0) {
+      return Response::json(['response' => 'This agent has already had duty on this date (may be as draft)'], $response);
+    }
     if (DB::table("schedule_vacations")->where([
       'agent_id' =>  $body['agent_id'],
       'group_id' => $body['group_id'],
@@ -246,6 +354,12 @@ class TimetableController
           'author' => AgentConstants::adminid(),
         ]
       );
+      $update_pool = DB::table('schedule_daysoff')->where('agent_id', $body['agent_id'])->where('date_expiration', '>', date('Y-m-d'))->orderBy('year', 'ASC')->first();
+      if ($update_pool) {
+        DB::table('schedule_daysoff')->where('id', $update_pool->id)->update(['days' => $update_pool->days - 1]);
+      }
+      $log = (new UseDaysOff(['path' => $body['path'], 'agent_id' => $body['agent_id'], 'dayoff' => $body['date']]));
+      (new LogsFactory($log))->store();
       $data['response'] = 'success';
     } else {
       $data['response'] = 'Already exist';
@@ -258,12 +372,20 @@ class TimetableController
     //$admin = DB::table('tbladmins')->where('id', $args['workerid'])->first(['firstname', 'lastname']);
 
     $args['workerid'] = $_SESSION['adminid'];
+    $reference_group_id = DB::table('schedule_agents_to_groups')
+      ->join('schedule_agentsgroups as ag', 'ag.id', '=', 'group_id')
+      ->where('agent_id', $args['workerid'])
+      ->first();
+
     $admins = DB::table('schedule_agents_to_groups as g')
       ->join('tbladmins as a', 'a.id', '=', 'g.agent_id')
-      ->where('g.group_id', function ($query) use ($args) {
-        $query->select('group_id')->from('schedule_agents_to_groups')->where('agent_id', $args['workerid']);
-      })
+      //->join('schedule_agents_to_groups as atg', 'atg')
+      ->where('g.group_id', $reference_group_id->group_id)
+      ->orWhere('g.group_id', $reference_group_id->parent)
       ->get(['g.*', 'a.firstname', 'a.lastname']);
+    //->orWhere('g.group_id', function ($query) use ($args) {
+    // $query->select('id')->from('schedule_agentsgroups')->where('agent_id', $args['workerid']);
+    //})
 
     //read data for other team members and put into array
     $data = [];
@@ -300,6 +422,7 @@ class TimetableController
       unlink($path);
     } catch (\PHPMailer\PHPMailer\Exception $e) {
       logActivity("Contact form mail sending failed with a PHPMailer Exception: " . $e->getMessage() . " (Subject: " . $subject . ")");
+      return Response::json(['result' => 'error', 'msg' => $e->getMessage()], $response);
     } catch (Exception $e) {
       logActivity("Contact form mail sending failed with this error: " . $e->getMessage());
     }
@@ -334,7 +457,7 @@ class TimetableController
       } else {
         $data['response'] = 'Already exist';
       }
-  }
+    }
     return Response::json($data, $response);
   }
 }

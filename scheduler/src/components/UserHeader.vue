@@ -8,6 +8,7 @@
 
 <script>
 export default {
+  mixins: [],
   name: "UserHeader",
   data() {
     return {

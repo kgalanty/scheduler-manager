@@ -1,114 +1,209 @@
 <template>
   <div
+    id="sidebarright"
     style="
       float: right;
       height: 100%;
       max-height: 100%;
       overflow: hidden;
       overflow-y: auto;
-      display: flex;
       flex-direction: column;
       align-content: stretch;
       background-color: white;
-      width:400px;
+      width: 600px;
+      position: sticky;
+      top: 0;
+      z-index: 300;
     "
     class=""
   >
-
-    <div v-if="open === false" class="closedsidebar">
-      <a @click="open = true"><b-icon icon="expand-alt" size="is-small" style="float:left"></b-icon>Agents</a>
+    <div v-if="open === false" class="closedsidebarright">
+      <a @click="open = true"
+        ><b-icon icon="expand-alt" size="is-small" style="float: left"></b-icon
+        >Agents</a
+      >
     </div>
-      <transition name="list">
-    <div class=" floatright openedsidebar" v-if="open == true">
-      <!-- <b-sidebar type="is-light" v-model="open" fullheight right> -->
-      <div class="p-3">
-        <b-button type="is-info" label="Close" @click="open = false"  size="is-small" />
-        <!-- <b-button type="is-success" label="Add new group" icon-left="plus" @click="openModal"  size="is-small" /> -->
-         <b-tooltip label="Show Delete icons" position="is-bottom" style="float: right;">
-         <b-switch size="is-small"
-         v-model="showDelete"
-            type="is-primary" style=""
-            ><b-icon 
-                    icon="trash"
-                    size="is-medium" /></b-switch>
-                     </b-tooltip>
-      </div>
-      <b-message type="is-info" has-icon style="margin:0px 10px">
-            To edit members and manage shifts & groups, <router-link :to="`/admin`">navigate here</router-link>.
+    <transition name="list">
+      <div class="floatright openedsidebar" v-if="open == true">
+        <!-- <b-sidebar type="is-light" v-model="open" fullheight right> -->
+        <div class="p-3">
+          <b-button
+            type="is-info"
+            label="Close"
+            @click="open = false"
+            size="is-small"
+          />
+          <!-- <b-button type="is-success" label="Add new group" icon-left="plus" @click="openModal"  size="is-small" /> -->
+          <b-tooltip
+            label="Show Delete icons"
+            position="is-bottom"
+            style="float: right"
+          >
+            <b-switch
+              size="is-small"
+              v-model="showDelete"
+              type="is-primary"
+              style=""
+              ><b-icon icon="trash" size="is-medium"
+            /></b-switch>
+          </b-tooltip>
+        </div>
+        <b-message type="is-info" has-icon style="margin: 0px 10px">
+          To put an agent into schedule, drag the name and drop to desired day.
+          <br />
+          To edit members and manage shifts & groups,
+          <router-link :to="`/admin`">navigate here</router-link>.
         </b-message>
         <span class="teamlist">
-      <div class="p-3" v-for="(team, team_i) in teams" :key="'teams' + team_i">
-        <span class="team_name">#{{team_i}} {{team.name}}</span>
-        <b-table :data="team.members" narrowed bordered mobile-cards> 
-          <template #empty>
+          <div
+            class="p-1"
+            v-for="(team, team_i) in teams"
+            :key="'teams' + team_i"
+          >
+            <b-table :data="team.members" narrowed bordered mobile-cards v-if="team.members">
+              <template #empty>
                 <div class="has-text-centered">No members</div>
-            </template>
-          <b-table-column field="Agent" centered label="Agent" v-slot="props" header-class="headerclass">
-            <b-button size="is-small" :style="getStyle(props.row.bg, props.row.color)"
-            @dragstart="startDrag($event, props.row, team_i)"
-            draggable
-             @dragend.prevent="dragEnd($event)"
-            >{{ props.row.name }}</b-button>
-              <!-- draggable
+              </template>
+              <b-table-column
+                field="Agent"
+                centered
+                :label="team.data.group"
+                v-slot="props"
+                cell-class="buttonscells"
+                header-class="groupnameheaderclass"
+              >
+                <b-button
+                  :style="getStyle(team.data.bgcolor, team.data.color)"
+                  @dragstart="startDrag($event, props.row, team_i)"
+                  draggable
+                  @dragend.prevent="dragEnd($event)"
+                  >{{ props.row.ldap_username ? props.row.ldap_username :  props.row.firstname +' '+ props.row.lastname}}</b-button
+                >
+                <!-- draggable
               class="agentName"
              
               @dragstart="startDrag($event, props.row)"
               @dragend.prevent="dragEnd($event)"
               >{{ props.row.name }}</span
             > -->
-          </b-table-column>
-          <b-table-column
-            field="Agent"
-            centered
-            label="Internal Name"
-            v-slot="props"  header-class="headerclass"
-          >
-            {{ props.row.name }}
-          </b-table-column>
-          <!-- <b-table-column field="Agent" centered label="Phone" v-slot="props"  header-class="headerclass">
+              </b-table-column>
+              <b-table-column
+                field="Agent"
+                label="Internal Name"
+                v-slot="props"
+                header-class="headerclass"
+                cell-class="internalnamecells"
+              >
+               <a :href="'https://tmdhosting.slack.com/team/'+props.row.slackid" target="_blank" v-if="props.row.slackid" >
+               <img style="height:15px" src="https://upload.wikimedia.org/wikipedia/commons/d/d5/Slack_icon_2019.svg" :alt="props.row.slackid"></a>
+                {{ props.row.firstname }} {{ props.row.lastname }}
+              </b-table-column>
+               <b-table-column
+                field="Phone"
+                centered
+                label="Phone"
+                v-slot="props"
+                header-class="headerclass"
+                 cell-class="internalnamecells"
+              >
+                {{ props.row.phone }}
+              </b-table-column>
+              <b-table-column
+                field="Agent"
+                centered
+                label="Off Days"
+                header-class="headerclass"
+                v-slot="props"
+                cell-class="internalnamecells" width="50"
+              >
+                 {{ props.row.vacations }}
+              </b-table-column>
+              <b-table-column
+                field="Agent"
+                centered
+                label="Remaining Vacations"
+                v-slot="props"
+                header-class="headerclass"
+                cell-class="internalnamecells"
+                width="50"
+              >
+                {{ props.row.daysoff }}
+              </b-table-column>
+              <!-- <b-table-column field="Agent" centered label="Phone" v-slot="props"  header-class="headerclass">
             {{ props.row.name }}
           </b-table-column> -->
-        </b-table>
+            </b-table>
+           
+          </div>
+           <div
+            class="p-3"
+          >
+           <b-button
+                  size="is-medium"
+                  :style="getStyle('red', 'yellow')"
+                  @dragstart="startDrag($event, {item: 'placeholder', adminid: -1})"
+                  draggable
+                  @dragend.prevent="dragEnd($event)"
+                  >HELP NEEDED</b-button
+                > Placeholder</div>
+        </span>
+        <!-- </b-sidebar> -->
       </div>
-    </span>
-      <!-- </b-sidebar> -->
-    </div>
-
-  </transition>
+    </transition>
   </div>
 </template>
 <script>
-import AddGroupForm from '../forms/AddGroupForm.vue'
+//import AddGroupForm from "../forms/AddGroupForm.vue";
 export default {
   data() {
     return {
       open: false,
-      showDelete:false,
-      newadmin: {}
+      showDelete: false,
+      newadmin: {},
     };
   },
-  watch:
-  {
-    showDelete()
-    {
-      this.$store.dispatch('switchShowDelete', {
-        val: this.showDelete
-      })
-    }
+  watch: {
+    open(val) {
+      if (val) {
+        if (document.documentElement.clientWidth < 2400) {
+          document.getElementById("mainwindow").style.marginLeft = 0;
+          document.getElementById("mainwindow").style.width = "70%";
+        }
+      } else {
+        // if (document.documentElement.clientWidth < 2400) {
+        document.getElementById("mainwindow").style.marginLeft = "";
+        document.getElementById("mainwindow").style.width = "";
+        // }
+      }
+      //console.log(val);
+    },
+    showDelete() {
+      this.$store.dispatch("switchShowDelete", {
+        val: this.showDelete,
+      });
+    },
   },
   computed: {
-    admins()
-    {
+    admins() {
       return this.$store.state.admins;
     },
     teams() {
-     // console.log(this.$filterObject(this.$store.state.schedule_teams, "name", this.$route.params.team))
-    // console.log(this.$route.name);
-     if(this.$route.name == 'Vacationing')
-     {
-        return this.$store.state.schedule_teams
-     }
-      return this.$filterObject(this.$store.state.schedule_teams, "name", this.$route.params.team);
+      // console.log(this.$filterObject(this.$store.state.schedule_teams, "name", this.$route.params.team))
+      // if (this.$route.name == "Vacationing") {
+      //   return this.$store.state.schedule_teams;
+      // }
+      return this.$store.state.agentsGroups.groups_subgroups;
+      // const filterByName =  this.$filterObject(
+      //   this.$store.state.schedule_teams,
+      //   "name",
+      //   this.$route.params.team
+      // );
+      // //filter out only top level teams using 'parent' key
+      // return this.$filterObject(
+      //   filterByName,
+      //   "parent",
+      //   0
+      // );
     },
     days() {
       return [
@@ -122,88 +217,125 @@ export default {
       ];
     },
   },
+  destroyed() {
+    document.getElementById("mainwindow").style.marginLeft = "";
+    document.getElementById("mainwindow").style.width = "";
+  },
   mounted() {
-    this.$store.dispatch('getTeams')
+    this.$store.dispatch("getTeams");
     this.$store.dispatch("getAdmins");
   },
   methods: {
-    addMember(team_id)
-    {
+    addMember(team_id) {
       this.$http
-        .post("./scheduleapi/agents/assigntogroup", {team_id: team_id, agent: this.newadmin[team_id]})
+        .post("./scheduleapi/agents/assigntogroup", {
+          team_id: team_id,
+          agent: this.newadmin[team_id],
+        })
         .then((response) => {
           if (response.data.response == "success") {
             this.$buefy.toast.open({
               message: "Added",
               type: "is-success",
             });
-            this.$store.dispatch('getTeams')
+            this.$store.dispatch("getTeams");
           } else {
             this.$buefy.toast.open({
               message: response.data.response,
               type: "is-danger",
             });
           }
-          
         });
     },
-    getStyle(bg, color)
-    {
-      if(!bg && !color)
-      {
-         return {
-        'background-color' : 'white',
-        'color': 'black'
-      }
+    getStyle(bg, color) {
+      if ((!bg && !color) || (bg == "null" && color == "null")) {
+        return {
+          backgroundColor: "rgb(202, 202, 202)",
+          color: "black",
+        };
       }
       return {
-        'background-color' : bg,
-        'color': color
-      }
+        "background-color": bg,
+        color: color,
+      };
     },
-    agentRow(row, index)
-    {
-      console.log(row)
-      console.log(index)
-    },
+    // agentRow(row, index) {
+    //   //console.log(row);
+    //   //console.log(index);
+    // },
     startDrag: (evt, item, team_i) => {
       evt.target.style.opacity = 0.5;
       evt.dataTransfer.dropEffect = "move";
       evt.dataTransfer.effectAllowed = "move";
-      item.team_i = parseInt(team_i)
-     // console.log(item)
+      item.team_i = parseInt(team_i);
+
+      //document.getElementById('sidebarright').style.zIndex = -1
+      // console.log(item)
       evt.dataTransfer.setData("agentItem", JSON.stringify(item));
     },
     dragEnd(event) {
       event.target.style.opacity = "";
     },
-    openModal()
-    {
-      this.$buefy.modal.open({
-                    parent: this,
-                    component: AddGroupForm,
-                    hasModalCard: true,
-                    trapFocus: true,
-                    width: 960
-
-      })
-    }
+    // openModal() {
+    //   this.$buefy.modal.open({
+    //     parent: this,
+    //     component: AddGroupForm,
+    //     hasModalCard: true,
+    //     trapFocus: true,
+    //     width: 960,
+    //   });
+    // },
   },
 };
 </script>
 <style scoped>
-.teamlist
+
+</style>
+<style >
+.buttonscells
 {
-  height:calc(100vh - 200px);
-   overflow-y: scroll;
-   display:block;
+  margin:0; padding:0;
+  display:contents;
 }
-.agentName
+.internalnamecells
 {
+  margin:0; padding:0;
+  font-size:0.8em;
+}
+.buttonscells button
+{
+ width:100%;
+}
+.closedsidebarright {
+  position: fixed;
+  top: 100px;
+  right: 0;
+  writing-mode: vertical-rl;
+  text-orientation: upright;
+  border: 1px solid black;
+  border-right: 0;
+  background-color: white;
+  border-radius: 5px;
+  z-index: 1;
+  padding: 5px;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+.openedsidebar {
+  border: 1px solid black;
+}
+</style>
+<style scoped>
+.teamlist {
+   height: 100vh;
+  overflow-y: scroll;
+  display: block;
+}
+.agentName {
   padding: 5px 10px;
 }
 .agentstable {
-  padding:0 !important;
+  padding: 0 !important;
 }
 .list-enter,
 .list-leave-to {
@@ -221,47 +353,30 @@ export default {
 }
 </style>
 <style >
-
-.headerclass
+.headerclass {
+  font-weight: bold;
+  background:rgb(185, 221, 255);
+}
+.groupnameheaderclass
 {
-  font-weight:bold;
-  text-decoration:underline;
+  color:white;
+  vertical-align: middle !important;
 }
 .table tr:first-child {
-  height:auto;
+  height: auto;
 }
 .b-sidebar .sidebar-content {
   width: auto;
 }
-</style>
-<style scoped>
+
 .floatright {
   z-index: 10;
-  background-color:white;
+  background-color: white;
 }
-</style>
-<style scoped>
-.team_name
-{
+
+.team_name {
   text-decoration: underline;
   font-weight: bold;
 }
-.closedsidebar {
-  position: fixed;
-  top: 100px;
-  right: 0;
-  writing-mode: vertical-rl;
-  text-orientation: upright;
-  border: 1px solid black;
-  border-right:0;
-  background-color: white;
-  border-radius:5px;
-      z-index: 1;
-      padding:5px;
-      border-top-right-radius: 0;
-      border-bottom-right-radius: 0;
-}
-.openedsidebar {
-  border: 1px solid black;
-}
+
 </style>

@@ -6,8 +6,7 @@ class AgentConstants
 {
     public static function adminid()
     {
-        return 230;
-        return $_SESSION['adminid'];
+        return $_SESSION['adminid'] ?? 230;
     }
     const EDITOR_PERMISSION = 3100;
 }

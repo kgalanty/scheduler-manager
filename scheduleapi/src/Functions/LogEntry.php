@@ -58,6 +58,7 @@ class LogEntry
 	{
 		return $this->createEntryLogs($entries, 'Deleted');
 	}
+
 	private function log($logs)
 	{
 		if($logs)

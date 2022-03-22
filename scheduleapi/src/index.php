@@ -13,7 +13,7 @@ $app = AppFactory::create();
 // $errorMiddleware = $app->addErrorMiddleware(true, true, true);
 if(!($_SESSION['adminid'] && $_SESSION['adminpw']))
 {
-   // die('Unauthorized');
+    //die("Not logged as admin");
 }
 define('ROUTE_PREFIX', '/schedule/scheduleapi');
 
@@ -45,6 +45,7 @@ $app->get(ROUTE_PREFIX.'/home','App\Controllers\HomeController:home');
 $app->get(ROUTE_PREFIX.'/dbmigration','App\Controllers\MigrationController:home');
 $app->get(ROUTE_PREFIX.'/agents','App\Controllers\AgentsController:agents');
 $app->get(ROUTE_PREFIX.'/agents/myinfo','App\Controllers\AgentsController:myinfo');
+$app->get(ROUTE_PREFIX.'/agents/{agentid}','App\Controllers\AgentsController:getAgentInfo');
 $app->get(ROUTE_PREFIX.'/shifts','App\Controllers\ShiftsController:getShifts');
 
 $app->post(ROUTE_PREFIX.'/shift/new','App\Controllers\ShiftsController:insertShift')->add(new JsonMiddleware());
@@ -56,7 +57,7 @@ $app->post(ROUTE_PREFIX.'/shifts/delete_duty','App\Controllers\TimetableControll
 $app->post(ROUTE_PREFIX.'/agents/assigntogroup','App\Controllers\AgentsController:addMemberToTeam')->add(new JsonMiddleware());
 $app->post(ROUTE_PREFIX.'/agents/color','App\Controllers\AgentsController:setAgentsColor')->add(new JsonMiddleware());
 $app->post(ROUTE_PREFIX.'/shifts/delete_draft','App\Controllers\TimetableController:deleteDraft')->add(new JsonMiddleware());
-$app->post(ROUTE_PREFIX.'/shifts/commit','App\Controllers\TimetableController:commitDrafts');
+$app->post(ROUTE_PREFIX.'/shifts/commit','App\Controllers\TimetableController:commitDrafts')->add(new JsonMiddleware());
 $app->post(ROUTE_PREFIX.'/shifts/revert','App\Controllers\TimetableController:revertDrafts');
 $app->post(ROUTE_PREFIX.'/editors/add','App\Controllers\EditorsController:add')->add(new JsonMiddleware());
 $app->post(ROUTE_PREFIX.'/editors/delete','App\Controllers\EditorsController:delete')->add(new JsonMiddleware());
@@ -72,8 +73,20 @@ $app->get(ROUTE_PREFIX.'/stats','App\Controllers\StatsController:get');
 $app->get(ROUTE_PREFIX.'/calendar/generate','App\Controllers\CalendarController:create');
 $app->get(ROUTE_PREFIX.'/calendar/{agenthash}','App\Controllers\CalendarController:calendar');
 
+$app->post(ROUTE_PREFIX.'/subteams/color', 'App\Controllers\SubteamsController:setcolor')->add(new JsonMiddleware());
+
 $app->get(ROUTE_PREFIX.'/editors/list','App\Controllers\EditorsController:list');
 $app->get(ROUTE_PREFIX.'/shifts/teams','App\Controllers\AgentsController:teamsMembers');
+
+$app->get(ROUTE_PREFIX.'/group/{groupid}/agents','App\Controllers\AgentsController:agentsTeams');
+$app->get(ROUTE_PREFIX.'/groups/agents','App\Controllers\AgentsController:agentsTeams');
+
+$app->get(ROUTE_PREFIX.'/daysoff/{agentid}','App\Controllers\DaysoffController:getDaysOff');
+$app->post(ROUTE_PREFIX.'/daysoff/{agentid}','App\Controllers\DaysoffController:postDaysOff')->add(new JsonMiddleware());
+$app->post(ROUTE_PREFIX.'/daysoff/entry/{entryid}','App\Controllers\DaysoffController:changeDaysOff')->add(new JsonMiddleware());
+
+$app->post(ROUTE_PREFIX.'/group/{groupid}/notifications/{date}','App\Controllers\NotifyController:notifyAgents');
+
 $app->get(ROUTE_PREFIX.'/group/{groupid}/drafts','App\Controllers\ShiftsController:loadDrafts');
 $app->get(ROUTE_PREFIX.'/shifts/shiftsgroups/{groupid}','App\Controllers\ShiftsController:shiftsGroups');
 $app->get(ROUTE_PREFIX.'/logs','App\Controllers\LogsController:get');
@@ -81,6 +94,7 @@ $app->get(ROUTE_PREFIX.'/verify','App\Controllers\AgentsController:verifyAgent')
 $app->get(ROUTE_PREFIX.'/report/{datestart}/{dateend}','App\Controllers\TimetableController:scheduleForWorker');
 $app->get(ROUTE_PREFIX.'/vacationing','App\Controllers\TimetableController:vacationing');
 $app->post(ROUTE_PREFIX.'/vacationing','App\Controllers\TimetableController:vacationingStore')->add(new JsonMiddleware());
+$app->post(ROUTE_PREFIX.'/vacationing/delete','App\Controllers\TimetableController:deleteVacationing')->add(new JsonMiddleware());
 // $app->post(ROUTE_PREFIX.'/assignshift','App\Controllers\ShiftsController:assignToShift');
 //$app->add($beforeMiddleware);
 $app->run();

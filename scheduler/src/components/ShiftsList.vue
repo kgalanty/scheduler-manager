@@ -1,53 +1,64 @@
 <template>
   <div>
-    <b-table :data="shifts" striped narrowed bordered mobile-cards class="shiftstable">
-       <template #empty>
-            <div class="has-text-centered">No records</div>
-          </template>
-      <b-table-column field="Shift" centered label="Teams" v-slot="props">
-        <strong>#{{ props.row.group_id }} {{ props.row.team }}</strong>
-        <p></p>
-        <b-button
-          type="is-danger"
-          icon-left="trash"
-          @click="confirmCustomDelete(props.row.group_id)"
-          size="is-small"
-        >
-          Delete
-        </b-button>
+    <b-table
+      :data="topteams"
+      striped
+      narrowed
+      bordered
+      mobile-cards
+      class="shiftstable"
+    >
+      <template #empty>
+        <div class="has-text-centered">No records</div>
+      </template>
+      <b-table-column field="Shift" centered label="Teams" v-slot="props" width="50%">
+        <div class="container">
+          <strong>#{{ props.row.group_id }} {{ props.row.team }}</strong>
+          <p></p>
           <b-button
-          type="is-success"
-          icon-left="plus"
-          @click="addOnCallShift(props.row.group_id)"
-          size="is-small"
-        >
-          Add On Call Shift
-        </b-button>
+            type="is-danger"
+            icon-left="trash"
+            @click="confirmCustomDelete(props.row.group_id)"
+            size="is-small"
+          >
+            Delete
+          </b-button>
+          <b-button
+            type="is-success"
+            icon-left="plus"
+            @click="addOnCallShift(props.row.group_id)"
+            size="is-small"
+            
+          >
+            Add On Call Shift</b-button
+          >
+        </div>
+       
+        <div class="container">
+          <Subteams :parent_team="props.row" />
+        </div>
       </b-table-column>
-      <b-table-column field="Shift" centered label="Shifts" v-slot="props">
-        <b-table :data="props.row.shifts" striped narrowed mobile-cards>
+      <b-table-column field="Shift" centered label="Shifts" v-slot="props" width="50%">
+        <b-table :data="props.row.shifts ? props.row.shifts : []" striped narrowed mobile-cards >
           <template #empty>
             <div class="has-text-centered">No records</div>
           </template>
-          <b-table-column field="Shift" centered label="Shift" v-slot="props">
-            <span v-if="props.row.from==='on'&&props.row.to==='call'">
-                  <b-button
-              size="is-small"
-              type="is-info"
-              icon-left="phone-volume"
-             >On Call</b-button>
-
+          <b-table-column field="Shift" centered label="Shift" v-slot="props" width="50%" >
+            <span v-if="props.row.from === 'on' && props.row.to === 'call'">
+              <b-button size="is-small" type="is-info" icon-left="phone-volume"
+                >On Call</b-button
+              >
             </span>
-            <span v-else>
-            {{ props.row.from }} - {{ props.row.to }}
-            </span>
+            <span v-else> {{ props.row.from }} - {{ props.row.to }} </span>
           </b-table-column>
           <b-table-column field="Shift" centered label="Action" v-slot="props">
             <b-button
               size="is-small"
               type="is-info"
               icon-left="trash"
-              @click="removeShift(props.row.shiftid)">Remove</b-button>
+              @click="removeShift(props.row.shiftid)"
+              >Remove</b-button
+            >
           </b-table-column>
         </b-table>
       </b-table-column>
@@ -56,33 +67,41 @@
 </template>
 
 <script>
+import Subteams from "./Subteams.vue";
 export default {
   name: "ShiftsList",
+  components: {
+    Subteams,
+  },
   computed: {
     shifts() {
-      return this.$store.state.shifts;
+      return this.$store.state.shifts
     },
+    topteams()
+    {
+      return this.$store.state.shifts.filter(i=>i.parent==0)
+    }
   },
+  mounted() {},
   methods: {
-    addOnCallShift(group)
-    { 
-       this.$http
-            .post("./scheduleapi/shift/new", { team_id: group, oncall: 1 })
-            .then((response) => {
-              if (response.data.response == "success") {
-                this.$buefy.toast.open({
-                  message: "Added!",
-                  type: "is-success",
-                });
-                this.$store.dispatch("getShiftsList");
-               // this.$store.dispatch("getTeams");
-              } else {
-                this.$buefy.toast.open({
-                  message: response.data.response,
-                  type: "is-danger",
-                });
-              }
+    addOnCallShift(group) {
+      this.$http
+        .post("./scheduleapi/shift/new", { team_id: group, oncall: 1 })
+        .then((response) => {
+          if (response.data.response == "success") {
+            this.$buefy.toast.open({
+              message: "Added!",
+              type: "is-success",
             });
+            this.$store.dispatch("getShiftsList");
+            // this.$store.dispatch("getTeams");
+          } else {
+            this.$buefy.toast.open({
+              message: response.data.response,
+              type: "is-danger",
+            });
+          }
+        });
     },
     confirmCustomDelete(group) {
       this.$buefy.dialog.confirm({
@@ -149,10 +168,17 @@ export default {
 .b-table tr {
   height: auto !important;
 }
-
+.modal-card-foot
+{
+  margin: unset;
+}
 .shiftstable thead:first-child th {
-background: rgb(165,197,255);
-background: linear-gradient(180deg, rgba(165,197,255,1) 0%, rgba(40,68,207,1) 100%);
-color:white;
+  background: rgb(165, 197, 255);
+  background: linear-gradient(
+    180deg,
+    rgba(165, 197, 255, 1) 0%,
+    rgba(40, 68, 207, 1) 100%
+  );
+  color: white;
 }
 </style>
