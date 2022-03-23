@@ -236,7 +236,6 @@ export default new Vuex.Store({
             "./scheduleapi/group/" + payload.topteam + "/agents?refdate="+context.state.refDate
           )
           .then((response) => {
-
             context.commit('SetAgentsGroups', response.data)
             resolve()
           }).
@@ -253,7 +252,6 @@ export default new Vuex.Store({
             "./scheduleapi/groups/agents?refdate="+context.state.refDate.format('YYYY-MM-DD')
           )
           .then((response) => {
-
             context.commit('SetAgentsGroups', response.data)
             resolve()
           }).

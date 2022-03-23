@@ -57,10 +57,16 @@ class AgentsController
   public function agentsTeams($request, $response, $args)
   {
     if ($args['groupid'] && is_numeric($args['groupid'])) {
-      $groups = DB::table('schedule_agentsgroups')->where('id', $args['groupid'])->orWhere('parent', $args['groupid'])->orderBy('parent', 'ASC')->get();
+      $groups = DB::table('schedule_agentsgroups')
+      ->where('id', $args['groupid'])
+      ->orWhere('parent', $args['groupid'])
+      ->orderBy('parent', 'DESC')
+      ->orderBy('order', 'ASC')
+      ->get();
     } else {
-      $groups = DB::table('schedule_agentsgroups')->orderBy('parent', 'ASC')->get();
+      $groups = DB::table('schedule_agentsgroups')->orderBy('parent', 'DESC')->orderBy('order', 'ASC')->get();
     }
+    //
     $group_ids = [];
     foreach ($groups as $group) {
       $group_ids[] = $group->id;
@@ -84,12 +90,11 @@ class AgentsController
     }
 
 
-
-    $groups_out = [];
+    $groups_out = new \StdClass;
     foreach ($groups as $group) {
-      $groups_out[$group->id]['data'] = $group;
+      $groups_out->{$group->id}['data'] = $group;
     }
-
+    
     foreach ($groups_out as $k => $gr) {
       foreach ($agents as $agent) {
         if ($agent->group_id == $k) {
@@ -97,11 +102,10 @@ class AgentsController
           $agent->daysoff = $daysoff[$agent->adminid] ? (int)$daysoff[$agent->adminid]->days_sum : '-';
 
           $agent->vacations = $vacations[$agent->adminid] ? (int)$vacations[$agent->adminid]->days : '-';
-          $groups_out[$k]['members'][] = $agent;
+          $groups_out->$k['members'][] = $agent;
         }
       }
     }
-
     $resp = ['agents' => $agents, 'groups_subgroups' => $groups_out];
     return Response::json($resp, $response);
   }

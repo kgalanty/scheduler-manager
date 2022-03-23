@@ -113,61 +113,119 @@
       </b-notification>
       <div class="schedulerow">
         <div v-for="(shift, index) in shiftsTimetable" :key="index + 'tt'">
-          <strong
-            style="
-              display: block;
-              width: 100%;
-              font-weght: bold;
-              font-size: 20px;
-            "
-          >
-            <h1 style="margin-right: 10px; color: black; display: inline-flex">
-              <b-taglist
-                attached
-                v-if="shift.from === 'on' && shift.to === 'call'"
+          <span v-if="shift.hide == 0">
+            <strong
+              style="
+                display: block;
+                width: 100%;
+                font-weght: bold;
+                font-size: 20px;
+              "
+            >
+              <h1
+                style="margin-right: 10px; color: black; display: inline-flex"
               >
-                <b-tag type="is-dark"
-                  ><b-icon icon="phone-volume" size="is-small"></b-icon
-                ></b-tag>
-                <b-tag type="is-success" style="color: black">On Call</b-tag>
-              </b-taglist>
-              <b-taglist attached v-else>
-                <b-tag type="is-dark" size="is-medium"
-                  ><b-icon icon="user-clock" size="is-small"></b-icon
-                ></b-tag>
-
-                <b-tag type="is-primary" size="is-medium"
-                  >{{ shift.from }} - {{ shift.to }}</b-tag
+                <b-taglist
+                  attached
+                  v-if="shift.from === 'on' && shift.to === 'call'"
                 >
-              </b-taglist>
-              <b-tooltip label="Add a shift" v-if="editorPermission === 1">
-                <b-button
-                  type="is-success"
-                  size="is-small"
-                  @click="OpenAddAgentModal(shift.id, shift.group_id)"
-                  icon-right="plus"
-                  ><b-icon icon="user-clock" size="is-small">
-                  </b-icon></b-button
-              ></b-tooltip>
-            </h1>
-          </strong>
-          <p></p>
-          <div class="columns">
-            <scheduleColumn
-              :ref="day + '-' + shift.id"
-              class="graphcolumn"
-              v-for="(day, index) in days"
-              :key="day + '-' + shift.id"
-              :ind="index"
-              :day="day"
-              :shift="shift.id"
-              :group="shiftsTimetable[0].group_id"
-              :refdate="referenceDate"
-            ></scheduleColumn>
-          </div>
+                  <b-tag type="is-dark"
+                    ><b-icon icon="phone-volume" size="is-small"></b-icon
+                  ></b-tag>
+                  <b-tag type="is-success" style="color: black">On Call</b-tag>
+                </b-taglist>
+                <b-taglist attached v-else>
+                  <b-tag type="is-dark" size="is-medium"
+                    ><b-icon icon="user-clock" size="is-small"></b-icon
+                  ></b-tag>
+
+                  <b-tag type="is-primary" size="is-medium"
+                    >{{ shift.from }} - {{ shift.to }}</b-tag
+                  >
+                </b-taglist>
+                <b-tooltip label="Add a shift" v-if="editorPermission === 1">
+                  <b-button
+                    type="is-success"
+                    size="is-small"
+                    @click="OpenAddAgentModal(shift.id, shift.group_id)"
+                    icon-right="plus"
+                    ><b-icon icon="user-clock" size="is-small">
+                    </b-icon></b-button
+                ></b-tooltip>
+                <b-tooltip
+                  label="Hide this shift from this week"
+                  v-if="editorPermission === 1"
+                >
+                  <b-button
+                    type="is-info"
+                    size="is-small"
+                    @click="hideShift(shift.id)"
+                    icon-left="eye-slash"
+                    >Hide</b-button
+                  ></b-tooltip
+                >
+              </h1>
+            </strong>
+            <p></p>
+            <div class="columns">
+              <scheduleColumn
+                :ref="day + '-' + shift.id"
+                class="graphcolumn"
+                v-for="(day, index) in days"
+                :key="day + '-' + shift.id"
+                :ind="index"
+                :day="day"
+                :shift="shift.id"
+                :group="shiftsTimetable[0].group_id"
+                :refdate="referenceDate"
+              ></scheduleColumn>
+            </div>
+          </span>
         </div>
       </div>
     </div>
+    
+    <ul>
+    <div v-for="(shift, index) in shiftsTimetable" :key="index + 'tt'">
+      <span v-if="shift.hide == 1">
+        <li  style="display: block; width: 100%; font-weght: bold; font-size: 20px">
+      
+          <h1 style="margin-right: 10px; color: black; display: inline-flex">
+            <b-taglist
+              attached
+              v-if="shift.from === 'on' && shift.to === 'call'"
+            >
+              <b-tag type="is-dark"
+                ><b-icon icon="phone-volume" size="is-small"></b-icon
+              ></b-tag>
+              <b-tag type="is-success" style="color: black">On Call</b-tag>
+            </b-taglist>
+            <b-taglist attached v-else>
+              <b-tag type="is-dark" size="is-medium"
+                ><b-icon icon="user-clock" size="is-small"></b-icon
+              ></b-tag>
+
+              <b-tag type="is-primary" size="is-medium"
+                >{{ shift.from }} - {{ shift.to }}</b-tag
+              >
+            </b-taglist>
+             </h1>
+            <b-tooltip
+              label="Show this shift off this week"
+              v-if="editorPermission === 1"
+            >
+              <b-button
+                type="is-primary is-light"
+                size="is-small"
+                @click="showShift(shift.id, shift.group_id)"
+                icon-left="eye"
+                >Show</b-button
+              ></b-tooltip>
+         
+          </li>
+      </span>
+    </div>
+    </ul>
     <div
       v-show="shiftsTimetable.length == 0 && this.loading == null"
       style="text-align: center"
@@ -299,6 +357,52 @@ export default {
     };
   },
   methods: {
+    hideShift(shiftid) {
+      this.$http
+        .post(
+          "./scheduleapi/shift/" +
+            shiftid +
+            "/hide?refdate=" +
+            this.$store.state.refDate
+        )
+        .then((response) => {
+          if (response.data.result == "success") {
+            this.readAPI()
+            this.$buefy.toast.open({
+              message: "Done",
+              type: "is-success",
+            });
+          } else {
+            this.$buefy.toast.open({
+              message: response.data.result,
+              type: "is-danger",
+            });
+          }
+        });
+    },
+    showShift(shiftid) {
+      this.$http
+        .post(
+          "./scheduleapi/shift/" +
+            shiftid +
+            "/show?refdate=" +
+            this.$store.state.refDate
+        )
+        .then((response) => {
+          if (response.data.result == "success") {
+            this.readAPI()
+            this.$buefy.toast.open({
+              message: "Done",
+              type: "is-success",
+            });
+          } else {
+            this.$buefy.toast.open({
+              message: response.data.result,
+              type: "is-danger",
+            });
+          }
+        });
+    },
     confirmSchedule() {
       this.$buefy.dialog.confirm({
         message: "Are you sure?",
@@ -485,21 +589,21 @@ export default {
       }
 
       this.loadCalendar();
-      let alreadyInStore = false;
-      if (
-        this.$store.state.timetable[
-          this.moment(this.referenceDate).format("YYYY-MM-DD")
-        ]
-      ) {
-        alreadyInStore = true;
-      }
+      // let alreadyInStore = false;
+      // if (
+      //   this.$store.state.timetable[
+      //     this.moment(this.referenceDate).format("YYYY-MM-DD")
+      //   ]
+      // ) {
+      //   alreadyInStore = true;
+      // }
       for (var i = 1; i < 8; i++) {
         if (
           this.$store.state.timetable[
             this.moment(this.referenceDate).add(1, "day").format("YYYY-MM-DD")
           ]
         ) {
-          alreadyInStore = true;
+          //alreadyInStore = true;
         }
       }
 
@@ -511,11 +615,11 @@ export default {
           .format("MMMDD")}-${this.moment(this.referenceDate).format("YYYY")}`,
       });
 
-      if (!alreadyInStore) {
+      //if (!alreadyInStore) {
         this.readAPI();
-      } else {
-        this.$store.commit("setRefdate", this.referenceDate);
-      }
+     // } else {
+      //  this.$store.commit("setRefdate", this.referenceDate);
+      //}
     },
   },
 };

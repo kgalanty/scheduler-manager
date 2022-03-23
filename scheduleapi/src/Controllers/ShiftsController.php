@@ -16,7 +16,7 @@ class ShiftsController
         $results = DB::table("schedule_agentsgroups as t")
             ->leftJoin('schedule_shifts as s', 's.group_id', '=', 't.id')
             ->orderBy('s.from')
-            ->orderBy('t.group')
+            ->orderBy('t.order', 'ASC')
             ->get(['s.id', 's.from', 's.to', 't.group', 't.color', 't.bgcolor', 't.id AS group_id', 't.parent']);
         foreach ($results as $result) {
             // if($result->from && $result->to)
@@ -24,11 +24,11 @@ class ShiftsController
             // $data['groups'][$result->group_id] = ['id' => $result->group_id, 'name' => $result->group];
             if (!$data[$result->group_id]) {
                 //add new shift to array
-                $shift = $result->from && $result->to ? [['from' => $result->from, 'to' => $result->to, 'shiftid' => $result->id, 'group_id'=>$result->group_id]] : [];
+                $shift = $result->from && $result->to ? [['from' => $result->from, 'to' => $result->to, 'shiftid' => $result->id, 'group_id' => $result->group_id]] : [];
                 //add main group entry to array
-                $data[$result->group_id] = ['group_id' => $result->group_id, 'team' => $result->group, 'shifts' => $shift, 'parent'=>$result->parent, 'color' => $result->color, 'bgcolor' => $result->bgcolor];
+                $data[$result->group_id] = ['group_id' => $result->group_id, 'team' => $result->group, 'shifts' => $shift, 'parent' => $result->parent, 'color' => $result->color, 'bgcolor' => $result->bgcolor];
             } else {
-                $data[$result->group_id]['shifts'][] = ['from' => $result->from, 'to' => $result->to, 'shiftid' => $result->id, 'group_id'=>$result->group_id];
+                $data[$result->group_id]['shifts'][] = ['from' => $result->from, 'to' => $result->to, 'shiftid' => $result->id, 'group_id' => $result->group_id];
             }
         }
         $result = array_values($data);
@@ -184,6 +184,30 @@ class ShiftsController
         //     ->withHeader('Content-Type', 'application/json');
 
     }
+    public function hideShift($request, $response, $args)
+    {
+        $shiftid = (int)$args['shiftid'];
+        $date = $_GET['refdate'];
+        try {
+            DB::table('schedule_shifts_hidden')->insert(['shift_id' => $shiftid, 'refdate' => $date]);
+            $data = ['result' => 'success'];
+        } catch (\Exception $e) {
+            $data = ['result' => $e->getMessage()];
+        }
+        return Response::json($data, $response);
+    }
+    public function showShift($request, $response, $args)
+    {
+        $shiftid = (int)$args['shiftid'];
+        $date = $_GET['refdate'];
+        try {
+            DB::table('schedule_shifts_hidden')->where(['shift_id' => $shiftid, 'refdate' => $date])->delete();
+            $data = ['result' => 'success'];
+        } catch (\Exception $e) {
+            $data = ['result' => $e->getMessage()];
+        }
+        return Response::json($data, $response);
+    }
     public function shiftsGroups($request, $response, $args)
     {
         $author = AgentConstants::adminid();
@@ -196,12 +220,20 @@ class ShiftsController
                 ->withHeader('Content-Type', 'application/json');
         }
 
-        $shifts = DB::table('schedule_shifts AS s')->where('group_id', $group->id)->orderBy('s.from', 'ASC')->get();
+
+
         $startdate = $_GET['startdate'];
         $startdateparams = explode('-', $startdate, 3);
 
         $startdateprocessed = date('Y-m-d', strtotime($startdateparams[0] . ' ' . $startdateparams[2]));
         $enddate = date('Y-m-d', strtotime($startdateprocessed . ' +6 days'));
+        $shifts = DB::table('schedule_shifts AS s')
+            ->leftJoin('schedule_shifts_hidden as sh', function ($join) use ($startdateprocessed) {
+                $join->on('sh.shift_id', '=', 's.id')->where('sh.refdate', '=', $startdateprocessed);
+            })
+            ->where('group_id', $group->id)
+            ->orderBy('s.from', 'ASC')
+            ->get(['s.from', 's.to', 's.id', 's.group_id', DB::raw('COALESCE(sh.hide, 0) as `hide`')]);
         $timetable = DB::table('schedule_timetable AS t')
             ->leftJoin('schedule_timetable_deldrafts as dr',  function ($join) use ($author) {
 
@@ -222,9 +254,9 @@ class ShiftsController
             ->get([
                 't.id', 't.shift_id', 't.day', 'a.firstname', 'a.lastname', 'd.color', 'd.bg', 't.draft', 't.author',
                 'dr.author AS draftauthor',
-                'shifts.from', 'shifts.to', 'ag.color as agcolor', 'ag.bgcolor as agbgcolor', 't.agent_id'
+                'shifts.from', 'shifts.to', 'ag.color as agcolor', 'ag.bgcolor as agbgcolor', 't.agent_id',
             ]);
-          //  echo('<pre>');var_dump($timetable);die;
+        //  echo('<pre>');var_dump($timetable);die;
         $days = [];
         foreach ($timetable as $t) {
             $days[$t->shift_id][$t->day][] = TimetableHelper::renderTimetableRecord($t);

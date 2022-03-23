@@ -87,6 +87,9 @@ $app->post(ROUTE_PREFIX.'/daysoff/entry/{entryid}','App\Controllers\DaysoffContr
 
 $app->post(ROUTE_PREFIX.'/group/{groupid}/notifications/{date}','App\Controllers\NotifyController:notifyAgents');
 
+$app->post(ROUTE_PREFIX.'/shift/{shiftid}/hide','App\Controllers\ShiftsController:hideShift')->add(new JsonMiddleware());
+$app->post(ROUTE_PREFIX.'/shift/{shiftid}/show','App\Controllers\ShiftsController:showShift')->add(new JsonMiddleware());
+
 $app->get(ROUTE_PREFIX.'/group/{groupid}/drafts','App\Controllers\ShiftsController:loadDrafts');
 $app->get(ROUTE_PREFIX.'/shifts/shiftsgroups/{groupid}','App\Controllers\ShiftsController:shiftsGroups');
 $app->get(ROUTE_PREFIX.'/logs','App\Controllers\LogsController:get');
