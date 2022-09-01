@@ -18,7 +18,7 @@ module.exports = {
       
    proxy: {
      "^/scheduleapi": {
-       target: "https://ticketing.stage.tmdhosting.com/schedule",
+       target: "https://my.tmdhosting.com/schedule",
        logLevel: "debug",
        //changeOrigin: true,
       // secure: true,

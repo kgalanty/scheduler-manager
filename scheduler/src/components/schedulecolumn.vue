@@ -7,18 +7,18 @@
     @dragleave="onDragLeave"
     :class="{ columndragenter: dragging }"
   >
-    <span class="columnday">{{ day }}</span>
+    <span class="columnday" v-if="groupindex===0">{{ day }}</span>
     <ul
       v-if="today && today[shift] && today[shift][date]"
       style="background-color: white"
     >
       <li
         :style="{ backgroundColor: item.bg, color: item.color }"
-        v-for="(item, i) in today[shift][date]"
+        v-for="item in today[shift][date]"
         :key="'dt' + date + '-' + item.id"
         class="agentitem"
         :class="[item.draft == 1 || item.deldraftauthor ? 'draftCell' : '']"
-        style="display: flex; width: 100%;height:40px;"
+        style="display: flex; width: 100%; height: 40px"
       >
         <b-tooltip
           label="Addition candidate. Undo addition"
@@ -47,15 +47,19 @@
         <span style="display: block; text-align: center; width: inherit">
           {{ item.agent }}
         </span>
-        <span style="margin-right:3px">
-        <b-icon v-if="item.draft" icon="plus-square" class="plusicon"></b-icon>
-        <b-icon
-          v-if="item.deldraftauthor"
-          icon="minus-square"
-          class="minusicon"
-        ></b-icon>
+        <span style="margin-right: 3px">
+          <b-icon
+            v-if="item.draft"
+            icon="plus-square"
+            class="plusicon"
+          ></b-icon>
+          <b-icon
+            v-if="item.deldraftauthor"
+            icon="minus-square"
+            class="minusicon"
+          ></b-icon>
         </span>
-        <span
+        <!-- <span
           style="display: contents; float: right; text-align: right"
           v-if="editorPermission === 1"
         >
@@ -77,7 +81,7 @@
             icon-left="arrow-down"
             @click="moveItemDown(item.id)"
           />
-        </span>
+        </span> -->
       </li>
     </ul>
     <ul v-else style="opacity: 0.5; text-align: center">
@@ -89,7 +93,7 @@
 import AddShiftMixin from "../mixins/AddShiftMixin.js";
 export default {
   mixins: [AddShiftMixin],
-  props: ["ind", "day", "shift", "group", "refdate"],
+  props: ["ind", "day", "shift", "group", "refdate", 'groupindex'],
   computed: {
     // todaydate()
     // {
@@ -260,7 +264,7 @@ export default {
       this.dragging = false;
       //console.log(evt.dataTransfer.getData("agentItem"))
       const AgentItem = JSON.parse(evt.dataTransfer.getData("agentItem"));
-      console.log(AgentItem)
+      console.log(AgentItem);
       // console.log(this.date);
       // console.log(itemID)
       if (typeof this.today == "undefined") {
@@ -394,8 +398,8 @@ export default {
   text-align: center;
   width: 100%;
   display: block;
-  margin: 2px 2px;
-  font-size: 18px;
+  background-color:rgb(72, 55, 201);
+  font-size: 1.1rem;
 }
 .arrowupdownbtn:hover {
   opacity: 0.6;

@@ -6,6 +6,7 @@ use WHMCS\Database\Capsule as DB;
 use App\Constants\AgentConstants;
 use App\Responses\Response;
 use App\Functions\EditorsAuth;
+use App\Functions\ShiftsHelper;
 use App\Functions\TimetableHelper;
 
 class ShiftsController
@@ -18,6 +19,14 @@ class ShiftsController
             ->orderBy('s.from')
             ->orderBy('t.order', 'ASC')
             ->get(['s.id', 's.from', 's.to', 't.group', 't.color', 't.bgcolor', 't.id AS group_id', 't.parent']);
+        // $results2 = DB::table("schedule_agentsgroups as t")
+        //     ->leftJoin('schedule_shifts as s', 's.group_id', '=', 't.id')
+        //     ->orderBy('s.from')
+        //     ->orderBy('t.order', 'ASC')
+        //     ->where('s.from', 'LIKE', '00:%')
+        //     ->get(['s.id', 's.from', 's.to', 't.group', 't.color', 't.bgcolor', 't.id AS group_id', 't.parent']);
+
+        //    $results = array_merge($results, $results2);
         foreach ($results as $result) {
             // if($result->from && $result->to)
             // $data['shifts'][$result->group_id][] = ['from'=>$result->from, 'to'=>$result->to];
@@ -30,7 +39,12 @@ class ShiftsController
             } else {
                 $data[$result->group_id]['shifts'][] = ['from' => $result->from, 'to' => $result->to, 'shiftid' => $result->id, 'group_id' => $result->group_id];
             }
+            if(count($data[$result->group_id]['shifts']) > 0)
+            {
+                ShiftsHelper::sortShifts($data[$result->group_id]['shifts']);
+            }
         }
+
         $result = array_values($data);
         return Response::json($result, $response);
         // $payload = json_encode(array_values($data));
@@ -77,17 +91,19 @@ class ShiftsController
                 $itemToMove = DB::table('schedule_timetable')->where('id', $id)->first();
 
                 if ($dir == 'up') {
-                    $itemToExchange = DB::table('schedule_timetable')->where(
-                        [
-                            'group_id' => $itemToMove->group_id,
-                            'shift_id' => $itemToMove->shift_id,
-                            'day' => $itemToMove->day,
-                            'draft' => 0,
-                            'order' => ($itemToMove->order) - 1
-                        ]
-                    )->update([
-                        'order' => $itemToMove->order
-                    ]);
+                    $itemToExchange = DB::table('schedule_timetable')
+                        ->where(
+                            [
+                                'group_id' => $itemToMove->group_id,
+                                'shift_id' => $itemToMove->shift_id,
+                                'day' => $itemToMove->day,
+                                'draft' => 0,
+                                'order' => ($itemToMove->order) - 1
+                            ]
+                        )
+                        ->update([
+                            'order' => $itemToMove->order
+                        ]);
                     DB::table('schedule_timetable')->where('id', $id)->update(['order' => $itemToMove->order - 1]);
                 } elseif ($dir == 'down') {
                     $itemToExchange = DB::table('schedule_timetable')->where(
@@ -208,6 +224,17 @@ class ShiftsController
         }
         return Response::json($data, $response);
     }
+    public function showOnTopbar($request, $response, $args)
+    {
+        $shiftid = (int)$request->getParsedBody()['shiftid'];
+        try {
+            DB::table('tblconfiguration')->updateOrInsert(['setting' => 'ScheduleManagerTopBarShift'], ['value' => $shiftid]);
+            $data = ['result' => 'success'];
+        } catch (\Exception $e) {
+            $data = ['result' => $e->getMessage()];
+        }
+        return Response::json($data, $response);
+    }
     public function shiftsGroups($request, $response, $args)
     {
         $author = AgentConstants::adminid();
@@ -219,8 +246,6 @@ class ShiftsController
             return $response
                 ->withHeader('Content-Type', 'application/json');
         }
-
-
 
         $startdate = $_GET['startdate'];
         $startdateparams = explode('-', $startdate, 3);
@@ -234,6 +259,7 @@ class ShiftsController
             ->where('group_id', $group->id)
             ->orderBy('s.from', 'ASC')
             ->get(['s.from', 's.to', 's.id', 's.group_id', DB::raw('COALESCE(sh.hide, 0) as `hide`')]);
+
         $timetable = DB::table('schedule_timetable AS t')
             ->leftJoin('schedule_timetable_deldrafts as dr',  function ($join) use ($author) {
 
@@ -250,17 +276,19 @@ class ShiftsController
                 $query->where('t.draft', '0');
                 $query->orWhere(['t.draft' => 1, 't.author' => $author]);
             })
-            ->orderBy('t.shift_id')->orderBy('t.order', 'ASC')
+            ->orderBy('t.shift_id')->orderBy('ag.order', 'ASC')
             ->get([
-                't.id', 't.shift_id', 't.day', 'a.firstname', 'a.lastname', 'd.color', 'd.bg', 't.draft', 't.author',
+                't.id', 't.shift_id', 't.day', 'a.firstname', 'a.lastname', 't.draft', 't.author',
                 'dr.author AS draftauthor',
-                'shifts.from', 'shifts.to', 'ag.color as agcolor', 'ag.bgcolor as agbgcolor', 't.agent_id',
+                'shifts.from', 'shifts.to', 'ag.color as agcolor', 'ag.bgcolor as agbgcolor', 't.agent_id', 'ag.order as grouporder'
             ]);
         //  echo('<pre>');var_dump($timetable);die;
         $days = [];
         foreach ($timetable as $t) {
             $days[$t->shift_id][$t->day][] = TimetableHelper::renderTimetableRecord($t);
         }
+        $shifts = collect($shifts)->map(function($x){ return (array) $x; })->toArray();
+        ShiftsHelper::sortShifts($shifts);
         $data = ['shifts' => $shifts, 't' => $days, 'group' => $group, 'refdate' => $startdateprocessed];
         return Response::json($data, $response);
         // $payload = json_encode($data);
@@ -268,5 +296,11 @@ class ShiftsController
         // return $response
         //     ->withHeader('Content-Type', 'application/json');
         //$data = $request->getParsedBody();
+    }
+    public function getShowOnTopbar($request, $response, $args)
+    {
+        $shiftid = DB::table('tblconfiguration')->where('setting', 'ScheduleManagerTopBarShift')->value('value');
+        $data = ['response' => 'success', 'shiftid' => (int)$shiftid];
+        return Response::json($data, $response);
     }
 }

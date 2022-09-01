@@ -57,9 +57,7 @@
 <script>
 export default {
   props: ["ind", "day", "shift", "group"],
-  mounted()
-  {
-  },
+  mounted() {},
   computed: {
     // todaydate()
     // {
@@ -121,11 +119,13 @@ export default {
       this.$http
         .post("./scheduleapi/vacationing/delete", {
           id: id,
-          path: 'vacationing/'+this.$route.params.date
+          path: "vacationing/" + this.$route.params.date,
         })
         .then((r) => {
           if (r.data.response === "success") {
             //this.today[this.date].push({'agent':AgentItem.name, 'bg':AgentItem.bg, 'color':AgentItem.color})
+            this.$store
+        .dispatch("loadAgentsForGroupAll")
             this.$store
               .dispatch("loadVacationings", {
                 //  team: this.team_id,
@@ -135,7 +135,8 @@ export default {
               })
               .then(() => {
                 loadingComponent.close();
-                 this.referenceDate = this.moment(this.$store.state.refDate);
+                this.referenceDate = this.moment(this.$store.state.refDate);
+                   
               });
           }
         });
@@ -153,7 +154,7 @@ export default {
       // if (typeof this.today[this.date] == "undefined") {
       //   this.today[this.date] = [];
       // }
-     
+
       const loadingComponent = this.$buefy.loading.open({
         container: null,
       });
@@ -162,12 +163,14 @@ export default {
           date: this.today,
           agent_id: AgentItem.adminid,
           group_id: AgentItem.team_i,
-          path: 'vacationing/'+this.$route.params.date
+          path: "vacationing/" + this.$route.params.date,
         })
         .then((r) => {
           if (r.data.response === "success") {
             loadingComponent.close();
             //this.today[this.date].push({'agent':AgentItem.name, 'bg':AgentItem.bg, 'color':AgentItem.color})
+                this.$store
+        .dispatch("loadAgentsForGroupAll")
             this.$store
               .dispatch("loadVacationings", {
                 //  team: this.team_id,
@@ -257,7 +260,6 @@ export default {
   text-align: center;
   width: 100%;
   display: block;
-  margin: 2px 2px;
   font-size: 18px;
 }
 </style>

@@ -1,11 +1,12 @@
 
 export default {
     methods: {
-        getAgentHeaderById(agentid) {
+        getAgentHeaderById() {
             this.$http
                 .get("./scheduleapi/agents/myinfo", { withCredentials: true })
                 .then((r) => {
                     if (r.data.response === "success") {
+                        this.$store.commit('SetMyAdminId', r.data.admin_id)
                         return r.data.info;
                     } else {
                         this.$buefy.snackbar.open({

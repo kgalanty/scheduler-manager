@@ -27,10 +27,15 @@
            <b-tooltip label="Logs" position="is-bottom"> <b-icon icon="file-alt" size="is-medium"> </b-icon></b-tooltip>
         </router-link>
         <router-link class="navbar-item" :to="`/calendar`">
-           <b-tooltip label="Sync with your calendar" position="is-bottom"><b-icon icon="calendar-week" size="is-medium"> </b-icon></b-tooltip>
+           <b-tooltip label="Sync with your calendar" position="is-bottom"><b-icon icon="calendar-check" size="is-medium"> </b-icon></b-tooltip>
         </router-link>
+         <router-link class="navbar-item" :to="`/leave`">
+           <b-tooltip label="Submit days off request" position="is-bottom"><b-icon icon="calendar-day" size="is-medium"> </b-icon></b-tooltip>
+        </router-link>
+        
       </div>
       <div class="navbar-end">
+        <b-button type="is-warning" style="margin-top:5px" @click="FeedbackModal">Give us Your Feedback</b-button>
         <a class="navbar-item" href="https://my.tmdhosting.com/admin/">
           <b-icon pack="fa" icon="chevron-left" size="is-medium"> </b-icon>
         </a>
@@ -53,6 +58,7 @@
 </template>
 
 <script>
+import SubmitFeedbackModal from '../forms/SubmitFeedbackModal'
 import { mapState } from "vuex";
 export default {
   name: "Header",
@@ -62,6 +68,19 @@ export default {
   mounted() {
     this.$store.dispatch("loadEditorPermissions");
   },
+  methods:
+  {
+    FeedbackModal()
+    {
+        this.$buefy.modal.open({
+        parent: this,
+        component: SubmitFeedbackModal,
+        hasModalCard: true,
+        props: {},
+        trapFocus: true,
+      });
+    }
+  }
 };
 document.addEventListener("DOMContentLoaded", () => {
   // Get all "navbar-burger" elements

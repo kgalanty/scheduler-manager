@@ -38,19 +38,14 @@ class LDAP
     {
         if ($this->result && $this->result['data']) {
             foreach ($this->result['data'] as $item) {
-                if($item[$key])
-                {
-                    for($i=0;$i<$item[$key]['count'];$i++)
-                    {
-                        if($item[$key][$i] == $value)
-                        {
+                if ($item[$key]) {
+                    for ($i = 0; $i < $item[$key]['count']; $i++) {
+                        if ($item[$key][$i] == $value) {
                             $ar = [];
-                            if($item['displayname'][0])
-                            {
+                            if ($item['displayname'][0]) {
                                 $ar['ldap_username'] = ucwords($item['displayname'][0]);
                             }
-                            if($item['telephonenumber'][0])
-                            {
+                            if ($item['telephonenumber'][0]) {
                                 $ar['ldap_phone'] = $item['telephonenumber'][0];
                             }
                             //return ['display_name' => $item['displayname'][0], 'username' => $value, 'phone' => $item['telephonenumber'][0]];
@@ -58,7 +53,6 @@ class LDAP
                         }
                     }
                 }
-             
             }
         }
     }
@@ -80,7 +74,7 @@ class AgentsLDAPCron
         $agents = DB::table('schedule_agents_details as ad')
             ->join('tbladmins as a', 'a.id', '=', 'ad.agent_id')
             ->get(['ad.*', 'a.username']);
-            return $agents;
+        return $agents;
     }
     public function handleAgent($agentRow)
     {
@@ -91,15 +85,13 @@ class AgentsLDAPCron
 $agentsHandler = (new AgentsLDAPCron(new LDAP()));
 $agentsList = $agentsHandler->queryAgents();
 $agentsReady = [];
-foreach ($agentsList as $agent)
-{
+foreach ($agentsList as $agent) {
     $a = $agentsHandler->handleAgent($agent);
-    if($a) $agentsReady[] = array_merge(['id'=>$agent->id, 'adminid'=>$agent->agent_id], $a);
+    if ($a) $agentsReady[] = array_merge(['id' => $agent->id, 'adminid' => $agent->agent_id], $a);
 }
-foreach($agentsReady as $ar)
-{
-   
-    DB::table('schedule_agents_details')->where('id', $ar['id'])->update(array_diff_key($ar, ['id'=>'', 'adminid' =>'']));
+foreach ($agentsReady as $ar) {
+
+    DB::table('schedule_agents_details')->where('id', $ar['id'])->update(array_diff_key($ar, ['id' => '', 'adminid' => '']));
 }
 exit;
 

@@ -54,6 +54,32 @@
       <b-table-column
         field="action"
         centered
+        label="Order"
+        v-slot="props"
+        width="13%"
+      >
+        <b-button
+          class="arrowupdownbtn"
+          type="is-info"
+          size="is-small"
+          outlined
+          icon-left="arrow-up"
+          v-if="props.index > 0"
+          @click="moveItemUp(props.row.group_id)"
+        />
+        <b-button
+          class="arrowupdownbtn"
+          type="is-info"
+          size="is-small"
+          outlined
+          icon-left="arrow-down"
+          v-if="props.index + 1 < subteams.length"
+          @click="moveItemDown(props.row.group_id)"
+        />
+      </b-table-column>
+      <b-table-column
+        field="action"
+        centered
         label="Actions"
         v-slot="props"
         width="10%"
@@ -80,6 +106,31 @@ export default {
     },
   },
   methods: {
+    moveItemUp(id) {
+      this.$http
+        .post("./scheduleapi/teams/reorder/up", {
+          id: id,
+        })
+        .then((r) => {
+          if (r.data.response === "success") {
+           // this.$store.dispatch("getTeams");
+            this.$store.dispatch("getShiftsList");
+          }
+        });
+    },
+    moveItemDown(id) {
+      console.log(id);
+      this.$http
+        .post("./scheduleapi/teams/reorder/down", {
+          id: id,
+        })
+        .then((r) => {
+          if (r.data.response === "success") {
+           // this.$store.dispatch("getTeams");
+            this.$store.dispatch("getShiftsList");
+          }
+        });
+    },
     delSubteam(groupid) {
       this.$buefy.dialog.confirm({
         title: "Deleting group",
@@ -138,4 +189,8 @@ export default {
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
+.arrowupdownbtn:hover {
+  opacity: 0.6;
+  transition: opacity 0.5s cubic-bezier(0.19, 0.64, 0.55, 0.93);
+}
 </style>

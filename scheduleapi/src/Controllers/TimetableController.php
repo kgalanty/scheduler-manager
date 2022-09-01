@@ -93,6 +93,8 @@ class TimetableController
     $author =  AgentConstants::adminid();
     if (!EditorsAuth::isEditor()) {
       $data['response'] = 'No permission for this operation';
+    } elseif (!$author) {
+      $data['response'] = 'You are not logged in. Please log in first.';
     } else {
       $agent = $request->getParsedBody()['agent_id'];
       $shift = $request->getParsedBody()['shift_id'];
@@ -222,8 +224,8 @@ class TimetableController
         ->get(['dd.*', 't.*', 's.from', 's.to', 'ag.group']);
 
       if ($notifications === true) {
-        
-        
+
+
         // $slackUsers = DB::table('schedule_slackusers')->whereIn('agent_id', $agents_id)->get();
         // $slack = new SlackNotifications($slackUsers, $entries, $deleteentries);
         $slack = new SlackNotifications(new commitNotify(['entries' => $entries, 'deleteentries' => $deleteentries]));

@@ -13,12 +13,55 @@ class SubteamsController
         $color_value = $request->getParsedBody()['value'];
         $groupid = $request->getParsedBody()['groupid'];
 
-    
+
         $results = DB::table("schedule_agentsgroups as t")
-        ->where('id',$groupid)
-        ->update([$color_field => $color_value]);
-          
+            ->where('id', $groupid)
+            ->update([$color_field => $color_value]);
+
 
         return Response::json(['response' => 'success', 'query' => $results], $response);
+    }
+    public function reorder($request, $response, $args)
+    {
+        $id = $request->getParsedBody()['id'];
+        $direction = $args['direction'];
+        $entry = DB::table('schedule_agentsgroups as ag')
+            ->where('id', $id)
+            ->first();
+        if ($direction == 'up') {
+            $entryExchange = DB::table('schedule_agentsgroups as ag')
+                ->where('order', $entry->order - 1)
+                ->first();
+
+            DB::table('schedule_agentsgroups as ag')
+                ->where('id', $entryExchange->id)
+                ->update(['order' => $entryExchange->order + 1]);
+
+            DB::table('schedule_agentsgroups as ag')
+                ->where('id', $entry->id)
+                ->update(['order' => $entry->order - 1]);
+            //$entryExchange
+
+            return Response::json(['response' => 'success'], $response);
+        }
+        elseif ($direction == 'down') {
+            $entryExchange = DB::table('schedule_agentsgroups as ag')
+                ->where('order', $entry->order + 1)
+                ->first();
+
+            DB::table('schedule_agentsgroups as ag')
+                ->where('id', $entryExchange->id)
+                ->update(['order' => $entryExchange->order - 1]);
+
+            DB::table('schedule_agentsgroups as ag')
+                ->where('id', $entry->id)
+                ->update(['order' => $entry->order + 1]);
+            //$entryExchange
+
+            return Response::json(['response' => 'success'], $response);
+        }
+        // $results = DB::table("schedule_agentsgroups as t")
+        // ->where('id',$groupid)
+        // ->update([$color_field => $color_value]);
     }
 }

@@ -2,7 +2,7 @@
   <div>
     <div
       class="draftExists"
-      v-if="draftExists"
+      v-if="draftExists && editorPermission===1"
       @mouseover="pendingchangeswidget = true"
       @mouseleave="pendingchangeswidget = false"
     >
@@ -83,7 +83,7 @@
         type="is-info"
         icon-left="calendar-alt"
       ></b-button>
-      <b-tooltip
+      <b-tooltip v-if="editorPermission===1"
         label="This will send slack notifications to all people who has shifts this week"
         ><b-button @click="confirmSchedule" type="is-success" icon-right="check"
           >Send notifications</b-button
@@ -171,9 +171,10 @@
               <scheduleColumn
                 :ref="day + '-' + shift.id"
                 class="graphcolumn"
-                v-for="(day, index) in days"
+                v-for="(day, ind) in days"
                 :key="day + '-' + shift.id"
-                :ind="index"
+                :ind="ind"
+                :groupindex="index"
                 :day="day"
                 :shift="shift.id"
                 :group="shiftsTimetable[0].group_id"
@@ -185,8 +186,8 @@
       </div>
     </div>
     
-    <ul>
-    <div v-for="(shift, index) in shiftsTimetable" :key="index + 'tt'">
+    <ul  v-if="editorPermission === 1">
+    <div v-for="(shift, index) in shiftsTimetable" :key="index + 'tt'" >
       <span v-if="shift.hide == 1">
         <li  style="display: block; width: 100%; font-weght: bold; font-size: 20px">
       
@@ -210,6 +211,7 @@
               >
             </b-taglist>
              </h1>
+             
             <b-tooltip
               label="Show this shift off this week"
               v-if="editorPermission === 1"
@@ -232,7 +234,7 @@
     >
       <b-message title="Info" type="is-info" has-icon :closable="false">
         No shifts defined for this team yet.
-        <router-link :to="`/admin`">Add one.</router-link>
+        <router-link :to="`/admin`" v-if="editorPermission===1">Add one.</router-link>
       </b-message>
     </div>
     <b-skeleton

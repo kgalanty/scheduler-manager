@@ -8,46 +8,62 @@
       </div>
     </section>
 
-    <div class="columns">
-      <div class="column">
-        <b-field label="Assign a year it belongs to">
-          <b-select placeholder="Select a year" expanded v-model="year">
-            <option
-              v-for="option in yearsEnumerate"
-              :value="option"
-              :key="option"
-            >
-              {{ option }}
-            </option>
-          </b-select>
-        </b-field>
-      </div>
-      <div class="column">
-        <b-field label="Select expiration date">
-          <b-datepicker
-            v-model="dateexp"
-            placeholder="Click to select..."
-            icon="calendar"
-            trap-focus
-            :first-day-of-week="1"
-          >
-          </b-datepicker>
-        </b-field>
-      </div>
-      <div class="column">
-        <b-field label="Amount of days">
-          <b-numberinput v-model="daysoff" step="1"></b-numberinput>
-        </b-field>
-      </div>
+    <DaysOffRequestsTable />
 
-      <div class="column">
-        <b-field label="Submit">
-          <b-button type="is-primary" expanded @click="SubmitAddition" :loading="btnLoading"
-            >Add</b-button
-          >
-        </b-field>
+    <ShiftsChangeRequestsTable />
+
+    <section class="hero">
+      <div class="notification is-info">
+        <div class="columns">
+          <div class="column">
+            <b-field label="Assign a year">
+              <b-select placeholder="Select a year" expanded v-model="year">
+                <option
+                  v-for="option in yearsEnumerate"
+                  :value="option"
+                  :key="option"
+                >
+                  {{ option }}
+                </option>
+              </b-select>
+            </b-field>
+          </div>
+          <div class="column">
+            <b-field label="Select expiration date">
+              <b-datepicker
+                v-model="dateexp"
+                placeholder="Click to select..."
+                icon="calendar"
+                trap-focus
+                :first-day-of-week="1"
+              >
+              </b-datepicker>
+            </b-field>
+          </div>
+          <div class="column">
+            <b-field label="Amount of days">
+              <b-numberinput
+                v-model="daysoff"
+                step="1"
+                type="is-primary is-light"
+              ></b-numberinput>
+            </b-field>
+          </div>
+
+          <div class="column">
+            <b-field label="Submit">
+              <b-button
+                type="is-primary is-light"
+                expanded
+                @click="SubmitAddition"
+                :loading="btnLoading"
+                >Add</b-button
+              >
+            </b-field>
+          </div>
+        </div>
       </div>
-    </div>
+    </section>
     <b-table :data="datatable" class="" paginated :loading="loading">
       <template #empty>
         <div class="has-text-centered">No records</div>
@@ -94,15 +110,22 @@
 // import ShiftsList from "../components/ShiftsList.vue";
 // import AgentsList from "../components/AgentsList.vue";
 import ChangeDaysOffModal from "../forms/ChangeDaysOffModal";
+import SubmitLeaveReviewModalVue from "../forms/SubmitLeaveReviewModal.vue";
+import DaysOffRequestsTable from "../components/DaysOff/Tables/DaysOffRequestsTable.vue";
+import ShiftsChangeRequestsTable from "../components/DaysOff/Tables/ShiftsChangeRequestsTable.vue";
+
 export default {
   name: "daysoff",
-  components: {},
+  components: { DaysOffRequestsTable, ShiftsChangeRequestsTable },
   mounted() {
-    this.getDaysOff(this.$route.params.agentid);
-    this.getAgentData(this.$route.params.agentid);
+    this.loadData();
     // this.$store.dispatch("getLogs", {datefrom: this.moment(this.datefrom).format('YYYY-MM-DD HH:mm:ss'), dateto: this.moment(this.dateto).format('YYYY-MM-DD HH:mm:ss') });
   },
   methods: {
+    loadData() {
+      this.getDaysOff(this.$route.params.agentid);
+      this.getAgentData(this.$route.params.agentid);
+    },
     ChangeDays(daysoffentry, currentdays) {
       const that = this;
       this.$buefy.modal.open({
@@ -113,7 +136,7 @@ export default {
         trapFocus: true,
         events: {
           reloadapi() {
-            that.getDaysOff(that.$route.params.agentid);
+            that.loadData();
           },
         },
       });
@@ -167,6 +190,7 @@ export default {
         .then((r) => {
           if (r.data.result === "success") {
             this.datatable = r.data.data;
+            this.$store.commit("daysoff/UPDATE_DAYSOFF", r.data.data);
           }
 
           this.loading = false;
@@ -183,6 +207,21 @@ export default {
         "background-color": bg,
         color: color,
       };
+    },
+    SubmitReview(request) {
+      const that = this;
+      this.$buefy.modal.open({
+        parent: this,
+        component: SubmitLeaveReviewModalVue,
+        hasModalCard: true,
+        props: { request },
+        trapFocus: true,
+        events: {
+          reloadapi() {
+            that.loadData();
+          },
+        },
+      });
     },
   },
   computed: {
@@ -201,17 +240,28 @@ export default {
     return {
       loading: true,
       btnLoading: false,
-      tblLoading: {},
+      DaysOffTableloadingReq: false,
+      ShiftsTableloadingReq: false,
       dateexp: new Date(),
       daysoff: 0,
       datatable: [],
       agentdata: {},
       year: new Date().getFullYear(),
+      requests: [],
+      shiftsrequests: [],
+      daysoffcollapse: false,
+      shiftscollapse: false,
       //datefrom: this.moment().startOf("month").toDate(),
       //dateto: this.moment().endOf("month").toDate(),
     };
   },
 };
 </script>
-<style scoped>
+<style>
+.notification .label {
+  color: white;
+}
+.pagination-link.is-current {
+  color: #fff;
+}
 </style>

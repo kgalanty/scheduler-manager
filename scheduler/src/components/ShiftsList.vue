@@ -7,6 +7,7 @@
       bordered
       mobile-cards
       class="shiftstable"
+      :loading="tableLoading"
     >
       <template #empty>
         <div class="has-text-centered">No records</div>
@@ -52,6 +53,20 @@
             <span v-else> {{ props.row.from }} - {{ props.row.to }} </span>
           </b-table-column>
           <b-table-column field="Shift" centered label="Action" v-slot="props">
+           <b-button  v-if="props.row.shiftid===showOnTopBarShift"
+              size="is-small"
+              type="is-success"
+              icon-left="check"
+              disabled
+              >Active</b-button
+            >
+            <b-button  v-if="props.row.from === 'on' && props.row.to === 'call' && props.row.shiftid!==showOnTopBarShift"
+              size="is-small"
+              type="is-primary"
+              icon-left="eye"
+              @click="showOnTopBar(props.row.shiftid)"
+              >Show on topbar</b-button
+            >
             <b-button
               size="is-small"
               type="is-info"
@@ -80,10 +95,47 @@ export default {
     topteams()
     {
       return this.$store.state.shifts.filter(i=>i.parent==0)
+    },
+    showOnTopBarShift()
+    {
+      return this.$store.state.ShowOnTopbarShift
+    },
+  },
+  data()
+  {
+    return {
+      tableLoading: true
     }
   },
-  mounted() {},
+  mounted() {
+     this.$store.dispatch('getShowOnTopbarShift')
+     .then(()=>
+     {
+       this.tableLoading = false
+     })
+  },
   methods: {
+    showOnTopBar(shiftid)
+    {
+      this.$http
+        .post("./scheduleapi/shift/showontopbar", { shiftid })
+        .then((response) => {
+          if (response.data.result == "success") {
+            this.$buefy.toast.open({
+              message: "Done!",
+              type: "is-success",
+            });
+            this.$store.dispatch('getShowOnTopbarShift')
+            this.$store.dispatch("getShiftsList");
+            // this.$store.dispatch("getTeams");
+          } else {
+            this.$buefy.toast.open({
+              message: response.data.response,
+              type: "is-danger",
+            });
+          }
+        });
+    },
     addOnCallShift(group) {
       this.$http
         .post("./scheduleapi/shift/new", { team_id: group, oncall: 1 })

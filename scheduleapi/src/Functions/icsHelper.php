@@ -1,6 +1,7 @@
 <?php
-
 namespace App\Functions;
+
+
 trait SimpleICS_Util {
 	function filter_linelimit($input, $lineLimit = 70) {
 		// go through each line and make them shorter.
@@ -152,27 +153,27 @@ class SimpleICS_Event {
 }
 
 
-icsHelper::$Template = <<<EOT
-BEGIN:VCALENDAR
-VERSION:2.0
-PRODID:{{productString}}
-METHOD:PUBLISH
-CALSCALE:GREGORIAN
-{{events|serialize}}
-END:VCALENDAR
+icsHelper::$Template=<<<EOTT
+	BEGIN:VCALENDAR
+	VERSION:2.0
+	PRODID:{{productString}}
+	METHOD:PUBLISH
+	CALSCALE:GREGORIAN
+	{{events|serialize}}
+	END:VCALENDAR
 
-EOT;
+EOTT;
 
-SimpleICS_Event::$Template = <<<EOT
-BEGIN:VEVENT
-UID:{{uniqueId}}
-DTSTART:{{startDate|calDate}}
-DTSTAMP:{{dateStamp|calDate}}
-DTEND:{{endDate|calDate}}
-LOCATION:{{location|escape}}
-DESCRIPTION:{{description|escape}}
-URL;VALUE=URI:{{uri|escape}}
-SUMMARY:{{summary|escape}}
-END:VEVENT
+SimpleICS_Event::$Template=<<<DUPA
+	BEGIN:VEVENT
+	UID:{{uniqueId}}
+	DTSTART:{{startDate|calDate}}
+	DTSTAMP:{{dateStamp|calDate}}
+	DTEND:{{endDate|calDate}}
+	LOCATION:{{location|escape}}
+	DESCRIPTION:{{description|escape}}
+	URL;VALUE=URI:{{uri|escape}}
+	SUMMARY:{{summary|escape}}
+	END:VEVENT
 
-EOT;
+DUPA;

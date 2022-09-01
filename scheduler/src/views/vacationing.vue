@@ -2,7 +2,7 @@
   <div>
     <div
       class="draftExists"
-      v-if="draftExists"
+      v-if="draftExists && editorPermission===1"
       @mouseover="pendingchangeswidget = true"
       @mouseleave="pendingchangeswidget = false"
     >
@@ -122,6 +122,7 @@
   </div>
 </template>
 <script>
+import { mapState } from 'vuex';
 //import SidebarRight from '../components/SidebarRight.vue'
 import vacationcolumn from "../components/vacationcolumn.vue";
 export default {
@@ -145,6 +146,7 @@ export default {
     };
   },
   computed: {
+   ...mapState(["editorPermission"]),
     attributes() {
       return [
         // Attributes for todos

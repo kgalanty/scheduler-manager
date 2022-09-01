@@ -37,32 +37,25 @@ class AgentsController
     $agents =  $request->getParsedBody()['agents'];
     $parent =  $request->getParsedBody()['parent'];
     if (!$groupid = DB::table('schedule_agentsgroups')->where(['group' => $name, 'parent' => $parent])->value('id')) {
-      $groupid = DB::table('schedule_agentsgroups')->insertGetId(['group' => $name, 'parent' => $parent]);
+
+      $nextOrderNumber =  DB::table('schedule_agentsgroups')->where(['parent' => $parent])->count() + 1;
+      $groupid = DB::table('schedule_agentsgroups')->insertGetId(['group' => $name, 'parent' => $parent, 'order' => $nextOrderNumber]);
       $payload = ['response' => 'success'];
     } else {
       $payload = ['response' => 'This name already exists'];
     }
-    // //$groupid = DB::table('schedule_agentsgroups')->insertGetId(['group' => $name]);
-    // $rows = [];
-    // foreach ($agents as $agent) {
-    //   $rows[] = ['group_id' => $groupid, 'agent_id' => $agent];
-    // }
-    // if ($rows)
-    //   DB::table('schedule_agents_to_groups')->insert($rows);
+
     return Response::json($payload, $response);
-    // $response->getBody()->write(json_encode($resp));
-    // return $response
-    //   ->withHeader('Content-Type', 'application/json');
   }
   public function agentsTeams($request, $response, $args)
   {
     if ($args['groupid'] && is_numeric($args['groupid'])) {
       $groups = DB::table('schedule_agentsgroups')
-      ->where('id', $args['groupid'])
-      ->orWhere('parent', $args['groupid'])
-      ->orderBy('parent', 'DESC')
-      ->orderBy('order', 'ASC')
-      ->get();
+        ->where('id', $args['groupid'])
+        ->orWhere('parent', $args['groupid'])
+        ->orderBy('parent', 'DESC')
+        ->orderBy('order', 'ASC')
+        ->get();
     } else {
       $groups = DB::table('schedule_agentsgroups')->orderBy('parent', 'DESC')->orderBy('order', 'ASC')->get();
     }
@@ -73,13 +66,16 @@ class AgentsController
     }
     $agents = DB::table('schedule_agents_to_groups as g')
       ->join('tbladmins as a', 'a.id', '=', 'g.agent_id')
+      ->join('schedule_agentsgroups as ag', 'ag.id', '=', 'g.group_id')
       ->leftJoin('schedule_agents_details as ad', 'ad.agent_id', '=', 'a.id')
       ->leftJoin('schedule_slackusers as su', 'su.agent_id', '=', 'a.id')
       ->whereIn('g.group_id', array_values($group_ids))
       ->orderBy('a.firstname')
       ->orderBy('a.lastname')
-      ->get(['a.firstname', 'a.lastname', 'a.id as adminid', 'g.group_id', 'ad.ldap_username', 'ad.ldap_phone',
-    'su.slackid', 'su.realname', 'su.realnamenormalized', 'su.phone', 'su.email']);
+      ->get([
+        'a.firstname', 'a.lastname', 'a.id as adminid', 'g.group_id', 'ad.ldap_username', 'ad.ldap_phone',
+        'su.slackid', 'su.realname', 'su.realnamenormalized', 'su.phone', 'su.email', 'ag.order as grouporder'
+      ]);
 
     //Take sum of valid days-off per agent
     $daysoff = collect(DB::table('schedule_daysoff')->where('date_expiration', '>', date('Y-m-d'))->groupBy('agent_id')->get(['agent_id', DB::raw('SUM(days) as days_sum')]))->keyBy('agent_id');
@@ -89,20 +85,20 @@ class AgentsController
       $vacations = collect(DB::table('schedule_vacations')->whereBetween('day', $datesRange)->groupBy('agent_id')->get(['agent_id', DB::raw('count(*) as days')]))->keyBy('agent_id');
     }
 
-
-    $groups_out = new \StdClass;
+    $groups_out = [];
     foreach ($groups as $group) {
-      $groups_out->{$group->id}['data'] = $group;
+      $groups_out[]['data'] = $group;
     }
-    
+
     foreach ($groups_out as $k => $gr) {
       foreach ($agents as $agent) {
-        if ($agent->group_id == $k) {
+        if ($agent->group_id == $gr['data']->id || $agent->group_id == $gr['data']->parent) {
 
           $agent->daysoff = $daysoff[$agent->adminid] ? (int)$daysoff[$agent->adminid]->days_sum : '-';
 
           $agent->vacations = $vacations[$agent->adminid] ? (int)$vacations[$agent->adminid]->days : '-';
-          $groups_out->$k['members'][] = $agent;
+
+          $groups_out[$k]['members'][] = $agent;
         }
       }
     }
@@ -115,7 +111,7 @@ class AgentsController
       ->leftJoin('schedule_agents_to_groups as ag', 'ag.group_id', '=', 'g.id')
       ->leftJoin('tbladmins as a', 'a.id', '=', 'ag.agent_id')
       ->leftJoin('schedule_agents_details as ad', 'a.id', '=', 'ad.agent_id')
-      
+
       ->orderBy('g.id')
       ->get(
         ['g.*', 'g.color as groupcolor', 'g.bgcolor as groupbgcolor', 'a.id AS agent_id', 'a.username', 'a.firstname', 'a.lastname', 'ad.color', 'ad.bg']
@@ -141,12 +137,16 @@ class AgentsController
     $sorted = [];
     foreach ($teams as $k => $t) {
       if ($t['parent'] == 0) {
-        $sorted[] = $t;
+
         $subteams = $teams;
         $subteams = array_filter($subteams, function ($v) use ($t) {
           return $v['parent'] === $t['groupid'] ? true : false;
         });
+        $t['children'] = $subteams ? 1 : 0;
+        $sorted[] = $t;
         if ($subteams) {
+          // $t['children'] = 1;
+
           array_push($sorted, ...$subteams);
         }
       }
@@ -187,7 +187,7 @@ class AgentsController
   {
     if (AgentConstants::adminid()) {
       $admin = (array) DB::table('tbladmins')->where('id', AgentConstants::adminid())->first();
-      $resp = ['response' => 'success', 'info' => $admin['firstname'] . ' ' . $admin['lastname']];
+      $resp = ['response' => 'success', 'info' => $admin['firstname'] . ' ' . $admin['lastname'], 'admin_id' => $admin['id']];
     } else {
       $resp = ['response' => 'error', 'msg' => 'Not logged as admin'];
     }
@@ -220,6 +220,67 @@ class AgentsController
       $data['response'] = 'No permission for this operation';
     } else {
       $data['response'] = 'success';
+    }
+    return Response::json($data, $response);
+    // $response->getBody()->write(json_encode($data));
+    // return $response
+    //   ->withHeader('Content-Type', 'application/json');
+
+  }
+
+  public function AgentsFromTickets($request, $response, $args)
+  {
+    $author = AgentConstants::adminid();
+
+    if (
+      $author || 1
+    ) {
+      $operators = array_map(function ($item) {
+        return $item->admin;
+      }, DB::table('tblticketreplies')->distinct()->where('admin', '!=', '')
+        ->whereBetween('date', [date("Y-m-d H:i:s", strtotime("last year January 1st")), date('Y-m-d H:i:s')])
+        ->get(['admin']));
+      $data['response'] = 'success';
+      $data['operators'] = $operators;
+    } else {
+      $data['response'] = 'No permission for this operation';
+    }
+    return Response::json($data, $response);
+    // $response->getBody()->write(json_encode($data));
+    // return $response
+    //   ->withHeader('Content-Type', 'application/json');
+
+  }
+
+  public function AgentsPersonalStatsTickets($request, $response, $args)
+  {
+    $author = AgentConstants::adminid();
+
+    $agent = $_GET['agent'];
+    $dateFrom = $_GET['dateFrom'];
+    $dateTo = $_GET['dateTo'];
+
+    if (
+      $author || 1
+    ) {
+      $avgFirstReply = DB::select('SELECT AVG(diff) AS avg_firstreply, COUNT(tid) AS replies_count FROM (SELECT time_to_sec(TIMEDIFF(tr.date, t.date)) AS diff, tr.tid
+      FROM tbltickets t
+      JOIN tblticketreplies tr ON tr.id = (SELECT id FROM tblticketreplies where tid = t.id AND admin != "" ORDER BY id ASC LIMIT 1 )
+      WHERE t.date BETWEEN ? AND ? AND tr.admin = ?
+      ) AS avg_result', [$dateFrom . '  00:00:00', $dateTo . ' 23:59:59', $agent]);
+
+      $avgReplyGeneral = DB::select('SELECT COUNT(*) AS replies_count, AVG(time_diff) AS avg_seconds FROM (SELECT time_to_sec(TIMEDIFF(trr.date, tr.date)) AS time_diff
+      FROM tblticketreplies tr
+     	JOIN tblticketreplies trr ON trr.id = (SELECT id FROM tblticketreplies WHERE tid = tr.tid AND id > tr.id && admin != "" ORDER BY id ASC LIMIT 1)
+      WHERE tr.date BETWEEN ? AND ? AND tr.admin = ""
+      AND (SELECT COUNT(id) FROM tblticketreplies WHERE tid = tr.tid AND id < tr.id && admin != "") > 0
+      AND trr.admin = ?) AS avgtime
+      ', [$dateFrom . '  00:00:00', $dateTo . ' 23:59:59', $agent]);
+
+      $data['response'] = 'success';
+      $data['operators'] = ['avgFirstReply' => $avgFirstReply[0] ?? null, 'avgReply' => $avgReplyGeneral[0] ?? null];
+    } else {
+      $data['response'] = 'No permission for this operation';
     }
     return Response::json($data, $response);
     // $response->getBody()->write(json_encode($data));

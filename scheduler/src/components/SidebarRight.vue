@@ -184,9 +184,7 @@ export default {
     },
   },
   computed: {
-    admins() {
-      return this.$store.state.admins;
-    },
+
     teams() {
       // console.log(this.$filterObject(this.$store.state.schedule_teams, "name", this.$route.params.team))
       // if (this.$route.name == "Vacationing") {

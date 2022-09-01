@@ -1,41 +1,61 @@
 <template>
   <div id="app">
-    
     <Header />
 
-    <SidebarRight v-if="editorPermission===1 && $route.matched.some(({ name }) => name.includes('Vacationing')||name.includes('Schedule') )"></SidebarRight >
-    <TemplatesSidebar v-if="editorPermission===1 && $route.matched.some(({ name }) => name.includes('Schedule'))"></TemplatesSidebar >
+    <SidebarRight
+      v-if="
+        editorPermission === 1 &&
+        $route.matched.some(
+          ({ name }) =>
+            name.includes('Vacationing') || name.includes('Schedule')
+        )
+      "
+    ></SidebarRight>
+    <TemplatesSidebar
+      v-if="
+        editorPermission === 1 &&
+        $route.matched.some(({ name }) => name.includes('Schedule'))
+      "
+    ></TemplatesSidebar>
     <div class="container is-fullhd notification" id="mainwindow">
-      <router-view/>
+      <router-view />
     </div>
   </div>
 </template>
 <script>
-import { mapState } from 'vuex'
-import Header from './components/Header.vue'
-import SidebarRight from './components/SidebarRight.vue'
-import TemplatesSidebar from './components/TemplatesSidebar.vue'
+import { mapState } from "vuex";
+import Header from "./components/Header.vue";
+import SidebarRight from "./components/SidebarRight.vue";
+import TemplatesSidebar from "./components/TemplatesSidebar.vue";
+import AgentsMixin from "./mixins/AgentsMixin";
+
 export default {
-  name: 'App',
+  name: "App",
+  mixins: [AgentsMixin],
   components: {
-    Header, SidebarRight,TemplatesSidebar
-   
+    Header,
+    SidebarRight,
+    TemplatesSidebar,
   },
-  computed:
-  {
-    ...mapState([
-      'editorPermission'
-    ])
-  }
-}
+  computed: {
+    ...mapState(["editorPermission"]),
+  },
+  mounted() {
+    this.getAgentHeaderById();
+  },
+};
 </script>
 <style>
-.is-fullhd
-{
+.is-fullhd {
   max-width: 1752px !important;
 }
-html
-{
+html {
   background-color: rgb(181, 201, 255) !important;
+}
+.pagination-link.is-current {
+  color: #fff !important;
+}
+.modal-card-foot {
+  margin: unset;
 }
 </style>

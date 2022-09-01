@@ -1,5 +1,14 @@
 <template>
-  <div style="background-color: white; display: flow-root">
+  <div style="background-color: white; padding: 20px; display: flow-root">
+    <div class="">
+      <b-button
+        size="is-small"
+        label="View tickets stats"
+        type="is-primary"
+        aria-controls="contentIdForA11y1"
+        @click="navigateToTicketsStats"
+      />
+    </div>
     <section class="hero">
       <div class="hero-body">
         <p class="title">Stats</p>
@@ -30,30 +39,33 @@
           </b-datepicker>
         </b-field>
       </div>
+      <div class="column">
+        <b-field label="Select a team">
+          <b-select v-model="teamFilter" @input="getStats" expanded>
+            <option>- All -</option>
+            <option
+              v-for="team in teams"
+              :value="team.groupid"
+              :key="team.groupid"
+              :disabled="team.children > 0"
+            >
+              <span v-if="team.parent > 0">- </span> {{ team.name }}
+            </option>
+          </b-select>
+        </b-field>
+      </div>
     </div>
     <b-table :data="agentstats" class="">
-      <b-table-column
-        field="id"
-        label="Agent"
-        v-slot="props"
-        centered
-      >
+      <template #empty>
+        <div class="has-text-centered">No stats for given filters</div>
+      </template>
+      <b-table-column field="id" label="Agent" v-slot="props" centered>
         {{ props.row.firstname }} {{ props.row.lastname }}
       </b-table-column>
-      <b-table-column
-        field="id"
-        label="Shifts"
-        v-slot="props"
-        centered
-      >
+      <b-table-column field="id" label="Shifts" v-slot="props" centered>
         {{ props.row.allshifts }} (Days: {{ props.row.days }})
       </b-table-column>
-      <b-table-column
-        field="id"
-        label="Days Off"
-        v-slot="props"
-        centered
-      >
+      <b-table-column field="id" label="Days Off" v-slot="props" centered>
         {{ daysSpan - props.row.days }}
       </b-table-column>
       <b-table-column
@@ -62,17 +74,21 @@
         v-slot="props"
         centered
       >
-      <div style="display:block;margin: 0 auto;">
-        <b-progress format="raw" :max="daysSpan">
-          <template #bar>
-            <b-progress-bar :value="props.row.days" show-value type="is-primary"></b-progress-bar>
-            <b-progress-bar
-              :value="daysSpan-props.row.days"
-              show-value
-            ></b-progress-bar>
-          </template>
-        </b-progress>
-      </div>
+        <div style="display: block; margin: 0 auto">
+          <b-progress format="raw" :max="daysSpan">
+            <template #bar>
+              <b-progress-bar
+                :value="props.row.days"
+                show-value
+                type="is-primary"
+              ></b-progress-bar>
+              <b-progress-bar
+                :value="daysSpan - props.row.days"
+                show-value
+              ></b-progress-bar>
+            </template>
+          </b-progress>
+        </div>
       </b-table-column>
     </b-table>
   </div>
@@ -88,6 +104,7 @@ export default {
       agentstats: [],
       datefrom: this.moment().startOf("month").toDate(),
       dateto: this.moment().endOf("month").toDate(),
+      teamFilter: "",
     };
   },
   watch: {
@@ -143,8 +160,12 @@ export default {
   },
   mounted() {
     this.getStats();
+    this.$store.dispatch("getTeams");
   },
   methods: {
+    navigateToTicketsStats() {
+      this.$router.push({ path: `/stats/tickets` });
+    },
     getStats() {
       if (this.moment(this.dateto).isAfter(this.datefrom)) {
         this.$http
@@ -152,6 +173,7 @@ export default {
             params: {
               datefrom: this.moment(this.datefrom).format("YYYY-MM-DD"),
               dateto: this.moment(this.dateto).format("YYYY-MM-DD"),
+              team: this.teamFilter,
             },
           })
           .then((r) => {
@@ -174,6 +196,6 @@ export default {
 </script>
 <style scoped>
 .progress-wrapper.is-not-native {
-  position:relative;
+  position: relative;
 }
 </style>

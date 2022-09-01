@@ -5,7 +5,7 @@ import moment from 'moment'
 Vue.prototype.moment = moment
 Vue.use(Vuex)
 
-
+import DaysoffRequestsStore from './daysoff/index'
 export default new Vuex.Store({
   state: {
     // schedule_teams: [
@@ -46,7 +46,10 @@ export default new Vuex.Store({
     shiftToHighlight: '',
     vacationings: [],
     editorPermission: 0,
-    agentsGroups: []
+    agentsGroups: [],
+    ShowOnTopbarShift: null,
+
+    myadminid: 0,
   },
   getters: {
     currentShifts: state => {
@@ -145,10 +148,16 @@ export default new Vuex.Store({
     editorPermissions(state, val) {
       state.editorPermission = parseInt(val)
     },
-    SetAgentsGroups(state, val)
-    {
+    SetAgentsGroups(state, val) {
       state.agentsGroups = val
-    }
+    },
+    SetShowOnTopbarShift(state, val) {
+      state.ShowOnTopbarShift = val
+    },
+    SetMyAdminId(state, val)
+    {
+      state.myadminid = val
+    },
 
   },
   actions: {
@@ -159,7 +168,7 @@ export default new Vuex.Store({
             context.commit('editorPermissions', 1)
           }
           else {
-            context.commit('editorPermissions', 1)
+            context.commit('editorPermissions', 0)
             // 0
           }
         })
@@ -233,14 +242,13 @@ export default new Vuex.Store({
       return new Promise((resolve, reject) => {
         axios
           .get(
-            "./scheduleapi/group/" + payload.topteam + "/agents?refdate="+context.state.refDate
+            "./scheduleapi/group/" + payload.topteam + "/agents?refdate=" + context.state.refDate
           )
           .then((response) => {
             context.commit('SetAgentsGroups', response.data)
             resolve()
           }).
-          catch((error)=>
-          {
+          catch((error) => {
             reject(error)
           })
       })
@@ -249,14 +257,13 @@ export default new Vuex.Store({
       return new Promise((resolve, reject) => {
         axios
           .get(
-            "./scheduleapi/groups/agents?refdate="+context.state.refDate.format('YYYY-MM-DD')
+            "./scheduleapi/groups/agents?refdate=" + context.state.refDate.format('YYYY-MM-DD')
           )
           .then((response) => {
             context.commit('SetAgentsGroups', response.data)
             resolve()
           }).
-          catch((error)=>
-          {
+          catch((error) => {
             reject(error)
           })
       })
@@ -297,9 +304,23 @@ export default new Vuex.Store({
         .then((response) => {
           context.commit('setLogs', response.data)
         })
-    }
+    },
+    getShowOnTopbarShift(context) {
+      return new Promise((resolve) => {
+        axios
+          .get("./scheduleapi/shift/showontopbar")
+          .then((response) => {
+            if (response.data.response == "success") {
+              context.commit('SetShowOnTopbarShift', response.data.shiftid)
+
+            }
+            resolve()
+          });
+      })
+    },
 
   },
   modules: {
+    daysoff: DaysoffRequestsStore,
   }
 })

@@ -1,0 +1,9 @@
+Is there a way we can add an additional angle to the stats page. I would like to have stats regarding the ticket flow in certain shifts so we can have a better idea about shifts that are having constantly high load and therefore need more support members or the other way around. The main stats that we are looking here are new tickets per shift, replies per shift, customer replies per shift (if possible). This way if I want to check lets say First Shift I can have a stats for the past 7 days, or Monday - Friday, or Weekend only breakdown.
+
+If the stats page allows further development in the aspect of total tickets, replies, it would be good to have such breakdown for each team member. Then at some point we can have detailed stats such team member 1 has 100 tickets 240 replies for the past 7 days. Then we can sort the team members per shift and we can see their stats in the selected shift for an in-depth look into working hours of employees, load during shifts, etc;
+
+tbltickets 
+
+- date
+- flag -> id operatora (asocjacja z shiftem)
+

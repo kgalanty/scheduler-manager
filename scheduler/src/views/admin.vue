@@ -56,8 +56,8 @@
                 <b-select placeholder="Select a team" v-model="team_id">
                   <option
                     v-for="(option, i) in topteams"
-                    :value="i"
-                    :key="option.id"
+                    :value="option.groupid"
+                    :key="i"
                   >
                     <span v-if="option.parent > 0">- </span> {{ option.name }}
                   </option>
@@ -105,7 +105,14 @@
           </div>
         </section>
       </b-tab-item>
-
+    <b-tab-item label="Days Off Requests">
+        <section class="section adminsection">
+          <h1 class="title agentstitle">Days Off Requests</h1>
+          <div class="subtitle">
+             <DaysOffRequestsForm />
+          </div>
+        </section>
+      </b-tab-item>
       <b-tab-item label="Reports">
         <section class="section adminsection">
           <div class="container">
@@ -113,26 +120,6 @@
           </div>
         </section>
       </b-tab-item>
-      <!-- <b-tab-item label="Agents Groups">
-    <section class="section">
-      <h1 class="title">Assign a person to a shift</h1>
-      <h2 class="subtitle">
-        <b-select placeholder="Select a name" style="display: inline-block">
-          <option v-for="option in admins" :value="option.id" :key="option.id">
-            {{ option.firstname }} {{ option.lastname }}
-          </option>
-        </b-select>
-        <b-select placeholder="Select a shift" style="display: inline-block">
-          <option v-for="option in shifts" :value="option.id" :key="option.id">
-            {{ option.from }}-{{ option.to }}
-          </option>
-        </b-select>
-      </h2>
-      <h2 class="subtitle">
-        <b-button type="is-primary" outlined>Assign</b-button>
-      </h2>
-    </section>
-  </b-tab-item> -->
     </b-tabs>
   </div>
 </template>
@@ -140,13 +127,16 @@
 import ShiftsList from "../components/ShiftsList.vue";
 import AgentsList from "../components/AgentsList.vue";
 import ReportsForm from "../components/ReportsForm.vue";
+import DaysOffRequestsForm from '../components/DaysOffRequestsForm.vue'
 
 export default {
   name: "admin",
+
   components: {
     ShiftsList,
     AgentsList,
     ReportsForm,
+    DaysOffRequestsForm,
   },
   data() {
     const data = [
@@ -213,6 +203,8 @@ export default {
     this.$http
       .get("./scheduleapi/verify", { withCredentials: true })
       .then((r) => {
+      
+
         if (r.data.response === "success") {
           this.$store.dispatch("getAdmins");
           this.$store.dispatch("getShiftsList");

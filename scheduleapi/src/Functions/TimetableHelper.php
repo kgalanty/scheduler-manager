@@ -64,7 +64,8 @@ class TimetableHelper
             'draft' => $t->draft,
             'deldraftauthor' => $t->draftauthor ?? false,
             'shift' => $t->from . '-' . $t->to,
-            'date' => $t->day
+            'date' => $t->day,
+            'grouporder' => $t->grouporder
         ];
     }
     public static function renderTimetableRecord(\StdClass $t)

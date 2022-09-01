@@ -73,4 +73,11 @@ class DatesHelper
 
         return $array;
     }
+
+    public static function convertDateTimeBetweenTimezones($datetime, $tzFrom = 'Europe/Sofia', $tzTo = 'America/Chicago')
+    {
+        return (new \DateTime($datetime, new \DateTimeZone($tzFrom)))
+            ->setTimezone(new \DateTimeZone($tzTo))
+            ->format('Y-m-d H:i:s');
+    }
 }

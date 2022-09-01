@@ -81,6 +81,22 @@ const routes = [
     component: () => import(/* webpackChunkName: "stats" */ '../views/stats.vue')
   },
   {
+    path: '/stats/tickets',
+    name: 'StatsTickets',
+    // route level code-splitting
+    // this generates a separate chunk (about.[hash].js) for this route
+    // which is lazy-loaded when the route is visited.
+    component: () => import(/* webpackChunkName: "stats" */ '../views/statstickets.vue')
+  },
+  {
+    path: '/stats/ticketspersonal',
+    name: 'StatsTicketsPersonal',
+    // route level code-splitting
+    // this generates a separate chunk (about.[hash].js) for this route
+    // which is lazy-loaded when the route is visited.
+    component: () => import(/* webpackChunkName: "stats" */ '../views/statsticketspersonal.vue')
+  },
+  {
     path: '/schedule/:team/:date',
     name: 'ScheduleTeam',
     component: () => import(/* webpackChunkName: "schedule" */ '../views/schedule.vue')
@@ -99,6 +115,11 @@ const routes = [
     path: '/calendar',
     name: 'Calendar',
     component: () => import(/* webpackChunkName: "calendar" */ '../views/calendar.vue')
+  },
+  {
+    path: '/leave',
+    name: 'Leave',
+    component: () => import(/* webpackChunkName: "calendar" */ '../views/leave.vue')
   },
   {
     path: '/logs',
