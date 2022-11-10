@@ -4,7 +4,6 @@
 
     <SidebarRight
       v-if="
-        editorPermission === 1 &&
         $route.matched.some(
           ({ name }) =>
             name.includes('Vacationing') || name.includes('Schedule')
@@ -13,17 +12,16 @@
     ></SidebarRight>
     <TemplatesSidebar
       v-if="
-        editorPermission === 1 &&
+        canShowEditorContent &&
         $route.matched.some(({ name }) => name.includes('Schedule'))
       "
     ></TemplatesSidebar>
-    <div class="container is-fullhd notification" id="mainwindow">
-      <router-view />
+    <div class="container is-fullhd notification " id="mainwindow">
+      <router-view class="p-5" />
     </div>
   </div>
 </template>
 <script>
-import { mapState } from "vuex";
 import Header from "./components/Header.vue";
 import SidebarRight from "./components/SidebarRight.vue";
 import TemplatesSidebar from "./components/TemplatesSidebar.vue";
@@ -38,7 +36,6 @@ export default {
     TemplatesSidebar,
   },
   computed: {
-    ...mapState(["editorPermission"]),
   },
   mounted() {
     this.getAgentHeaderById();

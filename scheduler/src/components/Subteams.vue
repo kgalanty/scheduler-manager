@@ -16,7 +16,7 @@
         <div class="has-text-centered">No records</div>
       </template>
       <b-table-column field="team" centered label="Subgroup" v-slot="props">
-        <b-tag type="is-info" size="is-medium"> {{ props.row.team }}</b-tag>
+        <b-tag type="is-info" size="is-medium"> {{ props.row.name }}</b-tag>
       </b-table-column>
       <b-table-column field="action" centered label="Text Color" v-slot="props">
         <input
@@ -66,6 +66,7 @@
           icon-left="arrow-up"
           v-if="props.index > 0"
           @click="moveItemUp(props.row.group_id)"
+          :loading="reorderLoadingBtn===props.row.group_id+'u'"
         />
         <b-button
           class="arrowupdownbtn"
@@ -74,6 +75,7 @@
           outlined
           icon-left="arrow-down"
           v-if="props.index + 1 < subteams.length"
+          :loading="reorderLoadingBtn===props.row.group_id+'d'"
           @click="moveItemDown(props.row.group_id)"
         />
       </b-table-column>
@@ -98,36 +100,46 @@
 export default {
   name: "Subteams",
   props: ["parent_team"],
+  data() {
+    return {
+      reorderLoadingBtn: 0,
+    };
+  },
   computed: {
     subteams() {
-      return this.$store.state.shifts.filter(
+      return this.$store.getters["teams/teams"].filter(
         (i) => i.parent === this.parent_team.group_id
       );
     },
   },
   methods: {
+    loadTeamsShifts() {
+      this.$store.dispatch("teams/getTeams");
+    },
     moveItemUp(id) {
+      this.reorderLoadingBtn = id+'u'
       this.$http
         .post("./scheduleapi/teams/reorder/up", {
           id: id,
         })
         .then((r) => {
+          this.reorderLoadingBtn = 0
           if (r.data.response === "success") {
-           // this.$store.dispatch("getTeams");
-            this.$store.dispatch("getShiftsList");
+            // this.$store.dispatch("getTeams");
+            this.loadTeamsShifts();
           }
         });
     },
     moveItemDown(id) {
-      console.log(id);
+      this.reorderLoadingBtn = id+'d'
       this.$http
         .post("./scheduleapi/teams/reorder/down", {
           id: id,
         })
         .then((r) => {
+          this.reorderLoadingBtn = 0
           if (r.data.response === "success") {
-           // this.$store.dispatch("getTeams");
-            this.$store.dispatch("getShiftsList");
+            this.loadTeamsShifts();
           }
         });
     },
@@ -148,8 +160,7 @@ export default {
                   message: "Removed!",
                   type: "is-success",
                 });
-                this.$store.dispatch("getShiftsList");
-                this.$store.dispatch("getTeams");
+                this.loadTeamsShifts();
               } else {
                 this.$buefy.toast.open({
                   message: response.data.response,
@@ -173,8 +184,7 @@ export default {
               message: "Color changed!",
               type: "is-success",
             });
-            this.$store.dispatch("getShiftsList");
-            this.$store.dispatch("getTeams");
+            this.loadTeamsShifts();
           } else {
             this.$buefy.toast.open({
               message: response.data.response,

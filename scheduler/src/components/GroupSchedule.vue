@@ -2,7 +2,7 @@
   <div>
     <div
       class="draftExists"
-      v-if="draftExists && editorPermission===1"
+      v-if="draftExists "
       @mouseover="pendingchangeswidget = true"
       @mouseleave="pendingchangeswidget = false"
     >
@@ -65,7 +65,7 @@
         "
         >{{ groupname }}</span
       >
-      <b-taglist attached style="display: inline-flex" v-if="days">
+      <b-taglist attached style="display: inline-flex" v-if="days && loading === null">
         <b-tag type="is-dark">{{ days[0] }}</b-tag>
         <b-tag type="is-info">{{ days[6] }}</b-tag>
       </b-taglist>
@@ -83,7 +83,8 @@
         type="is-info"
         icon-left="calendar-alt"
       ></b-button>
-      <b-tooltip v-if="editorPermission===1"
+      <b-tooltip
+        v-if="canShowEditorContent"
         label="This will send slack notifications to all people who has shifts this week"
         ><b-button @click="confirmSchedule" type="is-success" icon-right="check"
           >Send notifications</b-button
@@ -143,7 +144,7 @@
                     >{{ shift.from }} - {{ shift.to }}</b-tag
                   >
                 </b-taglist>
-                <b-tooltip label="Add a shift" v-if="editorPermission === 1">
+                <b-tooltip label="Add a shift" v-if="canShowEditorContent">
                   <b-button
                     type="is-success"
                     size="is-small"
@@ -154,7 +155,7 @@
                 ></b-tooltip>
                 <b-tooltip
                   label="Hide this shift from this week"
-                  v-if="editorPermission === 1"
+                  v-if="canShowEditorContent"
                 >
                   <b-button
                     type="is-info"
@@ -185,36 +186,42 @@
         </div>
       </div>
     </div>
-    
-    <ul  v-if="editorPermission === 1">
-    <div v-for="(shift, index) in shiftsTimetable" :key="index + 'tt'" >
-      <span v-if="shift.hide == 1">
-        <li  style="display: block; width: 100%; font-weght: bold; font-size: 20px">
-      
-          <h1 style="margin-right: 10px; color: black; display: inline-flex">
-            <b-taglist
-              attached
-              v-if="shift.from === 'on' && shift.to === 'call'"
-            >
-              <b-tag type="is-dark"
-                ><b-icon icon="phone-volume" size="is-small"></b-icon
-              ></b-tag>
-              <b-tag type="is-success" style="color: black">On Call</b-tag>
-            </b-taglist>
-            <b-taglist attached v-else>
-              <b-tag type="is-dark" size="is-medium"
-                ><b-icon icon="user-clock" size="is-small"></b-icon
-              ></b-tag>
 
-              <b-tag type="is-primary" size="is-medium"
-                >{{ shift.from }} - {{ shift.to }}</b-tag
+    <ul v-if="canShowEditorContent">
+      <div v-for="(shift, index) in shiftsTimetable" :key="index + 'tt'">
+        <span v-if="shift.hide == 1">
+          <li
+            style="
+              display: block;
+              width: 100%;
+              font-weght: bold;
+              font-size: 20px;
+            "
+          >
+            <h1 style="margin-right: 10px; color: black; display: inline-flex">
+              <b-taglist
+                attached
+                v-if="shift.from === 'on' && shift.to === 'call'"
               >
-            </b-taglist>
-             </h1>
-             
+                <b-tag type="is-dark"
+                  ><b-icon icon="phone-volume" size="is-small"></b-icon
+                ></b-tag>
+                <b-tag type="is-success" style="color: black">On Call</b-tag>
+              </b-taglist>
+              <b-taglist attached v-else>
+                <b-tag type="is-dark" size="is-medium"
+                  ><b-icon icon="user-clock" size="is-small"></b-icon
+                ></b-tag>
+
+                <b-tag type="is-primary" size="is-medium"
+                  >{{ shift.from }} - {{ shift.to }}</b-tag
+                >
+              </b-taglist>
+            </h1>
+
             <b-tooltip
               label="Show this shift off this week"
-              v-if="editorPermission === 1"
+              v-if="canShowEditorContent"
             >
               <b-button
                 type="is-primary is-light"
@@ -222,11 +229,11 @@
                 @click="showShift(shift.id, shift.group_id)"
                 icon-left="eye"
                 >Show</b-button
-              ></b-tooltip>
-         
+              ></b-tooltip
+            >
           </li>
-      </span>
-    </div>
+        </span>
+      </div>
     </ul>
     <div
       v-show="shiftsTimetable.length == 0 && this.loading == null"
@@ -234,9 +241,21 @@
     >
       <b-message title="Info" type="is-info" has-icon :closable="false">
         No shifts defined for this team yet.
-        <router-link :to="`/admin`" v-if="editorPermission===1">Add one.</router-link>
+        <router-link :to="`/admin`" v-if="canShowEditorContent"
+          >Add one.</router-link
+        >
       </b-message>
     </div>
+    <b-skeleton
+      style="float: left"
+      animated
+      v-if="this.loading != null"
+    ></b-skeleton>
+    <b-skeleton
+      style="float: left"
+      animated
+      v-if="this.loading != null"
+    ></b-skeleton>
     <b-skeleton
       style="float: left"
       animated
@@ -249,11 +268,13 @@
 import { mapState } from "vuex";
 import scheduleColumn from "../components/schedulecolumn.vue";
 import AddAgentToShiftForm from "../forms/AddAgentToShiftForm.vue";
+import AgentsMixin from "../mixins/AgentsMixin";
 
 export default {
   components: {
     scheduleColumn,
   },
+  mixins: [AgentsMixin],
   name: "GroupSchedule",
   props: ["team_id"],
 
@@ -308,6 +329,7 @@ export default {
     days() {
       return this.expandDaysWeekMixin(this.referenceDate);
     },
+    
     timetable() {
       return this.$store.state.timetable[
         this.moment(this.$store.state.refDate).format("YYYY-MM-DD")
@@ -369,7 +391,7 @@ export default {
         )
         .then((response) => {
           if (response.data.result == "success") {
-            this.readAPI()
+            this.readAPI();
             this.$buefy.toast.open({
               message: "Done",
               type: "is-success",
@@ -392,7 +414,7 @@ export default {
         )
         .then((response) => {
           if (response.data.result == "success") {
-            this.readAPI()
+            this.readAPI();
             this.$buefy.toast.open({
               message: "Done",
               type: "is-success",
@@ -589,7 +611,7 @@ export default {
       } else {
         this.referenceDate = this.moment(this.referenceDate).add(1, "week");
       }
-
+      this.$store.commit('SetGroupShiftsDrop', []);
       this.loadCalendar();
       // let alreadyInStore = false;
       // if (
@@ -618,8 +640,8 @@ export default {
       });
 
       //if (!alreadyInStore) {
-        this.readAPI();
-     // } else {
+      this.readAPI();
+      // } else {
       //  this.$store.commit("setRefdate", this.referenceDate);
       //}
     },
@@ -688,4 +710,8 @@ export default {
 .modal-card-foot {
   margin: unset;
 }
+.active
+  {
+    background: grey;
+  }
 </style>

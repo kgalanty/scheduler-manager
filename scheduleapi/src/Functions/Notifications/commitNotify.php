@@ -41,6 +41,8 @@ class commitNotify implements INotify
         foreach ($delentriesPerAgent as $key => $entriesPerAgentItem) {
             $delentriesPerAgentReady[$key] = implode(', ', $entriesPerAgentItem);
         }
+        logActivity('Schedule Slack log start: '.print_r($agentsSlack, true));
+
 
         foreach ($agentsSlack as $agent_id => $user) {
 
@@ -49,12 +51,14 @@ class commitNotify implements INotify
             //$slack_id = $user->slackid;
             //echo('<pre>'); var_dump($user); die;
             //channel $user->slackid
-            $api->chatPostMessage([
+            $t=$api->chatPostMessage([
                 'username' => 'Schedule Bot',
-                'channel' => 'U04SEHXUK',
+                'channel' => $user->slackid,
                 'text' => 'Schedule Manager update for ' . $user->realname . ":\n" . $addedShiftsString . $deletedentriesString,
 
             ]);
+            logActivity('Schedule Slack message to: '.print_r($user, true));
+            logActivity('Schedule Slack message result: '.print_r($t, true));
         }
         // echo('<pre>'); var_dump($agentsSlack); die;
     }

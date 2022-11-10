@@ -35,6 +35,17 @@
           />
           <!-- <b-button type="is-success" label="Add new group" icon-left="plus" @click="openModal"  size="is-small" /> -->
           <b-tooltip
+            label="Deselect all yellow checkboxes on the timetable"
+            position="is-left"
+            style="float: right"
+          ><b-checkbox
+            @input="deselectYellowCheckboxes"
+            v-model="yellowCheckbox"
+            style="float: right; padding-top: 6px"
+            type="is-warning"
+          ></b-checkbox></b-tooltip>
+
+          <b-tooltip
             label="Show Delete icons"
             position="is-bottom"
             style="float: right"
@@ -60,7 +71,13 @@
             v-for="(team, team_i) in teams"
             :key="'teams' + team_i"
           >
-            <b-table :data="team.members" narrowed bordered mobile-cards v-if="team.members">
+            <b-table
+              :data="team.members"
+              narrowed
+              bordered
+              mobile-cards
+              v-if="team.members"
+            >
               <template #empty>
                 <div class="has-text-centered">No members</div>
               </template>
@@ -77,7 +94,11 @@
                   @dragstart="startDrag($event, props.row, team_i)"
                   draggable
                   @dragend.prevent="dragEnd($event)"
-                  >{{ props.row.ldap_username ? props.row.ldap_username :  props.row.firstname +' '+ props.row.lastname}}</b-button
+                  >{{
+                    props.row.ldap_username
+                      ? props.row.ldap_username
+                      : props.row.firstname + " " + props.row.lastname
+                  }}</b-button
                 >
                 <!-- draggable
               class="agentName"
@@ -94,17 +115,27 @@
                 header-class="headerclass"
                 cell-class="internalnamecells"
               >
-               <a :href="'https://tmdhosting.slack.com/team/'+props.row.slackid" target="_blank" v-if="props.row.slackid" >
-               <img style="height:15px" src="https://upload.wikimedia.org/wikipedia/commons/d/d5/Slack_icon_2019.svg" :alt="props.row.slackid"></a>
+                <a
+                  :href="
+                    'https://tmdhosting.slack.com/team/' + props.row.slackid
+                  "
+                  target="_blank"
+                  v-if="props.row.slackid"
+                >
+                  <img
+                    style="height: 15px"
+                    src="https://upload.wikimedia.org/wikipedia/commons/d/d5/Slack_icon_2019.svg"
+                    :alt="props.row.slackid"
+                /></a>
                 {{ props.row.firstname }} {{ props.row.lastname }}
               </b-table-column>
-               <b-table-column
+              <b-table-column
                 field="Phone"
                 centered
                 label="Phone"
                 v-slot="props"
                 header-class="headerclass"
-                 cell-class="internalnamecells"
+                cell-class="internalnamecells"
               >
                 {{ props.row.phone }}
               </b-table-column>
@@ -114,9 +145,10 @@
                 label="Off Days"
                 header-class="headerclass"
                 v-slot="props"
-                cell-class="internalnamecells" width="50"
+                cell-class="internalnamecells"
+                width="50"
               >
-                 {{ props.row.vacations }}
+                {{ props.row.vacations }}
               </b-table-column>
               <b-table-column
                 field="Agent"
@@ -133,19 +165,20 @@
             {{ props.row.name }}
           </b-table-column> -->
             </b-table>
-           
           </div>
-           <div
-            class="p-3"
-          >
-           <b-button
-                  size="is-medium"
-                  :style="getStyle('red', 'yellow')"
-                  @dragstart="startDrag($event, {item: 'placeholder', adminid: -1})"
-                  draggable
-                  @dragend.prevent="dragEnd($event)"
-                  >HELP NEEDED</b-button
-                > Placeholder</div>
+          <div class="p-3">
+            <b-button
+              size="is-medium"
+              :style="getStyle('red', 'yellow')"
+              @dragstart="
+                startDrag($event, { item: 'placeholder', adminid: -1 })
+              "
+              draggable
+              @dragend.prevent="dragEnd($event)"
+              >HELP NEEDED</b-button
+            >
+            Placeholder
+          </div>
         </span>
         <!-- </b-sidebar> -->
       </div>
@@ -160,6 +193,7 @@ export default {
       open: false,
       showDelete: false,
       newadmin: {},
+      yellowCheckbox: true,
     };
   },
   watch: {
@@ -184,7 +218,6 @@ export default {
     },
   },
   computed: {
-
     teams() {
       // console.log(this.$filterObject(this.$store.state.schedule_teams, "name", this.$route.params.team))
       // if (this.$route.name == "Vacationing") {
@@ -224,6 +257,12 @@ export default {
     this.$store.dispatch("getAdmins");
   },
   methods: {
+    deselectYellowCheckboxes() {
+      this.$store.commit("SetGroupShiftsDrop", []);
+      setTimeout(() => {
+        this.yellowCheckbox = true;
+      }, 100);
+    },
     addMember(team_id) {
       this.$http
         .post("./scheduleapi/agents/assigntogroup", {
@@ -287,22 +326,20 @@ export default {
 };
 </script>
 <style scoped>
-
 </style>
 <style >
-.buttonscells
-{
-  margin:0; padding:0;
-  display:contents;
+.buttonscells {
+  margin: 0;
+  padding: 0;
+  display: contents;
 }
-.internalnamecells
-{
-  margin:0; padding:0;
-  font-size:0.8em;
+.internalnamecells {
+  margin: 0;
+  padding: 0;
+  font-size: 0.8em;
 }
-.buttonscells button
-{
- width:100%;
+.buttonscells button {
+  width: 100%;
 }
 .closedsidebarright {
   position: fixed;
@@ -325,7 +362,7 @@ export default {
 </style>
 <style scoped>
 .teamlist {
-   height: 100vh;
+  height: 100vh;
   overflow-y: scroll;
   display: block;
 }
@@ -353,11 +390,10 @@ export default {
 <style >
 .headerclass {
   font-weight: bold;
-  background:rgb(185, 221, 255);
+  background: rgb(185, 221, 255);
 }
-.groupnameheaderclass
-{
-  color:white;
+.groupnameheaderclass {
+  color: white;
   vertical-align: middle !important;
 }
 .table tr:first-child {
@@ -376,5 +412,4 @@ export default {
   text-decoration: underline;
   font-weight: bold;
 }
-
 </style>

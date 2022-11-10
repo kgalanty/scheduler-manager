@@ -2,7 +2,7 @@
   <form action="">
     <div class="modal-card">
       <header class="modal-card-head">
-        <p class="modal-card-title">Change Days in the Pool</p>
+        <p class="modal-card-title">Editing Pool</p>
         <button type="button" class="delete" @click="$emit('close')" />
       </header>
 
@@ -10,16 +10,32 @@
         <b-message type="is-danger" has-icon v-if="error">
           {{ error }}
         </b-message>
-       <b-field label="Days">
-      <b-numberinput v-model="days"></b-numberinput>
-    </b-field>
+        <b-field label="Days">
+          <b-numberinput v-model="days"></b-numberinput>
+        </b-field>
+        <b-field label="Expiration Date">
+          <b-datepicker
+            v-model="dateexp"
+            :first-day-of-week="1"
+            append-to-body
+            ref="datepicker"
+            expanded
+            placeholder="Select a date"
+          >
+          </b-datepicker>
+          <b-button
+            @click="$refs.datepicker.toggle()"
+            icon-left="calendar"
+            type="is-primary"
+          />
+        </b-field>
       </section>
       <footer class="modal-card-foot" style="margin: unset">
         <b-button label="Close" @click="$emit('close')" />
         <b-button
           icon-left="plus"
           label="Save"
-          @click="AddDays"
+          @click="Save"
           type="is-primary"
           :loading="saveInProgress"
         />
@@ -31,44 +47,46 @@
 <script>
 export default {
   name: "ChangeDaysOffModal",
-  props: ["daysoffentry", 'currentdays'],
+  props: ["daysoffentry"],
   data() {
     return {
       days: 0,
       saveInProgress: false,
-      error: ''
+      error: "",
+      dateexp: new Date(),
     };
   },
-  computed: {
-   
-  },
+  computed: {},
   mounted() {
-    this.days = this.currentdays
+    this.days = this.daysoffentry.days;
+    this.dateexp = new Date(this.daysoffentry.date_expiration)
   },
   methods: {
-    AddDays() {
-      
+    Save() {
       if (this.days < 1) {
         this.error = "You must Specify number of days";
         return;
       }
+      let ye = new Intl.DateTimeFormat('en', { year: 'numeric' }).format(this.dateexp);
+      let mo = new Intl.DateTimeFormat('en', { month: '2-digit' }).format(this.dateexp);
+      let da = new Intl.DateTimeFormat('en', { day: '2-digit' }).format(this.dateexp);
 
       this.error = "";
-      this.saveInProgress = true
+      this.saveInProgress = true;
       this.$http
-        .post("./scheduleapi/daysoff/entry/" + this.daysoffentry, {
-          changedays: this.days
+        .post("./scheduleapi/daysoff/entry/" + this.daysoffentry.id, {
+          changedays: this.days,
+          dateexp: `${ye}-${mo}-${da}`,
         })
         .then((r) => {
           if (r.data.result === "success") {
             this.$emit("reloadapi");
             this.$emit("close");
           } else {
-           
             this.$emit("close");
             // loadingComponent.close();
           }
-           this.saveInProgress = false
+          this.saveInProgress = false;
         });
     },
     // addGroup()

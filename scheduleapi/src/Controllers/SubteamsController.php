@@ -31,14 +31,17 @@ class SubteamsController
         if ($direction == 'up') {
             $entryExchange = DB::table('schedule_agentsgroups as ag')
                 ->where('order', $entry->order - 1)
+                ->where('parent', $entry->parent)
                 ->first();
 
             DB::table('schedule_agentsgroups as ag')
                 ->where('id', $entryExchange->id)
+                ->where('parent', $entry->parent)
                 ->update(['order' => $entryExchange->order + 1]);
 
             DB::table('schedule_agentsgroups as ag')
                 ->where('id', $entry->id)
+                ->where('parent', $entry->parent)
                 ->update(['order' => $entry->order - 1]);
             //$entryExchange
 
@@ -47,14 +50,17 @@ class SubteamsController
         elseif ($direction == 'down') {
             $entryExchange = DB::table('schedule_agentsgroups as ag')
                 ->where('order', $entry->order + 1)
+                ->where('parent', $entry->parent)
                 ->first();
 
             DB::table('schedule_agentsgroups as ag')
                 ->where('id', $entryExchange->id)
+                ->where('parent', $entry->parent)
                 ->update(['order' => $entryExchange->order - 1]);
 
             DB::table('schedule_agentsgroups as ag')
                 ->where('id', $entry->id)
+                ->where('parent', $entry->parent)
                 ->update(['order' => $entry->order + 1]);
             //$entryExchange
 

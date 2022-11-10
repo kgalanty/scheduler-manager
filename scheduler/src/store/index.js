@@ -6,16 +6,11 @@ Vue.prototype.moment = moment
 Vue.use(Vuex)
 
 import DaysoffRequestsStore from './daysoff/index'
+import TeamsStore from './teams/index'
+
 export default new Vuex.Store({
   state: {
-    // schedule_teams: [
-    //   {'name': 'Elders', 'id':2, 'members':[
-    //     {'agent_id': 3, 'name': 'Stoyan', 'bg': 'purple', 'color':'white'},{'agent_id': 4, 'name': 'Velin'}
-    //   ]},
-    //   {'name': 'Seniors', 'id':3, 'members':[
-    //     {'agent_id': 5, 'name': 'Marino C.'},{'agent_id': 6, 'name': 'Ned'},{'agent_id': 7, 'name': 'Nikola'}
-    //   ]},
-    // ],
+
     schedule_teams: [],
     agents:
       [
@@ -46,12 +41,32 @@ export default new Vuex.Store({
     shiftToHighlight: '',
     vacationings: [],
     editorPermission: 0,
+    editorPermissionsGroups: {},
+    adminPermission: 0,
     agentsGroups: [],
     ShowOnTopbarShift: null,
 
     myadminid: 0,
+    myadmindata: [],
+
+    groupShiftsDrop: [],
+
   },
   getters: {
+    topteams: (state, getters) => (variant) =>
+    {
+      if(state.adminPermission === 1 && variant === 'Admin')
+      {
+        return getters['teams/teams'].filter(i=>i.parent==0).sort((a,b) => b.group_id - a.group_id)
+      }
+      else if(getters.canShowEditorCP && variant == 'Editor')
+      {
+        return getters['teams/teams'].filter(i=>i.parent==0)
+          .filter(i=>state.editorPermissionsGroups && state.editorPermissionsGroups[3] && state.editorPermissionsGroups[3]
+          .includes(i.group_id))
+
+      }
+    },
     currentShifts: state => {
       return state.shiftsTimetable
     },
@@ -88,6 +103,10 @@ export default new Vuex.Store({
       })
       // ar[0].dates = { start: new Date(2021, 5, 14), end: new Date(2021, 5, 18) }
       return ar;
+    },
+    canShowEditorCP(state)
+    {
+      return state.editorPermissionsGroups && (state.editorPermissionsGroups[3]?.length > 0 || state.editorPermissionsGroups[4]?.length > 0)
     }
   },
   mutations: {
@@ -148,15 +167,27 @@ export default new Vuex.Store({
     editorPermissions(state, val) {
       state.editorPermission = parseInt(val)
     },
+    editorPermissionsGroups(state, val) {
+      state.editorPermissionsGroups = val
+    },
+    adminPermissions(state, val) {
+      state.adminPermission = val
+    },
     SetAgentsGroups(state, val) {
       state.agentsGroups = val
     },
     SetShowOnTopbarShift(state, val) {
       state.ShowOnTopbarShift = val
     },
-    SetMyAdminId(state, val)
-    {
+    SetMyAdminId(state, val) {
       state.myadminid = val
+    },
+    SetMyAdminData(state, val) {
+      state.myadmindata = val
+    },
+    SetGroupShiftsDrop(state, val)
+    {
+      state.groupShiftsDrop = val
     },
 
   },
@@ -166,13 +197,29 @@ export default new Vuex.Store({
         .then((r) => {
           if (r.data.response === "success") {
             context.commit('editorPermissions', 1)
+            context.commit('editorPermissionsGroups', r.data.gr)
+            if (r.data.admin === 1) {
+              context.commit('adminPermissions', 1)
+            }
           }
           else {
             context.commit('editorPermissions', 0)
             // 0
           }
+          // try
+          // {
+          //   var json = JSON.parse(r.data);
+        
+          // }
+          // catch(error)
+          // {
+          //   var iframe = document.createElement('div');
+          //     iframe.innerHTML = encodeURI(json);
+          //     document.body.appendChild(iframe);
+              
+          //    // setTimeout(() => document.location.reload(), 1000)
+          // }
         })
-
     },
     setItemKey(context, payload) {
       context.commit('setItemKey', payload)
@@ -322,5 +369,6 @@ export default new Vuex.Store({
   },
   modules: {
     daysoff: DaysoffRequestsStore,
+    teams: TeamsStore,
   }
 })

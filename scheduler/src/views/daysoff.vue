@@ -8,9 +8,22 @@
       </div>
     </section>
 
-    <DaysOffRequestsTable />
+    <DaysOffTableSkeleton :mode="1" cancel-column>
+      <template #subtitle>Days Off Requests</template>
+    </DaysOffTableSkeleton>
 
-    <ShiftsChangeRequestsTable />
+    <DaysOffTableSkeleton :mode="2">
+      <template #subtitle>Shifts Change Requests</template>
+    </DaysOffTableSkeleton>
+
+    <DaysOffTableSkeleton :mode="3">
+      <template #subtitle>Sick Leave Requests</template>
+    </DaysOffTableSkeleton>
+    <!-- <DaysOffRequestsTable /> -->
+
+    <!-- <ShiftsChangeRequestsTable />
+
+    <SickLeaveRequestsTable /> -->
 
     <section class="hero">
       <div class="notification is-info">
@@ -95,12 +108,13 @@
         > </b-field> -->
         <b-field>
           <b-button
-            @click="ChangeDays(props.row.id, props.row.days)"
+            @click="ChangeDays(props.row)"
             icon-right="pen"
             type="is-primary"
             size="is-small"
-            >Change Days Number</b-button
-          ></b-field
+            >Edit</b-button
+          >
+          </b-field
         >
       </b-table-column>
     </b-table>
@@ -111,14 +125,23 @@
 // import AgentsList from "../components/AgentsList.vue";
 import ChangeDaysOffModal from "../forms/ChangeDaysOffModal";
 import SubmitLeaveReviewModalVue from "../forms/SubmitLeaveReviewModal.vue";
-import DaysOffRequestsTable from "../components/DaysOff/Tables/DaysOffRequestsTable.vue";
-import ShiftsChangeRequestsTable from "../components/DaysOff/Tables/ShiftsChangeRequestsTable.vue";
+// import DaysOffRequestsTable from "../components/DaysOff/Tables/DaysOffRequestsTable.vue";
+// import ShiftsChangeRequestsTable from "../components/DaysOff/Tables/ShiftsChangeRequestsTable.vue";
+// import SickLeaveRequestsTable from '../components/DaysOff/Tables/SickLeaveRequestsTable.vue'
+import DaysOffTableSkeleton from '../components/shared/DaysOffTableSkeleton.vue'
 
 export default {
   name: "daysoff",
-  components: { DaysOffRequestsTable, ShiftsChangeRequestsTable },
-  mounted() {
-    this.loadData();
+  components: {DaysOffTableSkeleton},
+  mounted() { 
+    if(this.canLoadThisPage)
+    {
+      this.loadData();
+    }
+    else
+    {
+      this.$router.push({ path: `/`})
+    }
     // this.$store.dispatch("getLogs", {datefrom: this.moment(this.datefrom).format('YYYY-MM-DD HH:mm:ss'), dateto: this.moment(this.dateto).format('YYYY-MM-DD HH:mm:ss') });
   },
   methods: {
@@ -126,13 +149,13 @@ export default {
       this.getDaysOff(this.$route.params.agentid);
       this.getAgentData(this.$route.params.agentid);
     },
-    ChangeDays(daysoffentry, currentdays) {
+    ChangeDays(daysoffentry) {
       const that = this;
       this.$buefy.modal.open({
         parent: this,
         component: ChangeDaysOffModal,
         hasModalCard: true,
-        props: { daysoffentry: daysoffentry, currentdays: currentdays },
+        props: { daysoffentry: daysoffentry },
         trapFocus: true,
         events: {
           reloadapi() {
@@ -225,6 +248,10 @@ export default {
     },
   },
   computed: {
+    canLoadThisPage()
+    {
+        return (this.$store.state.editorPermissionsGroups && this.$store.state.editorPermissionsGroups[4]?.length > 0) || this.$store.state.adminPermission > 0
+    },
     yearsEnumerate() {
       const endYear = new Date().getFullYear() + 3;
       let startYear = 2020;
@@ -242,7 +269,7 @@ export default {
       btnLoading: false,
       DaysOffTableloadingReq: false,
       ShiftsTableloadingReq: false,
-      dateexp: new Date(),
+      dateexp: new Date(new Date().setFullYear(new Date().getFullYear() + 1)),
       daysoff: 0,
       datatable: [],
       agentdata: {},

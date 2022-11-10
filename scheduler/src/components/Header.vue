@@ -16,14 +16,21 @@
         <router-link
           class="navbar-item"
           :to="`/admin`"
-          v-if="editorPermission === 1"
+          v-if="adminPermission === 1"
         >
           <b-tooltip label="Configuration" position="is-bottom"> <b-icon icon="cogs" size="is-medium"> </b-icon></b-tooltip>
+        </router-link>
+        <router-link
+          class="navbar-item"
+          :to="`/editor`"
+          v-if="hasAccessToEditor && adminPermission !== 1"
+        >
+          <b-tooltip label="Configuration" position="is-bottom"> <b-icon icon="cogs" size="is-medium"> </b-icon> E</b-tooltip>
         </router-link>
         <router-link class="navbar-item" :to="`/stats`">
           <b-tooltip label="Stats" position="is-bottom"> <b-icon icon="chart-bar" size="is-medium"> </b-icon></b-tooltip>
         </router-link>
-        <router-link class="navbar-item" :to="`/logs`">
+        <router-link class="navbar-item" :to="`/logs`" v-if="adminPermission === 1">
            <b-tooltip label="Logs" position="is-bottom"> <b-icon icon="file-alt" size="is-medium"> </b-icon></b-tooltip>
         </router-link>
         <router-link class="navbar-item" :to="`/calendar`">
@@ -59,13 +66,14 @@
 
 <script>
 import SubmitFeedbackModal from '../forms/SubmitFeedbackModal'
-import { mapState } from "vuex";
+import verifyEditorPermissionsMixin from '../mixins/store/verifyEditorPermissionsMixin';
+//import { mapState } from "vuex";
 export default {
   name: "Header",
+  mixins: [verifyEditorPermissionsMixin],
   computed: {
-    ...mapState(["editorPermission"]),
   },
-  mounted() {
+  created() {
     this.$store.dispatch("loadEditorPermissions");
   },
   methods:
@@ -79,7 +87,8 @@ export default {
         props: {},
         trapFocus: true,
       });
-    }
+    },
+
   }
 };
 document.addEventListener("DOMContentLoaded", () => {

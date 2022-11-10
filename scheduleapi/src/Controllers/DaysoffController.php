@@ -15,8 +15,9 @@ class DaysoffController
     {
         $entryid = (int)$args['entryid'];
         $days = $request->getParsedBody()['changedays'];
+        $dateexp = $request->getParsedBody()['dateexp'];
         if ($entryid && $days) {
-            DB::table('schedule_daysoff')->where('id', $entryid)->update(['days' => $days]);
+            DB::table('schedule_daysoff')->where('id', $entryid)->update(['days' => $days, 'date_expiration' => $dateexp]);
             return Response::json(['result' => 'success'], $response);
         }
         return Response::json(['result' => 'error', 'msg' => 'Didnt get all necessary data'], $response);

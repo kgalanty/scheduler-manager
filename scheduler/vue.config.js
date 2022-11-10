@@ -20,10 +20,10 @@ module.exports = {
      "^/scheduleapi": {
        target: "https://my.tmdhosting.com/schedule",
        logLevel: "debug",
-       //changeOrigin: true,
-      // secure: true,
+       changeOrigin: true,
+       secure: true,
        withCredentials: true,
-       //pathRewrite: { "^/scheduleapi": "/scheduleapi" }
+       pathRewrite: { "^/scheduleapi": "/scheduleapi" }
      }
    }
  }}

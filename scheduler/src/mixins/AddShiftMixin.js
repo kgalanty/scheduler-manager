@@ -1,16 +1,15 @@
 
 export default {
     methods: {
-        PostShift(agent_id, force)
-        {
-          return     this.$http
-            .post("./scheduleapi/shifts/timetable", {
-              date: this.date,
-              agent_id: agent_id,
-              shift_id: this.shift_id,
-              group_id: this.group_id,
-              force: force
-            })
+        PostShift(agent_id, force) {
+            return this.$http
+                .post("./scheduleapi/shifts/timetable", {
+                    date: this.date,
+                    agent_id: agent_id,
+                    shift_id: this.shift_id,
+                    group_id: this.group_id,
+                    force: force
+                })
         },
         ForceAddDutyConfirm(r, agent_id, refdate) {
             this.$buefy.snackbar.open({
@@ -28,7 +27,7 @@ export default {
                     this.PostShift(agent_id, true)
                         .then((r) => {
                             if (r.data.response === "success") {
-                                
+
                                 //this.today[this.date].push({'agent':AgentItem.name, 'bg':AgentItem.bg, 'color':AgentItem.color})
                                 this.$store.dispatch("loadFromAPI", {
                                     teamroute: this.$route.params.team,
@@ -36,8 +35,7 @@ export default {
                                     refdateroute: this.$route.params.date,
                                 });
                             }
-                            else
-                            {
+                            else {
                                 this.$buefy.toast.open({
                                     duration: 5000,
                                     message: r.data.response,
@@ -45,6 +43,13 @@ export default {
                                 })
                             }
                             loadingComponent.close();
+                        })
+                        .catch((e) => {
+                            this.$buefy.toast.open({
+                                duration: 5000,
+                                message: 'Error: '+ e.message,
+                                type: 'is-danger'
+                            })
                         })
                 }
             })

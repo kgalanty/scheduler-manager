@@ -2,6 +2,7 @@ import Vue from 'vue'
 import VueRouter from 'vue-router'
 import Home from '../views/Home.vue'
 import NotFound from '../views/NotFound.vue'
+import Store from '../store/index.js'
 
 Vue.use(VueRouter)
 
@@ -73,6 +74,14 @@ const routes = [
     component: () => import(/* webpackChunkName: "admin" */ '../views/admin.vue')
   },
   {
+    path: '/editor',
+    name: 'Editor',
+    // route level code-splitting
+    // this generates a separate chunk (about.[hash].js) for this route
+    // which is lazy-loaded when the route is visited.
+    component: () => import(/* webpackChunkName: "editor" */ '../views/editor.vue'),
+  },
+  {
     path: '/stats',
     name: 'Stats',
     // route level code-splitting
@@ -86,7 +95,7 @@ const routes = [
     // route level code-splitting
     // this generates a separate chunk (about.[hash].js) for this route
     // which is lazy-loaded when the route is visited.
-    component: () => import(/* webpackChunkName: "stats" */ '../views/statstickets.vue')
+    component: () => import(/* webpackChunkName: "statstickets" */ '../views/statstickets.vue')
   },
   {
     path: '/stats/ticketspersonal',
@@ -94,12 +103,25 @@ const routes = [
     // route level code-splitting
     // this generates a separate chunk (about.[hash].js) for this route
     // which is lazy-loaded when the route is visited.
-    component: () => import(/* webpackChunkName: "stats" */ '../views/statsticketspersonal.vue')
+    component: () => import(/* webpackChunkName: "statsticketspersonal" */ '../views/statsticketspersonal.vue')
+  },
+  {
+    path: '/stats/:shiftid',
+    name: 'StatsShift',
+    // route level code-splitting
+    // this generates a separate chunk (about.[hash].js) for this route
+    // which is lazy-loaded when the route is visited.
+    component: () => import(/* webpackChunkName: "statsshift" */ '../views/statsshift.vue')
   },
   {
     path: '/schedule/:team/:date',
     name: 'ScheduleTeam',
-    component: () => import(/* webpackChunkName: "schedule" */ '../views/schedule.vue')
+    component: () => import(/* webpackChunkName: "schedule" */ '../views/schedule.vue'),
+    beforeEnter(to, from, next) {
+      //empty group shift drop checkboxes value
+      Store.commit('SetGroupShiftsDrop', []);
+      next();
+    }
   },
   {
     path: '/vacationing/:date',
@@ -109,7 +131,12 @@ const routes = [
   {
     path: '/daysoff/:agentid',
     name: 'DaysOff',
-    component: () => import(/* webpackChunkName: "vacationing" */ '../views/daysoff.vue')
+    component: () => import(/* webpackChunkName: "daysoff" */ '../views/daysoff.vue')
+  },
+  {
+    path: '/permissions/:agentid',
+    name: 'Permissions',
+    component: () => import(/* webpackChunkName: "permissions" */ '../views/permissions.vue')
   },
   {
     path: '/calendar',
@@ -119,7 +146,7 @@ const routes = [
   {
     path: '/leave',
     name: 'Leave',
-    component: () => import(/* webpackChunkName: "calendar" */ '../views/leave.vue')
+    component: () => import(/* webpackChunkName: "leave" */ '../views/leave.vue')
   },
   {
     path: '/logs',

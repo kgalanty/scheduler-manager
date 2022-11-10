@@ -45,7 +45,7 @@ export default {
 </style>
 <style >
 .notification a:not(.button):not(.dropdown-item) {
-  text-decoration: none;
+  text-decoration: none !important;
 }
 .section:first-child {
   margin-right: 5px;

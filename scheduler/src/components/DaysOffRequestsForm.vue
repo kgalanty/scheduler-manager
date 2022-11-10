@@ -1,40 +1,110 @@
 <template>
-  <div>
+  <div style="width: -webkit-fill-available;">
     <section class="hero">
       <div class="notification is-info is-light">
         <div class="columns">
-          <div class="column allrequests"><b-field>
-            <b-checkbox v-model="showAll" @input="getRequests">Show All Requests</b-checkbox>
-        </b-field></div>
+          <div class="column allrequests">
+            <b-field >
+              Show Answered Requests</b-field>   <b-field >
+              <b-checkbox v-model="showAll" @input="getRequests" 
+                ></b-checkbox
+              >
+            </b-field>
+          </div>
+          <div class="column">
+            <b-field>
+              Filter by request type:
+              <b-taginput
+                v-model="requestTypeFilter"
+                :data="requestTypes"
+                :maxtags="requestTypes.length"
+                autocomplete
+                :allow-new="false"
+                :open-on-focus="true"
+                field="label"
+                icon="chevron-right"
+                placeholder="Add a type"
+                type="is-info"
+                @typing="getFilteredTags"
+                @input="getRequests"
+                :has-counter="false"
+              >
+              </b-taginput>
+            </b-field>
+          </div>
+          <div class="column">
+            <b-field>
+              Filter by teams:
+              <b-select
+                placeholder="Assign a team"
+                v-model="teamsfilter"
+                @input="getRequests"
+              >
+                <option value="">-- None --</option>
+                <option
+                  v-for="team in teams"
+                  :value="team.group_id"
+                  :key="team.group_id"
+                  :disabled="team.hasSubteams > 0"
+                >
+                  <span v-if="team.parent > 0">- </span> {{ team.name }}
+                </option>
+              </b-select></b-field
+            >
+          </div>
         </div>
       </div>
     </section>
-    <b-table :data="requests" narrowed bordered class="agentsListTbl" :loading="loading"  :total="total"
-            paginated
-            backend-pagination
-            :per-page="perPage"
-            @page-change="onPageChange">
-     <template #empty>
+    <b-table
+      :data="requests"
+      narrowed
+      bordered
+      class="agentsListTbl"
+      :loading="loading"
+      :total="total"
+      paginated
+      backend-pagination
+      :per-page="perPage"
+      @page-change="onPageChange"
+    >
+      <template #empty>
         <div class="has-text-centered">No pending requests</div>
       </template>
-      <b-table-column field="date_start" label="Agent" v-slot="props" centered>
+      <b-table-column field="date_start" label="Agent" v-slot="props" centered width="140">
         {{ props.row.a_firstname }} {{ props.row.a_lastname }}
+      </b-table-column>
+      <b-table-column
+        field="group"
+        label="Group"
+        v-slot="props"
+        centered width="140"
+      >
+        {{ props.row.group }}
       </b-table-column>
       <b-table-column
         field="date_start"
         label="Vacation Range"
         v-slot="props"
         centered
-        width="250"
+        width="230"
       >
         {{ props.row.date_start }} - {{ props.row.date_end }}
+      </b-table-column>
+      <b-table-column
+        field="request_type"
+        label="Request Type"
+        v-slot="props"
+        centered
+        width="100"
+      >
+        <TypeColumn :request="props.row" />
       </b-table-column>
       <b-table-column
         field="date_submit"
         label="Date Added"
         v-slot="props"
         centered
-        width="250"
+        width="180"
       >
         {{ props.row.date_submit }}
       </b-table-column>
@@ -45,27 +115,34 @@
         <StatusColumn :request="props.row" :submitFunction="SubmitReview" />
       </b-table-column>
     </b-table>
-
-    
   </div>
 </template>
 
 <script>
 import SubmitLeaveReviewModal from "../forms/SubmitLeaveReviewModal.vue";
-import StatusColumn from './DaysOff/Requests/StatusColumn.vue'
-
+import StatusColumn from "./DaysOff/Requests/StatusColumn.vue";
+import TypeColumn from "./DaysOff/Requests/TypeColumn";
 export default {
   name: "DaysOffRequestsForm",
-  components: {StatusColumn},
-  computed: {},
+  components: { StatusColumn, TypeColumn },
+  computed: {
+    teams() {
+      return this.$store.getters["teams/teams"];
+    },
+  },
   methods: {
+    getFilteredTags(input) {
+      this.filteredTags = this.requestTypes.filter((i) =>
+        i.label.toLowerCase().indexOf(input.toLowerCase() >= 0)
+      );
+    },
     onPageChange(page) {
       this.page = page;
       this.getRequests();
     },
     getRequests() {
       this.loading = true;
-      const status = this.showAll ===true ? '' : 0
+      const status = this.showAll === true ? "" : 0;
 
       const params = [
         `all=1`,
@@ -73,18 +150,18 @@ export default {
         `order=id`,
         `page=${this.page}`,
         `perpage=${this.perPage}`,
+        `team=${this.teamsfilter}`,
+        `mode=${this.requestTypeFilter.map(u => u.id).join(',')}`,
         `orderdir=desc`,
       ].join("&");
 
-      this.$http
-        .get(`./scheduleapi/leave/get?${params}`)
-        .then((r) => {
-          if (r.data.response === "success") {
-            this.requests = r.data.data;
-            this.total = r.data.total;
-            this.loading = false;
-          }
-        });
+      this.$http.get(`./scheduleapi/leave/get?${params}`).then((r) => {
+        if (r.data.response === "success") {
+          this.requests = r.data.data;
+          this.total = r.data.total;
+          this.loading = false;
+        }
+      });
     },
     SubmitReview(request) {
       const that = this;
@@ -110,6 +187,14 @@ export default {
       page: 1,
       perPage: 20,
       total: 0,
+      teamsfilter: "",
+      requestTypeFilter: [],
+      requestTypes: [
+        { id: 1, label: "Vacation" },
+        { id: 2, label: "Shift Change" },
+        { id: 3, label: "Sick Leave" },
+      ],
+      filteredTags: [],
     };
   },
   mounted() {
@@ -120,13 +205,11 @@ export default {
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style >
-.allrequests
-{
-  font-size:0.8em;
-}
-.agentsListTbl > td:first-child {
-  text-align: left !important;
+.allrequests {
   font-size: 0.9em;
+}
+.agentsListTbl {
+  font-size: 0.8em;
 }
 .agentsListTbl {
   background: white !important;

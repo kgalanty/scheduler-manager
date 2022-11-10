@@ -42,12 +42,11 @@
       <div class="column">
         <b-field label="Select a team">
           <b-select v-model="teamFilter" @input="getStats" expanded>
-            <option>- All -</option>
+            <option value="">- All -</option>
             <option
               v-for="team in teams"
               :value="team.groupid"
               :key="team.groupid"
-              :disabled="team.children > 0"
             >
               <span v-if="team.parent > 0">- </span> {{ team.name }}
             </option>
@@ -60,7 +59,7 @@
         <div class="has-text-centered">No stats for given filters</div>
       </template>
       <b-table-column field="id" label="Agent" v-slot="props" centered>
-        {{ props.row.firstname }} {{ props.row.lastname }}
+        {{ props.row.firstname }} {{ props.row.lastname }} ({{props.row.group}})
       </b-table-column>
       <b-table-column field="id" label="Shifts" v-slot="props" centered>
         {{ props.row.allshifts }} (Days: {{ props.row.days }})

@@ -117,6 +117,13 @@
           </b-table-column>
         </b-table>
       </b-table-column>
+      <b-table-column
+            label="Details"
+            v-slot="props2"
+            centered
+          >
+          <b-button  @click="loadShiftStats(props2.row.id)" type="is-info" icon-left="eye" size="is-small">Detailed Stats</b-button>
+          </b-table-column>
     </b-table>
   </div>
 </template>
@@ -191,6 +198,11 @@ export default {
     this.$store.dispatch("getTeams");
   },
   methods: {
+    loadShiftStats(shift_id)
+    {
+      this.$router.push({ path: `/stats/${shift_id}` });
+      console.log(shift_id)
+    },
     setLastMonth()
     {
       this.datefrom = this.moment().subtract(1, "month").startOf('Month').toDate()

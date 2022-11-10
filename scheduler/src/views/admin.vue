@@ -25,8 +25,8 @@
                   <option value="0">- Top Level Team -</option>
                   <option
                     v-for="option in topteams"
-                    :value="option.groupid"
-                    :key="option.groupid"
+                    :value="option.group_id"
+                    :key="option.group_id"
                   >
                     <span v-if="option.parent > 0">- </span> {{ option.name }}
                   </option>
@@ -41,7 +41,7 @@
               </p>
             </b-message>
             <h2 class="subtitle">
-              <b-button type="is-primary" @click="addTeam"
+              <b-button type="is-primary" @click="addTeam" :loading="addNewTeamBtn"
                 >Add New Team</b-button
               >
             </h2>
@@ -56,7 +56,7 @@
                 <b-select placeholder="Select a team" v-model="team_id">
                   <option
                     v-for="(option, i) in topteams"
-                    :value="option.groupid"
+                    :value="option.group_id"
                     :key="i"
                   >
                     <span v-if="option.parent > 0">- </span> {{ option.name }}
@@ -89,7 +89,7 @@
               </b-field>
             </h2>
             <h2 class="subtitle">
-              <b-button type="is-primary" @click="addShift"
+              <b-button type="is-primary" @click="addShift" :loading="addShiftLoading" :disabled="addShiftLoading"
                 >Add New Shift</b-button
               >
             </h2>
@@ -139,32 +139,9 @@ export default {
     DaysOffRequestsForm,
   },
   data() {
-    const data = [
-      {
-        mon: {
-          agent: "agent 1",
-          style: { "background-color": "darkblue", color: "white" },
-        },
-        tue: "Jesse",
-        wed: "Simmons",
-        thu: "2016/10/15 13:43:27",
-        fri: "Male",
-        sat: "Male",
-        sun: "Male",
-      },
-      { wed: "Simmons", fri: "Male" },
-    ];
-    const agents = [
-      {
-        id: 5,
-        first_name: "agent name",
-      },
-    ];
 
     return {
       activeTab: 0,
-      data,
-      agents,
       timefrom: null,
       timeto: null,
       team_id: null,
@@ -172,14 +149,21 @@ export default {
       datefrom: "",
       dateto: "",
       parentteam: 0,
+
+      addNewTeamBtn: false,
+      addShiftLoading: false,
     };
   },
   computed: {
+    isAdmin()
+    {
+      return this.$store.state.adminPermission === 1
+    },
     teams() {
       return this.$store.state.schedule_teams;
     },
     topteams() {
-      return this.$store.state.schedule_teams.filter(i=>i.parent==0)
+      return this.$store.getters.topteams('Admin')
     },
     admins() {
       return this.$store.state.admins;
@@ -200,19 +184,25 @@ export default {
     },
   },
   mounted() {
+    if(this.isAdmin === 0)
+    {
     this.$http
       .get("./scheduleapi/verify", { withCredentials: true })
       .then((r) => {
       
-
-        if (r.data.response === "success") {
+        if (r.data.response === "success" && r.data.admin === 1) {
           this.$store.dispatch("getAdmins");
-          this.$store.dispatch("getShiftsList");
-          this.$store.dispatch("getTeams");
+          this.$store.dispatch("teams/getTeams");
         } else {
           this.$router.push({ path: `/` });
         }
       });
+    }
+    else
+    {
+      this.$store.dispatch("getAdmins");
+      this.$store.dispatch("teams/getTeams");
+    }
   },
   methods: {
     formatter(d) {
@@ -226,20 +216,21 @@ export default {
         });
         return;
       }
+      this.addNewTeamBtn = true
       this.$http
         .post("./scheduleapi/agents/addgroup", {
           name: this.new_team,
           parent: this.parentteam,
         })
         .then((response) => {
+          this.addNewTeamBtn = false
           if (response.data.response == "success") {
             this.$buefy.toast.open({
               message: "New Team Added",
               type: "is-success",
             });
             this.new_team = "";
-            this.$store.dispatch("getShiftsList");
-            this.$store.dispatch("getTeams");
+            this.$store.dispatch("teams/getTeams");
           } else {
             this.$buefy.toast.open({
               message: response.data.response,
@@ -256,6 +247,7 @@ export default {
         });
         return;
       }
+      this.addShiftLoading = true
       this.$http
         .post("./scheduleapi/shift/new", {
           from: this.moment(this.timefrom).format("HH:mm"),
@@ -263,12 +255,13 @@ export default {
           team_id: this.team_id,
         })
         .then((response) => {
+          this.addShiftLoading = false
           if (response.data.response == "success") {
             this.$buefy.toast.open({
               message: "Added!",
               type: "is-success",
             });
-            this.$store.dispatch("getShiftsList");
+            this.$store.dispatch("teams/getTeams");
           } else {
             this.$buefy.toast.open({
               message: response.data.response,

@@ -7,7 +7,21 @@
     @dragleave="onDragLeave"
     :class="{ columndragenter: dragging }"
   >
-    <span class="columnday" v-if="groupindex===0">{{ day }}</span>
+    <span class="columnday" v-if="groupindex === 0">{{ day }}</span>
+    <span
+      class="columnday"
+      :class="{ active: groupDrop.find((i) => i === shift + '|' + date) }"
+    >
+      <b-checkbox
+        :data-shift="shift"
+        :native-value="shift + '|' + date"
+        :true-value="shift + '-' + date"
+        size="is-small"
+        type="is-warning"
+        v-model="groupDrop"
+        :disabled="isCheckboxDisabled(shift, date)"
+      ></b-checkbox>
+    </span>
     <ul
       v-if="today && today[shift] && today[shift][date]"
       style="background-color: white"
@@ -93,7 +107,7 @@
 import AddShiftMixin from "../mixins/AddShiftMixin.js";
 export default {
   mixins: [AddShiftMixin],
-  props: ["ind", "day", "shift", "group", "refdate", 'groupindex'],
+  props: ["ind", "day", "shift", "group", "refdate", "groupindex"],
   computed: {
     // todaydate()
     // {
@@ -126,6 +140,14 @@ export default {
       }
       return this.$store.state.timetable[this.ref].t;
     },
+    groupDrop: {
+      get() {
+        return this.$store.state.groupShiftsDrop;
+      },
+      set(val) {
+        this.$store.commit("SetGroupShiftsDrop", val);
+      },
+    },
   },
   data() {
     return {
@@ -134,6 +156,12 @@ export default {
     };
   },
   methods: {
+    isCheckboxDisabled(shift_id, date) {
+      return (
+        !!this.groupDrop.find((i) => i.indexOf(date) > -1) &&
+        !this.groupDrop.find((i) => i == shift_id + "|" + date)
+      );
+    },
     moveItemUp(id) {
       const loadingComponent = this.$buefy.loading.open({
         container: null,
@@ -247,16 +275,22 @@ export default {
                 loadingComponent.close();
               });
           } else {
+            this.$buefy.toast.open({
+              duration: 5000,
+              message: r.data.response,
+              position: "is-top",
+              type: "is-danger",
+            });
             loadingComponent.close();
           }
         });
     },
-    PostShift(agent_id, force) {
+    PostShift(date, shift, group, agent_id, force) {
       return this.$http.post("./scheduleapi/shifts/timetable", {
-        date: this.date,
+        date: date,
         agent_id: agent_id,
-        shift_id: this.shift,
-        group_id: this.group,
+        shift_id: shift,
+        group_id: group,
         force: force,
       });
     },
@@ -276,50 +310,64 @@ export default {
       const loadingComponent = this.$buefy.loading.open({
         container: null,
       });
-      this.PostShift(AgentItem.adminid, force).then((r) => {
+
+      this.PostShift(
+        this.date,
+        this.shift,
+        this.group,
+        AgentItem.adminid,
+        force
+      ).then((r) => {
         if (r.data.response === "success") {
-          loadingComponent.close();
+
           //this.today[this.date].push({'agent':AgentItem.name, 'bg':AgentItem.bg, 'color':AgentItem.color})
-          this.$store.dispatch("loadFromAPI", {
-            teamroute: this.$route.params.team,
-            refdate: this.ref,
-            refdateroute: this.$route.params.date,
-          });
+          if (this.groupDrop.length === 0) {
+            loadingComponent.close();
+            this.$store.dispatch("loadFromAPI", {
+              teamroute: this.$route.params.team,
+              refdate: this.ref,
+              refdateroute: this.$route.params.date,
+            });
+          }
         } else {
-          // this.$buefy.snackbar.open({
-          //         duration: 10000,
-          //         message:  r.data.response,
-          //         type: 'is-danger',
-          //         position: 'is-top',
-          //         queue: false,
-          //         actionText: r.data.action ?? null,
-          //         onAction: () => {
-          //           const loadingComponent = this.$buefy.loading.open({
-          //             container: null,
-          //           });
-
-          //            this.PostShift(AgentItem.agent_id, true)
-          //            .then((r) => {
-          //                             if (r.data.response === "success") {
-          //                               loadingComponent.close();
-          //                               //this.today[this.date].push({'agent':AgentItem.name, 'bg':AgentItem.bg, 'color':AgentItem.color})
-          //                               this.$store.dispatch("loadFromAPI", {
-          //                                 teamroute: this.$route.params.team,
-          //                                 refdate: this.ref,
-          //                                 refdateroute: this.$route.params.date,
-          //                               });
-          //                             }
-
-          //         })
-          //     }
-          // })
-          this.ForceAddDutyConfirm(r, AgentItem.agent_id, this.ref);
-          // this.$buefy.toast.open({
-          //   message: r.data.response,
-          //   type: "is-danger",
-          // });
+          this.ForceAddDutyConfirm(r, AgentItem.adminid, this.ref);
           loadingComponent.close();
         }
+      });
+      let counter = this.groupDrop.length
+
+      this.groupDrop.forEach((i) => {
+        const shiftData = i.split("|");
+
+        if (shiftData[1] === this.date) {
+          return;
+        }
+        this.PostShift(
+          shiftData[1],
+          shiftData[0],
+          this.group,
+          AgentItem.adminid,
+          force
+        ).then((r) => {
+          if (r.data.response === "success") {
+            --counter;
+            console.log(counter)
+            if (counter > 1) {
+              return;
+            }
+
+            loadingComponent.close();
+            //this.today[this.date].push({'agent':AgentItem.name, 'bg':AgentItem.bg, 'color':AgentItem.color})
+            this.$store.dispatch("loadFromAPI", {
+              teamroute: this.$route.params.team,
+              refdate: this.ref,
+              refdateroute: this.$route.params.date,
+            });
+          } else {
+            this.ForceAddDutyConfirm(r, AgentItem.adminid, this.ref);
+            loadingComponent.close();
+          }
+        });
       });
       //const item = this.items.find(item => item.id == itemID)
       //item.list = list
@@ -398,7 +446,7 @@ export default {
   text-align: center;
   width: 100%;
   display: block;
-  background-color:rgb(72, 55, 201);
+  background-color: rgb(72, 55, 201);
   font-size: 1.1rem;
 }
 .arrowupdownbtn:hover {

@@ -8,6 +8,7 @@
       bordered
       class="agentsListTbl"
       :row-class="(row, index) => 'agentsListTbl'"
+      :loading="tblLoading"
     >
       <b-table-column centered label="Agent" searchable field="fullrow">
         <template #searchable="props">
@@ -15,7 +16,6 @@
             v-model="props.filters[props.column.field]"
             placeholder="Search by Agent Name"
             icon="search"
-            size="is-medium"
           />
         </template>
         <template v-slot="props">
@@ -29,11 +29,12 @@
           @input="setTeam(props.row.id)"
           expanded
         >
+          <option value="">-- None --</option>
           <option
             v-for="team in teams"
-            :value="team.groupid"
-            :key="team.groupid"
-            :disabled="team.children>0"
+            :value="team.group_id"
+            :key="team.group_id"
+            :disabled="team.hasSubteams > 0"
           >
             <span v-if="team.parent > 0">- </span> {{ team.name }}
           </option>
@@ -47,42 +48,14 @@
           >Open Days-Off Management</b-button
         >
       </b-table-column>
-      <!-- 
-      <b-table-column field="color" centered label="Text Color" v-slot="props">
-        <b-tooltip position="is-bottom" label="Color is not set">
-          <b-icon
-            icon="border-none"
-            v-if="props.row.color == null"
-            size="is-small"
-          ></b-icon>
-        </b-tooltip>
-        <input
-          type="color"
-          name="color[]"
-          :value="props.row.color"
-          @change="setcolor('color', $event.target.value, props.row.id)"
-        />
+      <b-table-column field="permissions" centered label="Permissions" v-slot="props">
+        <b-button
+          type="is-primary"
+          outlined
+          @click="OpenPermissionsManagement(props.row.id)"
+          >Permissions Management</b-button
+        >
       </b-table-column>
-      <b-table-column
-        field="bg"
-        centered
-        label="Background Color"
-        v-slot="props"
-      >
-        <b-tooltip position="is-bottom" label="Color is not set">
-          <b-icon
-            icon="border-none"
-            v-if="props.row.bg == null"
-            size="is-small"
-          ></b-icon>
-        </b-tooltip>
-        <input
-          type="color"
-          name="bgcolor"
-          @change="setcolor('bg', $event.target.value, props.row.id)"
-          :value="getColor(props.row.bg)"
-        />
-      </b-table-column> -->
     </b-table>
   </div>
 </template>
@@ -96,13 +69,14 @@ export default {
       return this.$store.state.admins;
     },
     teams() {
-      return this.$store.state.schedule_teams;
+      return this.$store.getters["teams/teams"];
     },
   },
   data() {
     return {
       adminteams: {},
       test: "",
+      tblLoading: false,
     };
   },
   mounted() {},
@@ -116,9 +90,51 @@ export default {
     },
   },
   methods: {
+    setEditor(id, value) {
+      this.tblLoading = true
+      var endpoint;
+      switch (value) {
+        case false:
+          endpoint = "delete";
+          break;
+        case true:
+          endpoint = "add";
+          break;
+      }
+      if (id && endpoint) {
+        this.$http
+          .post("./scheduleapi/editors/" + endpoint, {
+            agent_id: id,
+          })
+          .then((response) => {
+            if (response.data.response == "success") {
+              this.$buefy.toast.open({
+                message: "Permission is set",
+                type: "is-success",
+              });
+            } else {
+              this.$buefy.toast.open({
+                message: response.data.response,
+                type: "is-danger",
+              });
+            }
+            this.tblLoading = false
+          });
+      }
+      else
+      {
+        this.tblLoading = false
+      }
+    },
     OpenDaysOffManagement(id) {
       this.$router.push({
         path: `/daysoff/${id}`,
+      });
+    },
+    OpenPermissionsManagement(id)
+    {
+      this.$router.push({
+        path: `/permissions/${id}`,
       });
     },
     setTeam(admin) {
@@ -175,14 +191,13 @@ export default {
 <style >
 .agentsListTbl > td:first-child {
   text-align: left !important;
-  font-size: 0.9em;
+  font-size: 1.2em;
 }
 .agentsListTbl {
   background: white !important;
 }
 </style>
 <style >
-
 .b-table {
   float: left;
   width: 100%;

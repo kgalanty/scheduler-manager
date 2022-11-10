@@ -2,7 +2,10 @@
 
 namespace App\Controllers;
 
+use App\Constants\AgentConstants;
+use App\Constants\PermissionsConstants;
 use App\Functions\DatesHelper;
+use App\Functions\EditorsAuth;
 use WHMCS\Database\Capsule as DB;
 use App\Responses\Response;
 use App\Functions\ShiftsHelper;
@@ -12,7 +15,11 @@ class StatsController
     public function get($request, $response, $args)
     {
         if ($_GET['type'] === 'weektickets') {
-            $shifts = DB::table("schedule_shifts")->where('from', '07:00')->orWhere('from', '15:00')->orWhere('from', '23:00')->orderBy('from', 'ASC')->get();
+            $shifts = DB::table("schedule_shifts AS s")->join('schedule_agentsgroups AS ag', function ($join) {
+                $join->on('ag.id', '=', 's.group_id');
+                $join->where('ag.group', '=', 'Support');
+                $join->where('ag.parent', '=', '0');
+            })->where('from', '07:00')->orWhere('from', '15:00')->orWhere('from', '23:00')->orderBy('from', 'ASC')->get();
             $shiftsCount = count($shifts);
 
             $datestart = $_GET['datestart'] ? $_GET['datestart'] : date("Y-m-d", strtotime('monday this week'));
@@ -55,27 +62,44 @@ class StatsController
             return Response::json(['response' => 'success', 'stats' => $results], $response);
         }
 
+        $agentid =  AgentConstants::adminid();
+        $groups_to_show_stats = EditorsAuth::getEditorGroups()[PermissionsConstants::STATS_VIEW_PERMISSION];
+
         $data = [];
         $from = $_GET['datefrom'];
         $to = $_GET['dateto'];
         $team = (int)$_GET['team'];
+
         $results = DB::table("schedule_timetable as t")
             ->join('tbladmins as a', 't.agent_id', '=', 'a.id')
-            ->leftJoin('schedule_agents_to_groups as atg', 'atg.agent_id', '=', 't.agent_id');
+            ->leftJoin('schedule_agents_to_groups as atg', 'atg.agent_id', '=', 't.agent_id')
+            ->join('schedule_agentsgroups as ag', 'ag.id', '=', 'atg.group_id');
         if ($from) {
             $results = $results->where('t.day', '>=', $from);
         }
         if ($to) {
             $results = $results->where('t.day', '<=', $to);
         }
-        if ($team) {
-            $results = $results->where('atg.group_id', '=', $team);
+
+        if ($team && (EditorsAuth::isAdmin() || in_array($team, $groups_to_show_stats))) {
+
+            $teamsID = [];
+            $subteams_query = DB::table('schedule_agentsgroups as ag')->where('ag.parent', $team)->get(['id']);
+            array_map(function ($item) use (&$teamsID) {
+                $teamsID[] = $item->id;
+            }, $subteams_query);
+            $teamsID[] = $team;
+
+            $results->whereIn('atg.group_id', $teamsID);
+        } elseif (!EditorsAuth::isAdmin() && !in_array($team, $groups_to_show_stats)) {
+            $results = $results->where('a.id', $agentid);
         }
+
         $results = $results->groupBy('t.agent_id')
             ->orderBy('a.firstname', 'ASC')
             ->orderBy('a.lastname', 'ASC')
             //->select(DB::raw('count(t.agent_id) as agent_count, t.day, t.group_id, a.firstname, a.lastname, a.username'))
-            ->select(DB::raw('count(distinct t.day) as days, count(t.day) as allshifts, t.agent_id, t.day, a.firstname, a.lastname, a.username'))
+            ->select(DB::raw('count(distinct t.day) as days, count(t.day) as allshifts, t.agent_id, t.day, a.firstname, a.lastname, a.username, ag.group'))
             ->get();
         // echo('<pre>');var_dump($results);die;
         // foreach ($results as $result) {

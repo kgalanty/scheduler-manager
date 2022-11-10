@@ -17,26 +17,6 @@ if (!($_SESSION['adminid'] && $_SESSION['adminpw'])) {
 }
 define('ROUTE_PREFIX', '/schedule/scheduleapi');
 
-
-$app->get('/agents', function ($request, $response, $args) {
-    $data = [];
-
-    $payload = json_encode($data);
-    $response->getBody()->write($payload);
-    return $response
-        ->withHeader('Content-Type', 'application/json');
-});
-$app->get('/shifts[/{id}]', function ($request, $response, $args) {
-    $data = [];
-    // Show book identified by $args['id']
-    // ...
-
-    $payload = json_encode($data);
-
-    $response->getBody()->write($payload);
-    return $response
-        ->withHeader('Content-Type', 'application/json');
-});
 $app->get(ROUTE_PREFIX . '/', function (Request $request, Response $response, $args) {
     $response->getBody()->write("Hello world!");
     return $response;
@@ -46,6 +26,7 @@ $app->get(ROUTE_PREFIX . '/dbmigration', 'App\Controllers\MigrationController:ho
 $app->get(ROUTE_PREFIX . '/agents', 'App\Controllers\AgentsController:agents');
 $app->get(ROUTE_PREFIX . '/agents/myinfo', 'App\Controllers\AgentsController:myinfo');
 $app->get(ROUTE_PREFIX . '/agents/{agentid}', 'App\Controllers\AgentsController:getAgentInfo');
+$app->post(ROUTE_PREFIX . '/agents/editor', 'App\Controllers\AgentsController:changeEditorPermission')->add(new JsonMiddleware());
 $app->get(ROUTE_PREFIX . '/shifts', 'App\Controllers\ShiftsController:getShifts');
 
 $app->post(ROUTE_PREFIX . '/shift/new', 'App\Controllers\ShiftsController:insertShift')->add(new JsonMiddleware());
@@ -67,6 +48,7 @@ $app->post(ROUTE_PREFIX . '/editors/delete', 'App\Controllers\EditorsController:
 $app->post(ROUTE_PREFIX . '/shifts/reorder/{direction}', 'App\Controllers\ShiftsController:reorder')->add(new JsonMiddleware());
 
 $app->post(ROUTE_PREFIX . '/teams/reorder/{direction}', 'App\Controllers\SubteamsController:reorder')->add(new JsonMiddleware());
+$app->get(ROUTE_PREFIX . '/teams', 'App\Controllers\TeamsController:get');
 
 $app->post(ROUTE_PREFIX . '/templates/add', 'App\Controllers\TemplatesController:add')->add(new JsonMiddleware());
 $app->get(ROUTE_PREFIX . '/templates/{groupid}', 'App\Controllers\TemplatesController:list');
@@ -100,6 +82,7 @@ $app->get(ROUTE_PREFIX . '/group/{groupid}/drafts', 'App\Controllers\ShiftsContr
 $app->get(ROUTE_PREFIX . '/shifts/shiftsgroups/{groupid}', 'App\Controllers\ShiftsController:shiftsGroups');
 $app->get(ROUTE_PREFIX . '/logs', 'App\Controllers\LogsController:get');
 $app->get(ROUTE_PREFIX . '/verify', 'App\Controllers\AgentsController:verifyAgent');
+$app->get(ROUTE_PREFIX . '/verifyadmin', 'App\Controllers\AgentsController:verifyAdmin');
 $app->get(ROUTE_PREFIX . '/report/{datestart}/{dateend}', 'App\Controllers\TimetableController:scheduleForWorker');
 $app->get(ROUTE_PREFIX . '/vacationing', 'App\Controllers\TimetableController:vacationing');
 $app->post(ROUTE_PREFIX . '/vacationing', 'App\Controllers\TimetableController:vacationingStore')->add(new JsonMiddleware());
@@ -114,6 +97,9 @@ $app->post(ROUTE_PREFIX . '/feedback', 'App\Controllers\FeedbackController:submi
 
 $app->get(ROUTE_PREFIX . '/tickets/operators', 'App\Controllers\AgentsController:AgentsFromTickets');
 $app->get(ROUTE_PREFIX . '/tickets/personalstats', 'App\Controllers\AgentsController:AgentsPersonalStatsTickets');
+
+$app->get(ROUTE_PREFIX . '/permissions/agent/{agentid}', 'App\Controllers\PermissionsController:getPermissions');
+$app->post(ROUTE_PREFIX . '/permissions/agent/{agentid}', 'App\Controllers\PermissionsController:setPermissions')->add(new JsonMiddleware());
 // $app->post(ROUTE_PREFIX.'/assignshift','App\Controllers\ShiftsController:assignToShift');
 //$app->add($beforeMiddleware);
 $app->run();

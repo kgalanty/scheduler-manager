@@ -12,9 +12,15 @@
       <template #empty>
         <div class="has-text-centered">No records</div>
       </template>
-      <b-table-column field="Shift" centered label="Teams" v-slot="props" width="50%">
+      <b-table-column
+        field="Shift"
+        centered
+        label="Teams"
+        v-slot="props"
+        width="50%"
+      >
         <div class="container">
-          <strong>#{{ props.row.group_id }} {{ props.row.team }}</strong>
+          <strong>#{{ props.row.group_id }} {{ props.row.name }}</strong>
           <p></p>
           <b-button
             type="is-danger"
@@ -29,22 +35,38 @@
             icon-left="plus"
             @click="addOnCallShift(props.row.group_id)"
             size="is-small"
-            
           >
             Add On Call Shift</b-button
           >
         </div>
-       
+
         <div class="container">
           <Subteams :parent_team="props.row" />
         </div>
       </b-table-column>
-      <b-table-column field="Shift" centered label="Shifts" v-slot="props" width="50%">
-        <b-table :data="props.row.shifts ? props.row.shifts : []" striped narrowed mobile-cards >
+      <b-table-column
+        field="Shift"
+        centered
+        label="Shifts"
+        v-slot="props"
+        width="50%"
+      >
+        <b-table
+          :data="props.row.shifts ? props.row.shifts : []"
+          striped
+          narrowed
+          mobile-cards
+        >
           <template #empty>
             <div class="has-text-centered">No records</div>
           </template>
-          <b-table-column field="Shift" centered label="Shift" v-slot="props" width="50%" >
+          <b-table-column
+            field="Shift"
+            centered
+            label="Shift"
+            v-slot="props"
+            width="50%"
+          >
             <span v-if="props.row.from === 'on' && props.row.to === 'call'">
               <b-button size="is-small" type="is-info" icon-left="phone-volume"
                 >On Call</b-button
@@ -53,25 +75,33 @@
             <span v-else> {{ props.row.from }} - {{ props.row.to }} </span>
           </b-table-column>
           <b-table-column field="Shift" centered label="Action" v-slot="props">
-           <b-button  v-if="props.row.shiftid===showOnTopBarShift"
+            <b-button
+              v-if="props.row.id === showOnTopBarShift"
               size="is-small"
               type="is-success"
               icon-left="check"
               disabled
               >Active</b-button
             >
-            <b-button  v-if="props.row.from === 'on' && props.row.to === 'call' && props.row.shiftid!==showOnTopBarShift"
+            <b-button
+              v-if="
+                props.row.from === 'on' &&
+                props.row.to === 'call' &&
+                props.row.id !== showOnTopBarShift
+              "
               size="is-small"
               type="is-primary"
               icon-left="eye"
-              @click="showOnTopBar(props.row.shiftid)"
+              @click="showOnTopBar(props.row.id)"
               >Show on topbar</b-button
             >
             <b-button
               size="is-small"
               type="is-info"
               icon-left="trash"
-              @click="removeShift(props.row.shiftid)"
+              @click="removeShift(props.row.id)"
+              :loading="deleteLoadingID === props.row.id"	
+              :disabled="deleteLoadingID === props.row.id"
               >Remove</b-button
             >
           </b-table-column>
@@ -90,33 +120,39 @@ export default {
   },
   computed: {
     shifts() {
-      return this.$store.state.shifts
+      return this.$store.state.shifts;
     },
-    topteams()
-    {
-      return this.$store.state.shifts.filter(i=>i.parent==0)
+    topteams() {
+      return this.$store.getters.topteams("Admin");
     },
-    showOnTopBarShift()
-    {
-      return this.$store.state.ShowOnTopbarShift
+    showOnTopBarShift() {
+      return this.$store.state.ShowOnTopbarShift;
+    },
+    teams() {
+      return this.$store.getters["teams/teams"];
     },
   },
-  data()
-  {
+  data() {
     return {
-      tableLoading: true
-    }
+      tableLoading: true,
+      deleteLoadingID: 0,
+    };
   },
   mounted() {
-     this.$store.dispatch('getShowOnTopbarShift')
-     .then(()=>
-     {
-       this.tableLoading = false
-     })
+    this.$store.dispatch("getShowOnTopbarShift").then(() => {
+      this.tableLoading = false;
+    });
   },
   methods: {
-    showOnTopBar(shiftid)
+    loadTeamsShifts()
     {
+      this.deleteLoadingID = 0
+      this.$store.dispatch("teams/getTeams");
+    },
+    formatter(d) {
+      return d.toLocaleDateString();
+    },
+    showOnTopBar(shiftid) {
       this.$http
         .post("./scheduleapi/shift/showontopbar", { shiftid })
         .then((response) => {
@@ -125,8 +161,8 @@ export default {
               message: "Done!",
               type: "is-success",
             });
-            this.$store.dispatch('getShowOnTopbarShift')
-            this.$store.dispatch("getShiftsList");
+            this.$store.dispatch("getShowOnTopbarShift");
+            this.loadTeamsShifts()
             // this.$store.dispatch("getTeams");
           } else {
             this.$buefy.toast.open({
@@ -145,7 +181,7 @@ export default {
               message: "Added!",
               type: "is-success",
             });
-            this.$store.dispatch("getShiftsList");
+            this.loadTeamsShifts()
             // this.$store.dispatch("getTeams");
           } else {
             this.$buefy.toast.open({
@@ -172,8 +208,7 @@ export default {
                   message: "Removed!",
                   type: "is-success",
                 });
-                this.$store.dispatch("getShiftsList");
-                this.$store.dispatch("getTeams");
+                this.loadTeamsShifts()
               } else {
                 this.$buefy.toast.open({
                   message: response.data.response,
@@ -186,16 +221,19 @@ export default {
     },
 
     removeShift(id) {
+      this.deleteLoadingID = id
       this.$http
         .post("./scheduleapi/shifts/delete", { id })
         .then((response) => {
+          
           if (response.data.response == "success") {
             this.$buefy.toast.open({
               message: "Removed!",
               type: "is-success",
             });
-            this.$store.dispatch("getShiftsList");
+            this.loadTeamsShifts()
           } else {
+            this.deleteLoadingID = 0
             this.$buefy.toast.open({
               message: response.data.response,
               type: "is-danger",
@@ -220,8 +258,7 @@ export default {
 .b-table tr {
   height: auto !important;
 }
-.modal-card-foot
-{
+.modal-card-foot {
   margin: unset;
 }
 .shiftstable thead:first-child th {

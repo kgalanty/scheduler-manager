@@ -7,6 +7,7 @@ use App\Functions\Logs\AddEntryLog;
 use App\Functions\Logs\DeleteEntryLog;
 use App\Functions\LogsFactory;
 use App\Constants\AgentConstants;
+use App\Constants\PermissionsConstants;
 use App\Functions\AgentsHelper;
 use App\Functions\EditorsAuth;
 use App\Responses\Response;
@@ -18,6 +19,7 @@ use App\Functions\Logs\DelDaysOff;
 use App\Functions\Logs\UseDaysOff;
 use App\Functions\Notifications\commitNotify;
 use App\Functions\SlackNotifications;
+use App\Entities\Shift as ShiftEntity;
 
 class TimetableController
 {
@@ -68,12 +70,18 @@ class TimetableController
   public function deleteDuty($request, $response, $args)
   {
     $author = AgentConstants::adminid();
-    if (!EditorsAuth::isEditor()) {
+    $id = $request->getParsedBody()['id'];
+    $current_entry = DB::table("schedule_timetable")->where('id', $id)->first();
+
+    if ($current_entry->agent_id != -1) {
+      $agentGroupForPermissions = DB::table('schedule_agents_to_groups')->where('agent_id', $current_entry->agent_id)->value('group_id');
+    }
+
+    if ($current_entry->agent_id != -1 && !EditorsAuth::hasPermission(PermissionsConstants::MANAGE_GROUP_IN_SHIFTS, $agentGroupForPermissions) && !EditorsAuth::isAdmin()) {
       $data['response'] = 'No permission for this operation';
     } else {
 
-      $id = $request->getParsedBody()['id'];
-      $current_entry = DB::table("schedule_timetable")->where('id', $id)->first();
+
       //-1 is for I need help placeholders
       //add logging
       if (($current_entry->draft == 1 && $current_entry->author == $author) || $current_entry->agent_id == -1) {
@@ -91,15 +99,23 @@ class TimetableController
   public function insertDuty($request, $response, $args)
   {
     $author =  AgentConstants::adminid();
-    if (!EditorsAuth::isEditor()) {
+    $agent = $request->getParsedBody()['agent_id'];
+    $shift = $request->getParsedBody()['shift_id'];
+    $group = $request->getParsedBody()['group_id'];
+    $day = $request->getParsedBody()['date'];
+
+    $shiftEntity = new ShiftEntity($shift);
+
+    if ($agent != -1) {
+      $agentGroupForPermissions = DB::table('schedule_agents_to_groups')->where('agent_id', $agent)->value('group_id');
+    }
+
+
+    if ($agent != -1 && !EditorsAuth::hasPermission(PermissionsConstants::MANAGE_GROUP_IN_SHIFTS, $agentGroupForPermissions) && !EditorsAuth::isAdmin()) {
       $data['response'] = 'No permission for this operation';
     } elseif (!$author) {
       $data['response'] = 'You are not logged in. Please log in first.';
     } else {
-      $agent = $request->getParsedBody()['agent_id'];
-      $shift = $request->getParsedBody()['shift_id'];
-      $group = $request->getParsedBody()['group_id'];
-      $day = $request->getParsedBody()['date'];
 
       //check if the agent is available in the same day but other shift, 
       //prevent adding it again
@@ -127,7 +143,7 @@ class TimetableController
         return Response::json($data, $response);
       }
 
-      if (DB::table("schedule_timetable")->where([
+      if ((DB::table("schedule_timetable")->where([
         'agent_id' =>  $agent,
         'day' => $day,
         'draft' => '0'
@@ -136,7 +152,7 @@ class TimetableController
         'day' => $day,
         'draft' => '1',
         'author' => $author
-      ])->count() > 0) {
+      ])->count() > 0) && !$shiftEntity->isOnCall()) {
         $data['response'] = 'This Agent has a duty (planned or confirmed) in ' . $day . '.';
         return Response::json($data, $response);
       }
@@ -149,10 +165,9 @@ class TimetableController
         return Response::json($data, $response);
       }
       $weekRange = DatesHelper::getWeekRangeBasedOnDay($day);
-
       if (DB::table("schedule_timetable")->where([
         'agent_id' =>  $agent,
-      ])->whereBetween('day', $weekRange)->count() >= 5 && !$request->getParsedBody()['force']) {
+      ])->whereBetween('day', $weekRange)->where('draft', '0')->count() >= 5 && !$request->getParsedBody()['force']) {
         $data['response'] = 'This Agent has already 5 or more shifts this week. Are you sure you wish to add next?';
         $data['action'] = 'Add it anyway';
         return Response::json($data, $response);
@@ -162,7 +177,8 @@ class TimetableController
         'agent_id' =>  $agent,
         'group_id' => $group,
         'shift_id' => $shift,
-        'day' => $day
+        'day' => $day,
+        'draft' => 0
       ])->count() == 0) {
         $countForCurrentDay = DB::table("schedule_timetable")->where(
           [
@@ -197,72 +213,72 @@ class TimetableController
   {
     $notifications = (bool)$request->getParsedBody()['notifications'];
     $author = AgentConstants::adminid();
-    if (!EditorsAuth::isEditor()) {
-      $data['response'] = 'No permission for this operation';
-    } else {
-      $sameDaysEntries = DB::table('schedule_timetable')
-        ->where('draft', 1)
-        ->where('author', $author)
-        ->groupBy('day', 'shift_id', 'agent_id')
-        ->having('c', '>', '1')
-        ->selectRaw('count(*) as c, day')->get();
-      if (count($sameDaysEntries) > 0) {
-        $data['response'] = 'There is at least one duplicated shift on the same day. Remove it to proceed.';
-        return Response::json($data, $response);
-      }
-
-      $entries = DB::table('schedule_timetable as t')
-        ->join('schedule_shifts as s', 's.id', '=', 't.shift_id')
-        ->join('schedule_agentsgroups as ag', 'ag.id', '=', 't.group_id')
-        ->where(['t.author' => $author, 't.draft' => 1])
-        ->get();
-      $deleteentries = DB::table('schedule_timetable_deldrafts as dd')
-        ->join('schedule_timetable as t', 't.id', '=', 'dd.entry_id')
-        ->join('schedule_shifts as s', 's.id', '=', 't.shift_id')
-        ->join('schedule_agentsgroups as ag', 'ag.id', '=', 't.group_id')
-        ->where('dd.author', $author)
-        ->get(['dd.*', 't.*', 's.from', 's.to', 'ag.group']);
-
-      if ($notifications === true) {
-
-
-        // $slackUsers = DB::table('schedule_slackusers')->whereIn('agent_id', $agents_id)->get();
-        // $slack = new SlackNotifications($slackUsers, $entries, $deleteentries);
-        $slack = new SlackNotifications(new commitNotify(['entries' => $entries, 'deleteentries' => $deleteentries]));
-        $slack->send();
-      }
-      foreach ($entries as $entry) {
-        //Iterate through draft entries and find if there's placeholder NEED HELP in the same day and shift
-        //If it's there, delete one placeholder per one new entry commited
-        $placeholder = DB::table('schedule_timetable')
-          ->where('group_id', $entry->group_id)
-          ->where('shift_id', $entry->shift_id)
-          ->where('day', $entry->day)
-          ->where('agent_id', '-1')
-          ->first();
-        if ($placeholder) {
-          DB::table('schedule_timetable')->where('id', $placeholder->id)->delete();
-        }
-      }
-
-      $logs = (new AddEntryLog($entries));
-      // $GeneratedLogs = $logs->createAddLogs($entries);
-      (new LogsFactory($logs))->store();
-      DB::table('schedule_timetable')->where(['author' => $author, 'draft' => 1])->update(['draft' => 0]);
-
-
-      $logs = (new DeleteEntryLog($deleteentries));
-      (new LogsFactory($logs))->store();
-
-      $delid = [];
-      foreach ($deleteentries as $delentry) {
-        $delid[] = $delentry->id;
-      }
-
-      DB::table('schedule_timetable')->whereIn('id', $delid)->delete();
-      DB::table('schedule_timetable_deldrafts')->whereIn('entry_id', $delid)->delete();
-      $data = ['response' => 'success'];
+    // if (!EditorsAuth::hasPermission(PermissionsConstants::MANAGE_GROUP_SHIFTS, $group) && !EditorsAuth::isAdmin()) {
+    //   $data['response'] = 'No permission for this operation';
+    // } else {
+    $sameDaysEntries = DB::table('schedule_timetable')
+      ->where('draft', 1)
+      ->where('author', $author)
+      ->groupBy('day', 'shift_id', 'agent_id')
+      ->having('c', '>', '1')
+      ->selectRaw('count(*) as c, day')->get();
+    if (count($sameDaysEntries) > 0) {
+      $data['response'] = 'There is at least one duplicated shift on the same day. Remove it to proceed.';
+      return Response::json($data, $response);
     }
+
+    $entries = DB::table('schedule_timetable as t')
+      ->join('schedule_shifts as s', 's.id', '=', 't.shift_id')
+      ->join('schedule_agentsgroups as ag', 'ag.id', '=', 't.group_id')
+      ->orderBy('t.day', 'ASC')
+      ->where(['t.author' => $author, 't.draft' => 1])
+      ->get();
+    $deleteentries = DB::table('schedule_timetable_deldrafts as dd')
+      ->join('schedule_timetable as t', 't.id', '=', 'dd.entry_id')
+      ->join('schedule_shifts as s', 's.id', '=', 't.shift_id')
+      ->join('schedule_agentsgroups as ag', 'ag.id', '=', 't.group_id')
+      ->orderBy('t.day', 'ASC')
+      ->where('dd.author', $author)
+      ->get(['dd.*', 't.*', 's.from', 's.to', 'ag.group']);
+
+    if ($notifications === true) {
+      // $slackUsers = DB::table('schedule_slackusers')->whereIn('agent_id', $agents_id)->get();
+      // $slack = new SlackNotifications($slackUsers, $entries, $deleteentries);
+      $slack = new SlackNotifications(new commitNotify(['entries' => $entries, 'deleteentries' => $deleteentries]));
+      $slack->send();
+    }
+    foreach ($entries as $entry) {
+      //Iterate through draft entries and find if there's placeholder NEED HELP in the same day and shift
+      //If it's there, delete one placeholder per one new entry commited
+      $placeholder = DB::table('schedule_timetable')
+        ->where('group_id', $entry->group_id)
+        ->where('shift_id', $entry->shift_id)
+        ->where('day', $entry->day)
+        ->where('agent_id', '-1')
+        ->first();
+      if ($placeholder) {
+        DB::table('schedule_timetable')->where('id', $placeholder->id)->delete();
+      }
+    }
+
+    $logs = (new AddEntryLog($entries));
+    // $GeneratedLogs = $logs->createAddLogs($entries);
+    (new LogsFactory($logs))->store();
+    DB::table('schedule_timetable')->where(['author' => $author, 'draft' => 1])->update(['draft' => 0]);
+
+
+    $logs = (new DeleteEntryLog($deleteentries));
+    (new LogsFactory($logs))->store();
+
+    $delid = [];
+    foreach ($deleteentries as $delentry) {
+      $delid[] = $delentry->id;
+    }
+
+    DB::table('schedule_timetable')->whereIn('id', $delid)->delete();
+    DB::table('schedule_timetable_deldrafts')->whereIn('entry_id', $delid)->delete();
+    $data = ['response' => 'success'];
+    //}
     return Response::json($data, $response);
     // $payload = json_encode($data);
     // $response->getBody()->write($payload);
