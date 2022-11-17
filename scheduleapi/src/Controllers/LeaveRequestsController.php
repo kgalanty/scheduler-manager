@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Constants\AgentConstants;
 use App\Constants\PermissionsConstants;
+use App\Entities\VacationRequest;
 use App\Functions\AgentsHelper;
 use App\Functions\DatesHelper;
 use App\Functions\DaysOffHelper;
@@ -95,16 +96,22 @@ class LeaveRequestsController
         if (!EditorsAuth::isAdmin() && !$groupsManaging[4]) {
             return Response::json(['response' => 'error', 'msg' => 'You dont have permission to do this'], $response);
         }
+        $requestEntity = new VacationRequest($args['id']); 
+
+        if($requestEntity->isAlreadyApproved())
+        {
+            return Response::json(['response' => 'error', 'msg' => 'This request has been already handled.'], $response);
+        }
+
         $author =  AgentConstants::adminid();
         $comment = $request->getParsedBody()['comment'];
         $decision = $request->getParsedBody()['decision'] === true ? 1 : 2;
-        $request = DB::table("schedule_vacations_request")->where('id', $args['id'])->first();
 
-        if ($decision === 1 && $request->request_type == 1) {
+        if ($decision === 1 && $requestEntity->getRow()->request_type == 1) {
 
-            $dates = DatesHelper::generateBetweenDates($request->date_start, $request->date_end);
+            $dates = DatesHelper::generateBetweenDates($requestEntity->getRow()->date_start, $requestEntity->getRow()->date_end);
 
-            DaysOffHelper::AddDaysOffVacations($dates, $request->agent_id);
+            DaysOffHelper::AddDaysOffVacations($dates, $requestEntity->getRow()->agent_id);
         }
 
         $results = DB::table("schedule_vacations_request")->where('id', $args['id'])
@@ -115,10 +122,10 @@ class LeaveRequestsController
                 'approve_status' => $decision,
             ]);
 
-        $agent_author = DB::table('tbladmins as a')->whereIn('id', [$author,  $request->agent_id])->get(['a.firstname', 'a.lastname', 'a.id']);
-        $request->approve_admin_id = $author;
-        $request->approve_response = $comment;
-        $request->approve_status = $decision;
+        $agent_author = DB::table('tbladmins as a')->whereIn('id', [$author,  $requestEntity->getRow()->agent_id])->get(['a.firstname', 'a.lastname', 'a.id']);
+        $requestEntity->setRowAttr('approve_admin_id', $author);
+        $requestEntity->setRowAttr('approve_response', $comment);
+        $requestEntity->setRowAttr('approve_status', $decision);
 
         $slack = new SlackNotifications(new reviewNotify(['entries' => $request, 'admins' => $agent_author]));
         $slack->send();
@@ -143,6 +150,7 @@ class LeaveRequestsController
             DB::table('schedule_vacations_request')->where('id', $entry->id)->update(['cancelled' => '1']);
             return Response::json(['response' => 'success', 'result' => 'success'], $response);
         }
+
         return Response::json(['response' => 'error', 'result' => 'Unable to restore days off count'], $response);
     }
 

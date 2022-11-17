@@ -23,7 +23,7 @@ class reviewNotify implements INotify
     public function fetchAgents()
     {
         $agentsSlack = DB::table('schedule_slackusers as su')
-            ->where('su.agent_id', $this->entries->agent_id)
+            ->where('su.agent_id', $this->entries->getRow()->agent_id)
             ->first(['agent_id', 'slackid', 'realname', 'realnamenormalized']);
         return $agentsSlack;
     }
@@ -44,13 +44,13 @@ class reviewNotify implements INotify
             }
         }
       
-        $status = (new ReviewStatus($this->entries->approve_status))->giveStatus();
-        $daysOffType = (new DaysOffType($this->entries->request_type))->giveType();
+        $status = (new ReviewStatus($this->entries->getRow()->approve_status))->giveStatus();
+        $daysOffType = (new DaysOffType($this->entries->getRow()->request_type))->giveType();
 
         $t = $api->chatPostMessage([
             'username' => 'Schedule Bot',
             'channel' => $agent->slackid,
-            'text' => 'Your request for '.$daysOffType.' has been '.$status.' by ' . $reviewAuthor->firstname.' '.$reviewAuthor->lastname.'.'.($this->entries->approve_response ? ' Additional comment: '.$this->entries->approve_response : '')
+            'text' => 'Your request for '.$daysOffType.' has been '.$status.' by ' . $reviewAuthor->firstname.' '.$reviewAuthor->lastname.'.'.($this->entries->getRow()->approve_response ? ' Additional comment: '.$this->entries->getRow()->approve_response : '')
 
         ]);
 

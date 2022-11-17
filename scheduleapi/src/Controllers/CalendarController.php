@@ -34,11 +34,13 @@ class CalendarController
     public function calendar($request, $response, $args)
     {
         $data = [];
-        
-        $agenthash = $request->getQueryParams()['agenthash'];
+
+        $agenthash = $args['agenthash'];
         if (!$agenthash) {
+            return;
         }
         $agent_id = DB::table('schedule_calendaraccess')->where('hash', $agenthash)->value('agent_id');
+
         $cal = new icsHelper();
         //$agent_id = 136;
 
@@ -55,11 +57,12 @@ class CalendarController
             ->whereBetween('t.day', [$dayStart, $dayEnd])
             ->where('t.draft', '0')
             ->get();
+
         foreach ($schedule as $event) {
             $cal->addEvent(function ($e) use ($event) {
                 $e->startDate = new \DateTime($event->day . 'T' . $event->from . ':00+00:00');
                 $e->endDate = new \DateTime($event->day . 'T' . $event->to . ':00+00:00');
-                // $e->uri = 'http://url.to/my/event';
+                //$e->uri = 'http://url.to/my/event';
                 $e->location = 'TMDHosting';
                 $e->description = $event->group;
                 $e->summary = $event->group . ' @ ' . $event->day . ' ' . $event->from . ' - ' . $event->to;

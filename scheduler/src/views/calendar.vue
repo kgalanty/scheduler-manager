@@ -5,12 +5,25 @@
         <p class="title">Calendar Synchronization</p>
       </div>
     </section>
-     <section class="hero"><div class="notification is-primary"> <b-field label="">
-             Your Calendar URL
-            <b-input :loading="loading" style="" expanded v-if="link||loading" v-model="link"></b-input>
-            </b-field>
-        </div>
-     </section>
+    <section class="hero">
+      <div class="notification is-primary is-light">
+       Here you can obtain a link to your timetable with all your shifts. It can be imported to Google Calendar, Outlook etc.
+      </div>
+    </section>
+    <section class="hero">
+      <div class="notification is-primary">
+        <b-field label="">
+          Your Calendar URL
+          <b-input
+            :loading="loading"
+            style=""
+            expanded
+            v-if="link || loading"
+            v-model="link"
+          ></b-input>
+        </b-field>
+      </div>
+    </section>
   </div>
 </template>
 <script>
@@ -20,37 +33,34 @@ export default {
   name: "calendar",
 
   mounted() {
-    this.generate()
-   // this.$store.dispatch("getLogs", {datefrom: this.moment(this.datefrom).format('YYYY-MM-DD HH:mm:ss'), dateto: this.moment(this.dateto).format('YYYY-MM-DD HH:mm:ss') });
+    this.generate();
+    // this.$store.dispatch("getLogs", {datefrom: this.moment(this.datefrom).format('YYYY-MM-DD HH:mm:ss'), dateto: this.moment(this.dateto).format('YYYY-MM-DD HH:mm:ss') });
   },
   methods: {
-    generate()
-    {
-      this.loading = true
-   this.$http
-      .get("./scheduleapi/calendar/generate", { withCredentials: true })
-      .then((r) => {
-        if (r.data.response === "success") {
-          this.link = r.data.link
-        } else {
-         this.$router.push({ path: `/`})
-        }
-        this.loading = false
-      });
+    generate() {
+      this.loading = true;
+      this.$http
+        .get("./scheduleapi/calendar/generate", { withCredentials: true })
+        .then((r) => {
+          if (r.data.response === "success") {
+            this.link = r.data.link;
+          } else {
+            this.$router.push({ path: `/` });
+          }
+          this.loading = false;
+        });
     },
-    getStyle(bg, color)
-    {
-       if(!bg && !color)
-      {
-         return {
-        'background-color' : 'white',
-        'color': 'black'
-      }
+    getStyle(bg, color) {
+      if (!bg && !color) {
+        return {
+          "background-color": "white",
+          color: "black",
+        };
       }
       return {
-        'background-color' : bg,
-        'color': color
-      }
+        "background-color": bg,
+        color: color,
+      };
     },
     openSchedule(path, log) {
       var shift = log.log.split("Shift: ")[1];
@@ -66,8 +76,14 @@ export default {
       });
     },
     getStats() {
-      if (this.moment(this.dateto).isAfter(this.datefrom) || this.datefrom === this.dateto) {
-        this.$store.dispatch("getLogs", {datefrom: this.moment(this.datefrom).format('YYYY-MM-DD HH:mm:ss'), dateto: this.moment(this.dateto).format('YYYY-MM-DD HH:mm:ss') });
+      if (
+        this.moment(this.dateto).isAfter(this.datefrom) ||
+        this.datefrom === this.dateto
+      ) {
+        this.$store.dispatch("getLogs", {
+          datefrom: this.moment(this.datefrom).format("YYYY-MM-DD HH:mm:ss"),
+          dateto: this.moment(this.dateto).format("YYYY-MM-DD HH:mm:ss"),
+        });
       } else {
         // this.dateto = this.moment(this.datefrom).add(1, 'day').toDate()
         // this.getStats()
@@ -81,8 +97,8 @@ export default {
   },
   data() {
     return {
-       loading:false,
-       link: ''
+      loading: false,
+      link: "",
     };
   },
 };
