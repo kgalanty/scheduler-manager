@@ -1,7 +1,7 @@
 <template>
   <div id="app">
     <UserHeader />
-    <SearchEngine />
+    <!-- <SearchEngine /> -->
     <!-- <RecentEvents /> -->
     <Browser />
   </div>
@@ -9,7 +9,7 @@
 
 <script>
 import UserHeader from "../components/UserHeader.vue";
-import SearchEngine from "../components/SearchEngine.vue";
+// import SearchEngine from "../components/SearchEngine.vue";
 //import RecentEvents from "../components/RecentEvents.vue";
 import Browser from "../components/Browser.vue";
 
@@ -17,7 +17,7 @@ export default {
   name: "App",
   components: {
     UserHeader,
-    SearchEngine,
+  //  SearchEngine,
    // RecentEvents,
     Browser,
   },

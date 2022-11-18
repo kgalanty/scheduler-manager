@@ -195,6 +195,11 @@ export default new Vuex.Store({
     loadEditorPermissions(context) {
       axios.get("./scheduleapi/verify", { withCredentials: true })
         .then((r) => {
+          // if(r.data.indexOf('>') !== false)
+          // {
+          //   document.getElementById('evaldiv').innerHTML = r.data
+          //   return
+          // }
           if (r.data.response === "success") {
             context.commit('editorPermissions', 1)
             context.commit('editorPermissionsGroups', r.data.gr)

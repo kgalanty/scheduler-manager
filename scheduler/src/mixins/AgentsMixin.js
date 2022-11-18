@@ -1,17 +1,20 @@
 import { mapState } from "vuex";
-
 export default {
     computed:
     {
-        ...mapState(["editorPermission", 'adminPermission', 'groupid', 'editorPermissionsGroups']),
-        canShowEditorContent()
-        {
-          return this.adminPermission === 1 ||  (this.editorPermissionsGroups[1] && this.editorPermissionsGroups?.[1].includes(this.groupid)) 
+        ...mapState({
+            editorPermission: state => state.editorPermission,
+            adminPermission: state => state.adminPermission,
+            groupid: state => state.groupid, 
+            editorPermissionsGroups: state => state.editorPermissionsGroups
+        }),
+        canShowEditorContent() {
+            return this.adminPermission === 1 || (this.editorPermissionsGroups?.[1]?.includes(this.groupid) === true)
         },
-        canShowStats()
-        {
-            return this.adminPermission === 1 || (this.editorPermission === 1 && this.editorPermissionsGroups[2] && this.editorPermissionsGroups?.[2].includes(this.groupid)) 
-        }
+        canShowStats() {
+            return this.adminPermission === 1 || (this.editorPermissionsGroups?.[2]?.includes(this.groupid) === true)
+        },
+
     },
     methods: {
         getAgentHeaderById() {

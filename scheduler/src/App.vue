@@ -1,8 +1,8 @@
 <template>
   <div id="app">
     <Header />
-
     <SidebarRight
+      :canShowEditorContent="canShowEditorContent"
       v-if="
         $route.matched.some(
           ({ name }) =>
@@ -36,6 +36,7 @@ export default {
     TemplatesSidebar,
   },
   computed: {
+
   },
   mounted() {
     this.getAgentHeaderById();

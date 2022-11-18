@@ -26,7 +26,7 @@
     <transition name="list">
       <div class="floatright openedsidebar" v-if="open == true">
         <!-- <b-sidebar type="is-light" v-model="open" fullheight right> -->
-        <div class="p-3">
+        <div class="p-3" v-if="canShowEditorContent">
           <b-button
             type="is-info"
             label="Close"
@@ -59,7 +59,7 @@
             /></b-switch>
           </b-tooltip>
         </div>
-        <b-message type="is-info" has-icon style="margin: 0px 10px">
+        <b-message type="is-info" has-icon style="margin: 0px 10px" v-if="canShowEditorContent">
           To put an agent into schedule, drag the name and drop to desired day.
           <br />
           To edit members and manage shifts & groups,
@@ -188,6 +188,7 @@
 <script>
 //import AddGroupForm from "../forms/AddGroupForm.vue";
 export default {
+  props: ['canShowEditorContent'],
   data() {
     return {
       open: false,

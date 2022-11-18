@@ -9,10 +9,11 @@
   >
     <span class="columnday" v-if="groupindex === 0">{{ day }}</span>
     <span
+    
       class="columnday"
       :class="{ active: groupDrop.find((i) => i === shift + '|' + date) }"
     >
-      <b-checkbox
+      <b-checkbox v-if="canEditThisGroup"
         :data-shift="shift"
         :native-value="shift + '|' + date"
         :true-value="shift + '-' + date"
@@ -101,9 +102,13 @@
     <ul v-else style="opacity: 0.5; text-align: center">
       <li style="padding: 0.4rem">Empty</li>
     </ul>
+    <ul v-if="today && today.shift && today.shift.date && canEditThisGroup" style="opacity: 0.5; text-align: center">
+      <li style="padding: 0.4rem">Add new</li>
+    </ul>
   </div>
 </template>
 <script>
+import { mapState } from 'vuex';
 import AddShiftMixin from "../mixins/AddShiftMixin.js";
 export default {
   mixins: [AddShiftMixin],
@@ -113,6 +118,11 @@ export default {
     // {
 
     // },
+    ...mapState(['adminPermission', 'editorPermissionsGroups']),
+    canEditThisGroup()
+    {
+      return this.adminPermission === 1 || (this.editorPermissionsGroups?.[1]?.includes(this.group) === true)
+    },
     editorPermission() {
       return this.$store.state.editorPermission;
     },
@@ -295,6 +305,18 @@ export default {
       });
     },
     onDrop(evt, force = false) {
+      if(this.canEditThisGroup === false)
+      {
+        this.$buefy.toast.open({
+              duration: 5000,
+              message: 'No permissions to perofrm this action.',
+              position: "is-top",
+              type: "is-danger",
+            });
+            this.dragging = false;
+        return;
+      }
+
       this.dragging = false;
       //console.log(evt.dataTransfer.getData("agentItem"))
       const AgentItem = JSON.parse(evt.dataTransfer.getData("agentItem"));
@@ -351,7 +373,6 @@ export default {
         ).then((r) => {
           if (r.data.response === "success") {
             --counter;
-            console.log(counter)
             if (counter > 1) {
               return;
             }
