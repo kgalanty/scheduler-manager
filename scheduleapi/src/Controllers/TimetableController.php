@@ -20,6 +20,7 @@ use App\Functions\Logs\UseDaysOff;
 use App\Functions\Notifications\commitNotify;
 use App\Functions\SlackNotifications;
 use App\Entities\Shift as ShiftEntity;
+use App\Constants\DBConstants;
 
 class TimetableController
 {
@@ -39,7 +40,12 @@ class TimetableController
   public function deleteVacationing($request, $response, $args)
   {
     $author = AgentConstants::adminid();
-    if (!EditorsAuth::isEditor()) {
+    $id = $request->getParsedBody()['id'];
+
+    $current_entry = DB::table("schedule_vacations")->where('id', $id)->first();
+    $agentGroupForPermissions = DB::table('schedule_agents_to_groups')->where('agent_id', $current_entry->agent_id)->value('group_id');
+
+    if ($current_entry->agent_id != -1 && !EditorsAuth::hasPermission(PermissionsConstants::MANAGE_GROUP_IN_SHIFTS, $agentGroupForPermissions) && !EditorsAuth::isAdmin()) {
       $data['response'] = 'No permission for this operation';
     } else {
 
@@ -307,17 +313,18 @@ class TimetableController
     $startdateparams = explode('-', $startdate, 3);
     $author = AgentConstants::adminid();
 
-    $startdateprocessed = date('Y-m-d', strtotime($startdateparams[0] . ' ' . $startdateparams[2]));
-    $enddateprocessed = date('Y-m-d', strtotime($startdateparams[1] . ' ' . $startdateparams[2]));
-    if ($enddateprocessed < $startdateprocessed) {
-      $enddateprocessed = date('Y-m-d', strtotime($startdateparams[1] . ' ' . $startdateparams[2] + 1));
-    }
+   // $startdateprocessed = date('Y-m-d', strtotime($startdateparams[0] . ' ' . $startdateparams[2]));
+   // $enddateprocessed = date('Y-m-d', strtotime($startdateparams[0] . ' ' . $startdateparams[2] .' +6 days'));
+    
+    $enddateprocessed = date('Y-m-d',  strtotime($startdateparams[1] . ' ' . $startdateparams[2]));
+    $startdateprocessed = date('Y-m-d', strtotime($enddateprocessed . ' -6 days'));
+
     //var_dump($startdateprocessed, $enddateprocessed);die;
-    $timetable = DB::table('schedule_vacations AS t')
-      ->leftJoin('tbladmins AS a', 'a.id', '=', 't.agent_id')
-      ->leftJoin('schedule_agents_details AS d', 'd.agent_id', '=', 'a.id')
-      ->leftJoin('schedule_agents_to_groups as ag', 'ag.agent_id', '=', 't.agent_id')
-      ->leftJoin('schedule_agentsgroups AS agr', 'agr.id', '=', 'ag.group_id')
+    $timetable = DB::table(DBConstants::DBVACATIONS . ' AS t')
+      ->leftJoin(DBConstants::DBADMINS . ' AS a', 'a.id', '=', 't.agent_id')
+      ->leftJoin(DBConstants::DBAGENTSDETAILS . ' AS d', 'd.agent_id', '=', 'a.id')
+      ->leftJoin(DBConstants::DBAGENTSTOGROUPS . ' as ag', 'ag.agent_id', '=', 't.agent_id')
+      ->leftJoin(DBConstants::DBAGENTSGROUPS . ' AS agr', 'agr.id', '=', 'ag.group_id')
       ->whereBetween('t.day', [$startdateprocessed, $enddateprocessed])
       ->where(function ($query) use ($author) {
         $query->where('t.draft', '0');
@@ -353,17 +360,17 @@ class TimetableController
     if ($body['agent_id'] == -1) {
       return Response::json(['response' => 'Placeholders cannot be stored in vacationing.'], $response);
     }
-    if (DB::table('schedule_timetable')->where('agent_id', $body['agent_id'])->where('day', $body['date'])->count() > 0) {
+    if (DB::table(DBConstants::DBTIMETABLE)->where('agent_id', $body['agent_id'])->where('day', $body['date'])->count() > 0) {
       return Response::json(['response' => 'This agent has already had duty on this date (may be as draft)'], $response);
     }
-    if (DB::table("schedule_vacations")->where([
+    if (DB::table(DBConstants::DBVACATIONS)->where([
       'agent_id' =>  $body['agent_id'],
       'group_id' => $body['group_id'],
       'day' => $body['date'],
       'draft' => '0',
       'author' => AgentConstants::adminid(),
     ])->count() == 0) {
-      DB::table("schedule_vacations")->insert(
+      DB::table(DBConstants::DBVACATIONS)->insert(
         [
           'agent_id' =>  $body['agent_id'],
           'group_id' => $body['group_id'],
@@ -372,9 +379,9 @@ class TimetableController
           'author' => AgentConstants::adminid(),
         ]
       );
-      $update_pool = DB::table('schedule_daysoff')->where('agent_id', $body['agent_id'])->where('date_expiration', '>', date('Y-m-d'))->orderBy('year', 'ASC')->first();
+      $update_pool = DB::table(DBConstants::DBDAYSOFF)->where('agent_id', $body['agent_id'])->where('date_expiration', '>', date('Y-m-d'))->orderBy('year', 'ASC')->first();
       if ($update_pool) {
-        DB::table('schedule_daysoff')->where('id', $update_pool->id)->update(['days' => $update_pool->days - 1]);
+        DB::table(DBConstants::DBDAYSOFF)->where('id', $update_pool->id)->update(['days' => $update_pool->days - 1]);
       }
       $log = (new UseDaysOff(['path' => $body['path'], 'agent_id' => $body['agent_id'], 'dayoff' => $body['date']]));
       (new LogsFactory($log))->store();

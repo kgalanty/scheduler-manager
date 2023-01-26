@@ -53,6 +53,10 @@ export default new Vuex.Store({
 
   },
   getters: {
+    hasPermission: (state) => (permissions, group_id) => 
+    {
+      return state.editorPermissionsGroups[permissions]?.includes(group_id) || state.adminPermission === 1
+    },
     topteams: (state, getters) => (variant) =>
     {
       if(state.adminPermission === 1 && variant === 'Admin')
@@ -286,6 +290,7 @@ export default new Vuex.Store({
               return;
             }
             context.commit('setVacationings', response.data)
+            context.commit('setRefdate', response.data.refdate)
             resolve()
           });
       })

@@ -28,6 +28,6 @@ class VacationRequest implements IEntity
 
     public function isAlreadyApproved()
     {
-        return 
+        return $this->getRow()->approve_status === 1;
     }
 }

@@ -162,12 +162,9 @@ class AgentsController
   {
     $team =  $request->getParsedBody()['team_id'];
     $agent =  $request->getParsedBody()['agent'];
-    if($team === '')
-    {
+    if ($team === '') {
       DB::table('schedule_agents_to_groups')->where('agent_id', $agent)->delete();
-    }
-    else
-    {
+    } else {
       DB::table('schedule_agents_to_groups')->updateOrInsert(['agent_id' => $agent], ['group_id' => $team]);
     }
 
@@ -235,9 +232,9 @@ class AgentsController
   {
     $groups = EditorsAuth::getEditorGroups();
 
-      $data['response'] = 'success';
+    $data['response'] = 'success';
 
-      $data['gr'] = $groups;
+    $data['gr'] = $groups;
     if (EditorsAuth::isAdmin()) {
       $data['admin'] = 1;
     }
@@ -254,7 +251,7 @@ class AgentsController
     $author = AgentConstants::adminid();
 
     if (
-      $author || 1
+      $author 
     ) {
       $operators = array_map(function ($item) {
         return $item->admin;
@@ -280,11 +277,21 @@ class AgentsController
     $agent = urldecode($_GET['agent']);
     $dateFrom = $_GET['dateFrom'];
     $dateTo = $_GET['dateTo'];
-    if (!EditorsAuth::isEditor()) {
-      $agent = AgentConstants::adminname();
+    $agent_id = $_GET['agent_id'];
+
+    $groupsManaging = EditorsAuth::getEditorGroups();
+
+    if (!EditorsAuth::isAdmin() || !$groupsManaging[2]) {
+        return Response::json(['response' => 'error', 'msg' => 'You dont have permission to do this'], $response);
     }
+
+    $agent_to_group = DB::table('schedule_agents_to_groups')->where('agent_id', $agent_id)->first();
+//var_dump($agent_to_group->group_id, $groupsManaging, $agent_to_group);die;
+    // if (!EditorsAuth::isEditor()) {
+    //   $agent = AgentConstants::adminname();
+    // }
     if (
-      $author
+      in_array($agent_to_group->group_id, $groupsManaging[2]) && $agent_to_group || (int)$agent_id === (int)$author || EditorsAuth::isAdmin()
     ) {
       $avgFirstReply = DB::select('SELECT AVG(diff) AS avg_firstreply, COUNT(tid) AS replies_count FROM (SELECT time_to_sec(TIMEDIFF(tr.date, t.date)) AS diff, tr.tid
       FROM tbltickets t
@@ -324,5 +331,26 @@ class AgentsController
     // return $response
     //   ->withHeader('Content-Type', 'application/json');
 
+  }
+  public function getTimetable($request, $response, $args)
+  {
+    $date = $_GET['date'];
+    $agent_id = $args['agentid'];
+
+    if (!$date) {
+      $date = date('Y-m-d');
+    }
+    $date_from = date('Y-m-d', strtotime($date . ' -1 months'));
+    $date_to = date('Y-m-d', strtotime($date . ' +1 months'));
+
+    $timetable = DB::table('schedule_timetable as t')->where('t.agent_id', $agent_id)
+      ->join('schedule_shifts as s', 's.id', '=', 't.shift_id')
+      ->whereBetween('t.day', [$date_from, $date_to])
+      ->where('t.draft', '0')
+      ->orderBy('t.day', 'ASC')
+      ->get(['t.day', 's.from', 's.to']);
+
+
+    return Response::json(['timetable' => $timetable], $response);
   }
 }

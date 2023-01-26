@@ -15,9 +15,6 @@ class DBConstants
     const DBTPLSHIFTS = 'schedule_tplshifts';
     const DBTPLDELDRAFTS = 'schedule_timetable_deldrafts';
     const DBTPLS = 'schedule_templates';
-    
-
-
-
-
+    const DBVACATIONS = 'schedule_vacations';
+    const DBDAYSOFF = 'schedule_daysoff';
 }

@@ -18,7 +18,7 @@
     </div>
     <section class="hero">
       <div class="hero-body">
-        <p class="title">Personal stats by tickets</p>
+        <p class="title">Personal tickets stats</p>
       </div>
     </section>
 
@@ -71,9 +71,9 @@
       </div>
       <div class="column" v-if="!isAdmin">
         <b-field label="Agent">
-          <b-button type="is-info" expanded  @click="showMyStats()"
-          >Show My Stats</b-button
-        >
+          <b-button type="is-info" expanded @click="showMyStats()"
+            >Show My Stats</b-button
+          >
         </b-field>
       </div>
       <div class="column" v-if="isEditor">
@@ -333,9 +333,11 @@ export default {
       );
     },
     teams() {
-      return this.isAdmin ? this.$store.state.schedule_teams : this.$store.state.schedule_teams.filter((item) => {
-        return this.groupsAllowed.includes(item.groupid);
-      });
+      return this.isAdmin
+        ? this.$store.state.schedule_teams
+        : this.$store.state.schedule_teams.filter((item) => {
+            return this.groupsAllowed.includes(item.groupid);
+          });
     },
     agents() {
       return this.$store.state.agentsGroups.agents;
@@ -369,10 +371,9 @@ export default {
     }
   },
   methods: {
-    showMyStats()
-    {
-      this.teamSelected = ''
-      this.getStats()
+    showMyStats() {
+      this.teamSelected = "";
+      this.getStats();
     },
     getOperators() {
       this.$http.get("./scheduleapi/agents").then((r) => {
@@ -445,7 +446,7 @@ export default {
 
               return;
             }
-
+            var showError = false
             this.agents.forEach(async (item) => {
               await this.$http
                 .get("./scheduleapi/tickets/personalstats", {
@@ -455,18 +456,30 @@ export default {
                     agent: encodeURIComponent(
                       item.firstname + " " + item.lastname
                     ),
+                    agent_id: item.adminid,
                   },
                 })
                 .then((r) => {
+                  agentsCounter--;
                   if (r.data.response === "success") {
                     this.groupStats.push(r.data.stats);
-                    agentsCounter--;
+
                     // this.agentstats = r.data.operators;
                   } else {
-                    // this.$router.push({ path: `/`})
+                    showError = true
+                    //  this.$router.push({ path: `/`})
+                    
                   }
                   if (agentsCounter === 0) {
                     this.loadingTbl = false;
+                  }
+                  if(showError)
+                  {
+                    this.$buefy.toast.open({
+                      message: 'Some data were not loaded for permissions lack reason.',
+                      type: "is-danger",
+                    });
+                    showError = false
                   }
                 });
             });
@@ -484,7 +497,9 @@ export default {
                       " " +
                       this.operatorSelected.lastname
                   )
-                : (this.operatorFilter ? encodeURIComponent(this.operatorFilter) : ''),
+                : this.operatorFilter
+                ? encodeURIComponent(this.operatorFilter)
+                : "",
             },
           })
           .then((r) => {

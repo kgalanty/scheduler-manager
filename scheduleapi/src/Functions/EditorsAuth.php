@@ -10,7 +10,7 @@ class EditorsAuth
 {
 	public static function isAdmin()
 	{
-		return in_array(AgentConstants::adminid(), [98]);
+		return in_array(AgentConstants::adminid(), [98,230]);
 	}
 
 	public static function hasPermission(int $perm_id, int $group_id) 

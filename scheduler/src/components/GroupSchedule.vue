@@ -603,6 +603,8 @@ export default {
       //   });
     },
     moveWeek(direction) {
+      //const OldRefDate = this.referenceDate
+
       if (direction == -1) {
         this.referenceDate = this.moment(this.referenceDate).subtract(
           1,
@@ -636,7 +638,7 @@ export default {
           this.referenceDate
         ).format("MMMDD")}-${this.moment(this.referenceDate)
           .add(6, "day")
-          .format("MMMDD")}-${this.moment(this.referenceDate).format("YYYY")}`,
+          .format("MMMDD")}-${this.moment(this.referenceDate).add(6, "day").format("YYYY")}`,
       });
 
       //if (!alreadyInStore) {

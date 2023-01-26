@@ -67,10 +67,10 @@
             type="is-warning"
             size="is-small"
             @click="confirmCancel(props.row.id)"
-            v-if="props.row.cancelled == 0"
+            v-if="showCancel(row)"
             >Cancel</b-button
           >
-          <b-tag type="is-info is-light" v-if="props.row.cancelled == 1"
+          <b-tag type="is-info is-light" v-if="showCancelledLabel(row)"
             >Cancelled</b-tag
           >
         </b-table-column>
@@ -146,7 +146,15 @@ export default {
       });
     },
   },
-  computed: {},
+  computed: {
+    showCancel(row) {
+      return row.cancelled === 0 && row.approve_admin_id > 0;
+    },
+    showCancelledLabel(row)
+    {
+      return row.cancelled === 1
+    }
+  },
   data() {
     return {
       btnLoading: false,

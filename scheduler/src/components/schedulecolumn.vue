@@ -139,7 +139,7 @@ export default {
         .format("YYYY-MM-DD");
     },
     shifts() {
-      return this.$store.state.timetable[this.date].shifts;
+      return this.$store.state.timetable[this.ref]?.shifts;
     },
     today() {
       if (
@@ -166,6 +166,10 @@ export default {
     };
   },
   methods: {
+    canEditTimetable(group_id)
+    {
+      return this.adminPermission === 1 || (this.editorPermissionsGroups?.[1]?.includes(group_id) === true)
+    },
     isCheckboxDisabled(shift_id, date) {
       return (
         !!this.groupDrop.find((i) => i.indexOf(date) > -1) &&
@@ -305,11 +309,13 @@ export default {
       });
     },
     onDrop(evt, force = false) {
-      if(this.canEditThisGroup === false)
+      const AgentItem = JSON.parse(evt.dataTransfer.getData("agentItem"));
+
+      if(this.canEditTimetable(AgentItem.group_id) === false)
       {
         this.$buefy.toast.open({
               duration: 5000,
-              message: 'No permissions to perofrm this action.',
+              message: 'No permissions to perform this action.',
               position: "is-top",
               type: "is-danger",
             });
@@ -319,7 +325,7 @@ export default {
 
       this.dragging = false;
       //console.log(evt.dataTransfer.getData("agentItem"))
-      const AgentItem = JSON.parse(evt.dataTransfer.getData("agentItem"));
+     
       console.log(AgentItem);
       // console.log(this.date);
       // console.log(itemID)

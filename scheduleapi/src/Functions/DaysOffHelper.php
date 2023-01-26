@@ -22,10 +22,9 @@ class DaysOffHelper
 
         DB::table('schedule_vacations')->insert($rows);
 
-        self::SubtractDaysFromHolidays(count($dates), $agent_id);
         return;
     }
-
+    // take days from pool
     public static function SubtractDaysFromHolidays(int $daysCount, int $agent_id)
     {
         $daysPool = DB::table('schedule_daysoff')->where('date_expiration', '>', date('Y-m-d'))->where('agent_id', $agent_id)->orderBy('date_expiration', 'ASC')->first();
@@ -35,6 +34,7 @@ class DaysOffHelper
         }
         return false;
     }
+    //return days to pool
     public static function AddDaysFromHolidays(int $daysCount, int $agent_id)
     {
         $daysPool = DB::table('schedule_daysoff')->where('date_expiration', '>', date('Y-m-d'))->where('agent_id', $agent_id)->orderBy('date_expiration', 'ASC')->first();

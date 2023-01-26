@@ -1,14 +1,14 @@
 
 export default {
     methods: {
-        PostShift(agent_id, force) {
+        PostForceShift(agent_id) {
             return this.$http
                 .post("./scheduleapi/shifts/timetable", {
                     date: this.date,
                     agent_id: agent_id,
-                    shift_id: this.shift_id,
-                    group_id: this.group_id,
-                    force: force
+                    shift_id: this.shift,
+                    group_id: this.group,
+                    force: true
                 })
         },
         ForceAddDutyConfirm(r, agent_id, refdate) {
@@ -24,7 +24,7 @@ export default {
                         container: null,
                     });
 
-                    this.PostShift(agent_id, true)
+                    this.PostForceShift(agent_id)
                         .then((r) => {
                             if (r.data.response === "success") {
 

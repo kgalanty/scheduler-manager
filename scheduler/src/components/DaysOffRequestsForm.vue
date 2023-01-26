@@ -1,14 +1,12 @@
 <template>
-  <div style="width: -webkit-fill-available;">
+  <div style="width: -webkit-fill-available">
     <section class="hero">
       <div class="notification is-info is-light">
         <div class="columns">
           <div class="column allrequests">
-            <b-field >
-              Show Answered Requests</b-field>   <b-field >
-              <b-checkbox v-model="showAll" @input="getRequests" 
-                ></b-checkbox
-              >
+            <b-field> Show Answered Requests</b-field>
+            <b-field>
+              <b-checkbox v-model="showAll" @input="getRequests"></b-checkbox>
             </b-field>
           </div>
           <div class="column">
@@ -70,14 +68,21 @@
       <template #empty>
         <div class="has-text-centered">No pending requests</div>
       </template>
-      <b-table-column field="date_start" label="Agent" v-slot="props" centered width="140">
+      <b-table-column
+        field="date_start"
+        label="Agent"
+        v-slot="props"
+        centered
+        width="140"
+      >
         {{ props.row.a_firstname }} {{ props.row.a_lastname }}
       </b-table-column>
       <b-table-column
         field="group"
         label="Group"
         v-slot="props"
-        centered width="140"
+        centered
+        width="140"
       >
         {{ props.row.group }}
       </b-table-column>
@@ -112,7 +117,19 @@
         {{ props.row.desc }}
       </b-table-column>
       <b-table-column field="" label="Status" v-slot="props" centered>
-        <StatusColumn :request="props.row" :submitFunction="SubmitReview" />
+        <StatusColumn
+          :request="props.row"
+          :submitFunction="SubmitReview"
+          :hasPermission="hasPermission(props.row.agent_group_id)"
+        />
+      </b-table-column>
+      <b-table-column field="" label="Edition" v-slot="props" centered>
+        <b-button
+          type="is-info"
+          @click="OpenEditModal(props.row)"
+          :disabled="!hasPermission(props.row.agent_group_id)"
+          icon-right="pen"
+        />
       </b-table-column>
     </b-table>
   </div>
@@ -122,6 +139,9 @@
 import SubmitLeaveReviewModal from "../forms/SubmitLeaveReviewModal.vue";
 import StatusColumn from "./DaysOff/Requests/StatusColumn.vue";
 import TypeColumn from "./DaysOff/Requests/TypeColumn";
+import EditLeaveModal from "../forms/EditLeaveModal.vue";
+import Permissions from "..//libs/permissions";
+
 export default {
   name: "DaysOffRequestsForm",
   components: { StatusColumn, TypeColumn },
@@ -129,8 +149,32 @@ export default {
     teams() {
       return this.$store.getters["teams/teams"];
     },
+    LeaveManagementPermissions() {
+      return Permissions.MANAGE_LEAVES;
+    },
   },
   methods: {
+    hasPermission(group_id) {
+      return this.$store.getters.hasPermission(
+        this.LeaveManagementPermissions,
+        group_id
+      );
+    },
+    OpenEditModal(request) {
+      const that = this;
+      this.$buefy.modal.open({
+        parent: this,
+        component: EditLeaveModal,
+        hasModalCard: true,
+        props: { request },
+        trapFocus: true,
+        events: {
+          reloadapi() {
+            that.getRequests();
+          },
+        },
+      });
+    },
     getFilteredTags(input) {
       this.filteredTags = this.requestTypes.filter((i) =>
         i.label.toLowerCase().indexOf(input.toLowerCase() >= 0)
@@ -151,7 +195,7 @@ export default {
         `page=${this.page}`,
         `perpage=${this.perPage}`,
         `team=${this.teamsfilter}`,
-        `mode=${this.requestTypeFilter.map(u => u.id).join(',')}`,
+        `mode=${this.requestTypeFilter.map((u) => u.id).join(",")}`,
         `orderdir=desc`,
       ].join("&");
 

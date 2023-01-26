@@ -117,13 +117,13 @@
           </b-table-column>
         </b-table>
       </b-table-column>
-      <b-table-column
+      <!-- <b-table-column
             label="Details"
             v-slot="props2"
             centered
           >
           <b-button  @click="loadShiftStats(props2.row.id)" type="is-info" icon-left="eye" size="is-small">Detailed Stats</b-button>
-          </b-table-column>
+          </b-table-column> -->
     </b-table>
   </div>
 </template>

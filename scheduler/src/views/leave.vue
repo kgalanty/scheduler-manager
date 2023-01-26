@@ -11,8 +11,8 @@
         <section class="hero">
           <div class="notification is-info is-light">
             <div class="columns">
-              <div class="column is-one-fifth">
-                <b-field label="Select vacation range">
+              <div class="column is-one-fifth has-text-info">
+                <b-field label="Select vacation range ">
                   <b-datepicker
                     v-model="vacationdates"
                     placeholder="Click to select..."
@@ -36,7 +36,7 @@
                     expanded
                     @click="SubmitAddition"
                     :loading="btnLoading"
-                    >Submit vacaton request</b-button
+                    >Submit vacation request</b-button
                   >
                 </b-field>
               </div>
@@ -221,7 +221,7 @@ export default {
           duration: 5000,
           message: "You need to set dates range.",
           type: "is-danger",
-          position: "is-bottom-left",
+          position: "is-top",
         });
         return;
       }

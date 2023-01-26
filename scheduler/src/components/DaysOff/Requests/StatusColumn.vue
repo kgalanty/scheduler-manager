@@ -5,6 +5,7 @@
       v-if="submitFunction"
       @click="submitFunction(request)"
       size="is-small"
+      :disabled="!hasPermission"
       >Submit a review</b-button
     >
     <span v-else>
@@ -25,7 +26,7 @@
 export default {
   name: "StatusColumn",
   components: {},
-  props: ["request", "submitFunction"],
+  props: ["request", "submitFunction", 'hasPermission'],
   computed:
   {
     iconType()

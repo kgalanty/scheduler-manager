@@ -7,16 +7,17 @@ use App\Functions\AgentsHelper;
 use App\Functions\DaysOffType;
 use App\Functions\Interfaces\INotify;
 use App\Functions\ReviewStatus;
+use App\Functions\Interfaces\IEntity;
 
 class reviewNotify implements INotify
 {
     public $entries;
     public $admins;
 
-    public function __construct(array $entries)
+    public function __construct(array $params)
     {
-        $this->entries = $entries['entries'];
-        $this->admins = $entries['admins']; //tbladmins entries
+        $this->entries = $params['entries'];
+        $this->admins = $params['admins']; //tbladmins entries
         // ['entries' => $entries, 'deleteentries' => $deleteentries]
     }
 
@@ -34,11 +35,11 @@ class reviewNotify implements INotify
        
         foreach($this->admins as $admin)
         {
-            if($admin->id == $this->entries->agent_id)
+            if($admin->id == $this->entries->getRow()->agent_id)
             {
                 $submitter = $admin;
             }
-            if($admin->id == $this->entries->approve_admin_id)
+            if($admin->id == $this->entries->getRow()->approve_admin_id)
             {
                 $reviewAuthor = $admin;
             }

@@ -250,8 +250,9 @@ class ShiftsController
         $startdate = $_GET['startdate'];
         $startdateparams = explode('-', $startdate, 3);
 
-        $startdateprocessed = date('Y-m-d', strtotime($startdateparams[0] . ' ' . $startdateparams[2]));
-        $enddate = date('Y-m-d', strtotime($startdateprocessed . ' +6 days'));
+        $enddate = date('Y-m-d',  strtotime($startdateparams[1] . ' ' . $startdateparams[2]));
+        $startdateprocessed = date('Y-m-d', strtotime($enddate . ' -6 days'));
+        
         $shifts = DB::table('schedule_shifts AS s')
             ->leftJoin('schedule_shifts_hidden as sh', function ($join) use ($startdateprocessed) {
                 $join->on('sh.shift_id', '=', 's.id')->where('sh.refdate', '=', $startdateprocessed);

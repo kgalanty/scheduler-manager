@@ -120,6 +120,13 @@
           </div>
         </section>
       </b-tab-item>
+      <b-tab-item label="Calendar Access">
+        <section class="section adminsection">
+          <div class="container">
+            <CalendarAccess />
+          </div>
+        </section>
+      </b-tab-item>
     </b-tabs>
   </div>
 </template>
@@ -128,6 +135,7 @@ import ShiftsList from "../components/ShiftsList.vue";
 import AgentsList from "../components/AgentsList.vue";
 import ReportsForm from "../components/ReportsForm.vue";
 import DaysOffRequestsForm from '../components/DaysOffRequestsForm.vue'
+import CalendarAccess from "../components/CalendarAccess.vue"
 
 export default {
   name: "admin",
@@ -137,6 +145,7 @@ export default {
     AgentsList,
     ReportsForm,
     DaysOffRequestsForm,
+    CalendarAccess,
   },
   data() {
 

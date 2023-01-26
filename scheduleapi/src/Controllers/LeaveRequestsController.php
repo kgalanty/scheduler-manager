@@ -13,6 +13,7 @@ use App\Functions\Notifications\reviewNotify;
 use App\Functions\SlackNotifications;
 use WHMCS\Database\Capsule as DB;
 use App\Responses\Response;
+use App\Functions\Notifications\daysOffNotify;
 
 class LeaveRequestsController
 {
@@ -57,7 +58,7 @@ class LeaveRequestsController
             if ($_GET['order'] && $_GET['orderdir']) {
                 $results->orderBy($_GET['order'], $_GET['orderdir']);
             }
-            $results = $results->get(['r.*', 'a.firstname as a_firstname', 'a.lastname as a_lastname', 'b.firstname as b_firstname', 'b.lastname as b_lastname', 'ag.group']);
+            $results = $results->get(['r.*', 'a.firstname as a_firstname', 'a.lastname as a_lastname', 'b.firstname as b_firstname', 'b.lastname as b_lastname', 'ag.group', 'ag.id AS agent_group_id']);
         }
 
         return Response::json(['response' => 'success', 'data' => $results, 'total' => $total], $response);
@@ -87,6 +88,9 @@ class LeaveRequestsController
                 'approve_status' => 0,
             ]);
 
+        $slack = new SlackNotifications(new daysOffNotify(['author_id' => $author, 'datestart' => $datestart, 'dateend' => $dateend, 'mode' => $mode]));
+        $slack->send();
+
         return Response::json(['response' => 'success', 'query' => $results], $response);
     }
     public function submitreview($request, $response, $args)
@@ -96,10 +100,9 @@ class LeaveRequestsController
         if (!EditorsAuth::isAdmin() && !$groupsManaging[4]) {
             return Response::json(['response' => 'error', 'msg' => 'You dont have permission to do this'], $response);
         }
-        $requestEntity = new VacationRequest($args['id']); 
+        $requestEntity = new VacationRequest($args['id']);
 
-        if($requestEntity->isAlreadyApproved())
-        {
+        if ($requestEntity->isAlreadyApproved()) {
             return Response::json(['response' => 'error', 'msg' => 'This request has been already handled.'], $response);
         }
 
@@ -107,11 +110,18 @@ class LeaveRequestsController
         $comment = $request->getParsedBody()['comment'];
         $decision = $request->getParsedBody()['decision'] === true ? 1 : 2;
 
+        $excl_dates = $request->getParsedBody()['excl_dates'] ? $request->getParsedBody()['excl_dates'] : [];
+        $excl_datesImploded = implode(',', $excl_dates);
+        $agent =  $requestEntity->getRow()->agent_id;
+
         if ($decision === 1 && $requestEntity->getRow()->request_type == 1) {
 
             $dates = DatesHelper::generateBetweenDates($requestEntity->getRow()->date_start, $requestEntity->getRow()->date_end);
 
-            DaysOffHelper::AddDaysOffVacations($dates, $requestEntity->getRow()->agent_id);
+            $daysToSubtract = count($dates) - count($excl_dates);
+
+            DaysOffHelper::AddDaysOffVacations($dates, $agent);
+            DaysOffHelper::SubtractDaysFromHolidays($daysToSubtract, $agent);
         }
 
         $results = DB::table("schedule_vacations_request")->where('id', $args['id'])
@@ -120,6 +130,7 @@ class LeaveRequestsController
                 'approve_response' => $comment,
                 'approve_date' => gmdate('Y-m-d H:i:s'),
                 'approve_status' => $decision,
+                'excluded_days' => $excl_datesImploded,
             ]);
 
         $agent_author = DB::table('tbladmins as a')->whereIn('id', [$author,  $requestEntity->getRow()->agent_id])->get(['a.firstname', 'a.lastname', 'a.id']);
@@ -127,14 +138,14 @@ class LeaveRequestsController
         $requestEntity->setRowAttr('approve_response', $comment);
         $requestEntity->setRowAttr('approve_status', $decision);
 
-        $slack = new SlackNotifications(new reviewNotify(['entries' => $request, 'admins' => $agent_author]));
+        $slack = new SlackNotifications(new reviewNotify(['entries' => $requestEntity, 'admins' => $agent_author]));
         $slack->send();
 
         return Response::json(['response' => 'success', 'result' => $results], $response);
     }
     public function cancelLeave($request, $response, $args)
     {
-        $groupsManaging = EditorsAuth::getEditorGroups();
+        $groupsManaging = EditorsAuth::getEditorGroups();   //TODO: Add checking permission group vs leave request staff group
 
         if (!EditorsAuth::isAdmin() || !$groupsManaging[4]) {
             return Response::json(['response' => 'error', 'msg' => 'You dont have permission to do this'], $response);
@@ -195,5 +206,55 @@ class LeaveRequestsController
         // $results = DB::table("schedule_agentsgroups as t")
         // ->where('id',$groupid)
         // ->update([$color_field => $color_value]);
+    }
+
+    function editLeave($request, $response, $args)
+    {
+        $groupsManaging = EditorsAuth::getEditorGroups();
+
+        if (!EditorsAuth::isAdmin() || !$groupsManaging[4]) {
+            return Response::json(['response' => 'error', 'msg' => 'You dont have permission to perform this action.'], $response);
+        }
+        $entry = DB::table('schedule_vacations_request as vr')
+        ->join('schedule_agents_to_groups as atg', 'atg.agent_id', '=', 'vr.agent_id')
+        ->where('vr.id', $args['id'])
+        ->first(['vr.agent_id', 'atg.group_id']);
+        if (!$entry) {
+            return Response::json(['response' => 'error', 'msg' => 'Invalid id'], $response);
+        }
+
+        if(!in_array($entry->group_id, $groupsManaging[4]))
+        {
+            return Response::json(['response' => 'error', 'msg' => 'No permissions to perform this action.'], $response);
+        }
+
+        $newdatestart = $request->getParsedBody()['datestart'];
+        $newdateend = $request->getParsedBody()['dateend'];
+
+        if ($request->getParsedBody()['diff'] !== 0) {
+            //update pool of staff or return error
+            $resp = $request->getParsedBody()['diff'] > 0 ? 
+                DaysOffHelper::AddDaysFromHolidays($request->getParsedBody()['diff'],$entry->agent_id)
+                :
+                DaysOffHelper::SubtractDaysFromHolidays(abs($request->getParsedBody()['diff']), $entry->agent_id);
+
+                if(!$resp)
+                {
+                    return Response::json(['response' => 'error', 'msg' => 'Failed to readjust days in pool.'], $response);
+                }
+        }
+
+        // update  date range in request
+
+        DB::table('schedule_vacations_request')->where('id', $args['id'])
+            ->update(
+                [
+                    'date_start' =>  $newdatestart,
+                    'date_end' => $newdateend,
+                    'excluded_days' => implode(',', $request->getParsedBody()['excl_dates'])
+                ]
+            );
+
+            return Response::json(['response' => 'success'], $response);
     }
 }

@@ -26,6 +26,7 @@ $app->get(ROUTE_PREFIX . '/dbmigration', 'App\Controllers\MigrationController:ho
 $app->get(ROUTE_PREFIX . '/agents', 'App\Controllers\AgentsController:agents');
 $app->get(ROUTE_PREFIX . '/agents/myinfo', 'App\Controllers\AgentsController:myinfo');
 $app->get(ROUTE_PREFIX . '/agents/{agentid}', 'App\Controllers\AgentsController:getAgentInfo');
+$app->get(ROUTE_PREFIX . '/agents/{agentid}/timetable', 'App\Controllers\AgentsController:getTimetable');
 $app->post(ROUTE_PREFIX . '/agents/editor', 'App\Controllers\AgentsController:changeEditorPermission')->add(new JsonMiddleware());
 $app->get(ROUTE_PREFIX . '/shifts', 'App\Controllers\ShiftsController:getShifts');
 
@@ -58,7 +59,10 @@ $app->post(ROUTE_PREFIX . '/templates/delete', 'App\Controllers\TemplatesControl
 $app->get(ROUTE_PREFIX . '/stats', 'App\Controllers\StatsController:get');
 $app->get(ROUTE_PREFIX . '/leaverequests', 'App\Controllers\LeaveRequests:requestslist');
 $app->get(ROUTE_PREFIX . '/calendar/generate', 'App\Controllers\CalendarController:create');
-$app->get(ROUTE_PREFIX . '/calendar/{agenthash}', 'App\Controllers\CalendarController:calendar');
+$app->get(ROUTE_PREFIX . '/calendar/{agenthash}', 'App\Controllers\CalendarController:usercalendar');
+$app->get(ROUTE_PREFIX . '/calendar', 'App\Controllers\CalendarController:accesslist');
+
+$app->post(ROUTE_PREFIX . '/calendar/revoke', 'App\Controllers\CalendarController:revokeaccess');
 
 $app->post(ROUTE_PREFIX . '/subteams/color', 'App\Controllers\SubteamsController:setcolor')->add(new JsonMiddleware());
 
@@ -93,6 +97,7 @@ $app->get(ROUTE_PREFIX . '/leave/get/{agentid}', 'App\Controllers\LeaveRequestsC
 $app->get(ROUTE_PREFIX . '/leave/get', 'App\Controllers\LeaveRequestsController:requestslist');
 $app->post(ROUTE_PREFIX . '/leave/review/{id}', 'App\Controllers\LeaveRequestsController:submitreview')->add(new JsonMiddleware());
 $app->post(ROUTE_PREFIX . '/leave/cancel/{id}', 'App\Controllers\LeaveRequestsController:cancelLeave')->add(new JsonMiddleware());
+$app->post(ROUTE_PREFIX . '/leave/edit/{id}', 'App\Controllers\LeaveRequestsController:editLeave')->add(new JsonMiddleware());
 $app->post(ROUTE_PREFIX . '/feedback', 'App\Controllers\FeedbackController:submitrequest')->add(new JsonMiddleware());
 
 $app->get(ROUTE_PREFIX . '/tickets/operators', 'App\Controllers\AgentsController:AgentsFromTickets');

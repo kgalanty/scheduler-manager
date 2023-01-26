@@ -6,10 +6,38 @@ use WHMCS\Database\Capsule as DB;
 use App\Responses\Response;
 use App\Constants\AgentConstants;
 use App\Functions\icsHelper;
+use App\Functions\EditorsAuth;
 use App\Constants\Env;
 
 class CalendarController
 {
+    public function accesslist($request, $response, $args)
+    {
+        if (!EditorsAuth::isAdmin()) {
+            return Response::json(['response' => 'No Permissions to perform this operation'], $response);
+        }
+        $calendar_list = DB::table('schedule_calendaraccess as c')
+            ->leftJoin('tbladmins as a', 'a.id', '=', 'c.agent_id')
+            ->get(['c.id', 'a.id AS agent_id', 'a.username', 'a.firstname', 'a.lastname', 'a.disabled', 'c.hash']);
+        return Response::json(['response' => 'success', 'calendar' => $calendar_list], $response);
+    }
+
+    public function revokeaccess($request, $response, $args)
+    {
+        $id = (int)$request->getParsedBody()['id'];
+
+        if (!$id) {
+            return Response::json(['response' => 'Wrong ID'], $response);
+        }
+
+        if (!EditorsAuth::isAdmin()) {
+            return Response::json(['response' => 'No permission'], $response);
+        }
+        DB::table('schedule_calendaraccess')->where('id', $id)->delete();
+
+        return Response::json(['response' => 'success'], $response);
+    }
+
     public function create($request, $response, $args)
     {
         if (!AgentConstants::adminid()) {
@@ -31,7 +59,7 @@ class CalendarController
         $link = Env::API . '/calendar/' . $hash;
         return Response::json(['response' => 'success', 'link' => $link], $response);
     }
-    public function calendar($request, $response, $args)
+    public function usercalendar($request, $response, $args)
     {
         $data = [];
 
@@ -44,8 +72,7 @@ class CalendarController
         $cal = new icsHelper();
         //$agent_id = 136;
 
-        if((int)DB::table('tbladmins')->where('id', $agent_id)->value('disabled') === 1)
-        {
+        if ((int)DB::table('tbladmins')->where('id', $agent_id)->value('disabled') === 1) {
             die('You have no permission to access this link');
         }
 
@@ -78,7 +105,7 @@ class CalendarController
         //     $e->description = 'ICS Entertainment';
         //     $e->summary = 'Lorem ipsum dolor ics amet, lorem ipsum dolor ics amet, lorem ipsum dolor ics amet, lorem ipsum dolor ics amet';
         // });
-//var_dump( icsHelper::MIME_TYPE);die;
+        //var_dump( icsHelper::MIME_TYPE);die;
         header('Content-Type: ' . icsHelper::MIME_TYPE);
         header("HTTP/1.1 200 OK");
         // header("Content-type:text/calendar");
@@ -88,7 +115,7 @@ class CalendarController
         //     header('Content-Disposition: attachment; filename=event.ics');
         // }
         echo $cal->serialize();
-         exit;
+        exit;
 
         // return Response::json(['response' => 'success', 'stats' => $results], $response);
 
