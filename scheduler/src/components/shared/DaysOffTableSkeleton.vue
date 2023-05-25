@@ -103,7 +103,7 @@ export default {
       this.$buefy.dialog.confirm({
         title: "Cancel Leave",
         message:
-          "Are you sure you want to <b>cancel</b> this leave? This will return leave days to agent's pool.",
+          "Are you sure you want to <b>cancel</b> this leave? This will not return leave days to agent's pool.",
         confirmText: "Yes, cancel it",
         type: "is-warning",
         hasIcon: true,
@@ -111,6 +111,7 @@ export default {
           this.$http
             .post("./scheduleapi/leave/cancel/" + id, {
               withCredentials: true,
+              daysreturn: 0,
             })
             .then(({ data }) => {
               if (data.response === "success") {

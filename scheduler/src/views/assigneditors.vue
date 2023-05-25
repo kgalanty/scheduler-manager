@@ -1,59 +1,55 @@
 <template>
-  <div style="background-color: white; text-align:center; display:block;height:content-fit;" class="agentListContainer container">
-       <h1 class="title">Assign Editors</h1>
+  <div
+    style="
+      background-color: white;
+      text-align: center;
+      display: block;
+      height: content-fit;
+    "
+    class="agentListContainer container"
+  >
+    <h1 class="title">Assign Editors</h1>
 
-    <div class="columns"> <div class="column" style="text-align:right;">
+    <div class="columns">
+      <div class="column" style="text-align: right">
         <b-select placeholder="Select a name" v-model="neweditor">
-                <option
-                    v-for="a in admins"
-                    :value="a.id"
-                    :key="a.id">
-                    {{ a.firstname }} {{ a.lastname }}
-                </option>
-            </b-select>
-            </div><div class="column" style="text-align:left;">
-             <b-button type="is-primary" @click="addEditor">Add Editor</b-button>
-             </div></div>
-             <h1 class="title">Assigned Editors</h1>
+          <option v-for="a in admins" :value="a.id" :key="a.id">
+            {{ a.firstname }} {{ a.lastname }}
+          </option>
+        </b-select>
+      </div>
+      <div class="column" style="text-align: left">
+        <b-button type="is-primary" @click="addEditor">Add Editor</b-button>
+      </div>
+    </div>
+    <h1 class="title">Assigned Editors</h1>
 
-  <b-table :data="list" narrowed bordered class="agentsListTbl"> 
-
-          <b-table-column
-            centered
-            label="Agent"
-            v-slot="props" 
-          >
-             #{{ props.row.id }} {{ props.row.firstname }} {{ props.row.lastname }} ( {{ props.row.username }} )
-          </b-table-column>
-         <b-table-column
-            field="color"
-            centered
-            label="Delete"
-            v-slot="props" 
-          >
-          <b-button type="is-danger" @click="removeEditor(props.row.id)">Delete</b-button>
-          </b-table-column>
-  </b-table>
-
+    <b-table :data="list" narrowed bordered class="agentsListTbl">
+      <b-table-column centered label="Agent" v-slot="props">
+        #{{ props.row.id }} {{ props.row.firstname }} {{ props.row.lastname }} (
+        {{ props.row.username }} )
+      </b-table-column>
+      <b-table-column field="color" centered label="Delete" v-slot="props">
+        <b-button type="is-danger" @click="removeEditor(props.row.id)"
+          >Delete</b-button
+        >
+      </b-table-column>
+    </b-table>
   </div>
 </template>
 <style >
-  .agentListContainer table td{
-   background-color:rgb(214, 224, 255);
-  }
+.agentListContainer table td {
+  background-color: rgb(214, 224, 255);
+}
 </style>
 <script>
-
 export default {
   name: "assigneditors",
-  components: {
-
-  },
+  components: {},
   data() {
-
     return {
-     neweditor:null,
-     list: []
+      neweditor: null,
+      list: [],
     };
   },
   computed: {
@@ -65,31 +61,28 @@ export default {
     },
   },
   mounted() {
-   this.$http
+    this.$http
       .get("./scheduleapi/verify", { withCredentials: true })
       .then((r) => {
         if (r.data.response === "success") {
-            this.$store.dispatch("getAdmins");
-            this.getAssignedEditors()
+          this.$store.dispatch("getAdmins");
+          this.getAssignedEditors();
         } else {
-         this.$router.push({ path: `/`})
+          this.$router.push({ path: `/` });
         }
       });
-
   },
   methods: {
-    removeEditor(editor_id)
-    {
-               this.$http
-        .post("./scheduleapi/editors/delete", {agent_id:editor_id})
+    removeEditor(editor_id) {
+      this.$http
+        .post("./scheduleapi/editors/delete", { agent_id: editor_id })
         .then((response) => {
           if (response.data.response == "success") {
             this.$buefy.toast.open({
               message: "Editor has been removed",
               type: "is-success",
             });
-              this.getAssignedEditors()
-             
+            this.getAssignedEditors();
           } else {
             this.$buefy.toast.open({
               message: response.data.response,
@@ -98,17 +91,14 @@ export default {
           }
         });
     },
-    getAssignedEditors()
-    {
-       this.$http
-        .get("./scheduleapi/editors/list")
-        .then((response) => {
-           if (response.data.response == "success") {
-             this.list = response.data.list
-           }
-        })
+    getAssignedEditors() {
+      this.$http.get("./scheduleapi/editors/list").then((response) => {
+        if (response.data.response == "success") {
+          this.list = response.data.list;
+        }
+      });
     },
-     addEditor() {
+    addEditor() {
       if (!this.neweditor) {
         this.$buefy.toast.open({
           message: "All fields must be filled",
@@ -116,17 +106,16 @@ export default {
         });
         return;
       }
-         this.$http
-        .post("./scheduleapi/editors/add", {agent_id:this.neweditor})
+      this.$http
+        .post("./scheduleapi/editors/add", { agent_id: this.neweditor })
         .then((response) => {
           if (response.data.response == "success") {
             this.$buefy.toast.open({
               message: "New Editor added",
               type: "is-success",
             });
-            this.new_team = null
-            this.getAssignedEditors()
-             
+            this.new_team = null;
+            this.getAssignedEditors();
           } else {
             this.$buefy.toast.open({
               message: response.data.response,
@@ -139,16 +128,14 @@ export default {
 };
 </script>
 <style scoped>
-.title
-{
+.title {
   text-decoration: underline;
 }
 .agentListContainer {
-   display: flow-root;
+  display: flow-root;
 }
-.agentsListTbl
-{
-  border:1px solid black;
+.agentsListTbl {
+  border: 1px solid black;
 }
 </style>
 <style >
@@ -159,9 +146,9 @@ export default {
   margin-right: 5px;
 }
 .section {
-    -webkit-flex: 1; /* Safari */
-    -ms-flex: 1; /* IE 10 */
-    flex: 1; /* Standard syntax */
+  -webkit-flex: 1; /* Safari */
+  -ms-flex: 1; /* IE 10 */
+  flex: 1; /* Standard syntax */
   border: 1px solid rgb(211, 211, 211);
   border-radius: 5px;
 }
@@ -171,9 +158,8 @@ export default {
 .table tr {
   height: 40px;
 }
-.sectionscontainer
-{
-    display: -webkit-flex; /* Safari */     
-    display: flex; /* Standard syntax */
+.sectionscontainer {
+  display: -webkit-flex; /* Safari */
+  display: flex; /* Standard syntax */
 }
 </style>

@@ -114,8 +114,7 @@
             size="is-small"
             >Edit</b-button
           >
-          </b-field
-        >
+        </b-field>
       </b-table-column>
     </b-table>
   </div>
@@ -128,26 +127,21 @@ import SubmitLeaveReviewModalVue from "../forms/SubmitLeaveReviewModal.vue";
 // import DaysOffRequestsTable from "../components/DaysOff/Tables/DaysOffRequestsTable.vue";
 // import ShiftsChangeRequestsTable from "../components/DaysOff/Tables/ShiftsChangeRequestsTable.vue";
 // import SickLeaveRequestsTable from '../components/DaysOff/Tables/SickLeaveRequestsTable.vue'
-import DaysOffTableSkeleton from '../components/shared/DaysOffTableSkeleton.vue'
+import DaysOffTableSkeleton from "../components/shared/DaysOffTableSkeleton.vue";
 
 export default {
   name: "daysoff",
-  components: {DaysOffTableSkeleton},
-  mounted() { 
-    if(this.canLoadThisPage)
-    {
-      this.loadData();
-    }
-    else
-    {
-      this.$router.push({ path: `/`})
-    }
+  components: { DaysOffTableSkeleton },
+  mounted() {
+    
+    this.loadData();
+      
     // this.$store.dispatch("getLogs", {datefrom: this.moment(this.datefrom).format('YYYY-MM-DD HH:mm:ss'), dateto: this.moment(this.dateto).format('YYYY-MM-DD HH:mm:ss') });
   },
   methods: {
     loadData() {
-      this.getDaysOff(this.$route.params.agentid);
       this.getAgentData(this.$route.params.agentid);
+      this.getDaysOff(this.$route.params.agentid);
     },
     ChangeDays(daysoffentry) {
       const that = this;
@@ -248,9 +242,12 @@ export default {
     },
   },
   computed: {
-    canLoadThisPage()
-    {
-        return (this.$store.state.editorPermissionsGroups && this.$store.state.editorPermissionsGroups[4]?.length > 0) || this.$store.state.adminPermission > 0
+    canLoadThisPage() {
+      return (
+        (this.$store.state.editorPermissionsGroups &&
+          this.$store.state.editorPermissionsGroups[4]?.length > 0 && this.$store.state.editorPermissionsGroups[4].includes(this.agentdata.group_id)) ||
+        this.$store.state.adminPermission > 0
+      );
     },
     yearsEnumerate() {
       const endYear = new Date().getFullYear() + 3;

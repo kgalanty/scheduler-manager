@@ -94,6 +94,7 @@
         width="230"
       >
         {{ props.row.date_start }} - {{ props.row.date_end }}
+        <b-tag v-if="props.row.cancelled > 0" type="is-danger">Cancelled by {{ props.row.c_firstname }} {{ props.row.c_lastname }}</b-tag>
       </b-table-column>
       <b-table-column
         field="request_type"
@@ -123,12 +124,19 @@
           :hasPermission="hasPermission(props.row.agent_group_id)"
         />
       </b-table-column>
-      <b-table-column field="" label="Edition" v-slot="props" centered>
-        <b-button
+      <b-table-column field="" label="Actions" v-slot="props" centered>
+        <b-button  v-if="props.row.cancelled == 0"
           type="is-info"
           @click="OpenEditModal(props.row)"
           :disabled="!hasPermission(props.row.agent_group_id)"
           icon-right="pen"
+        />
+        <b-button
+        v-if="props.row.cancelled == 0"
+          type="is-danger"
+          @click="OpenCancelModal(props.row)"
+          :disabled="!hasPermission(props.row.agent_group_id)"
+          icon-right="times"
         />
       </b-table-column>
     </b-table>
@@ -141,6 +149,7 @@ import StatusColumn from "./DaysOff/Requests/StatusColumn.vue";
 import TypeColumn from "./DaysOff/Requests/TypeColumn";
 import EditLeaveModal from "../forms/EditLeaveModal.vue";
 import Permissions from "..//libs/permissions";
+import CancelLeaveModal from  "../forms/CancelLeaveModal.vue";
 
 export default {
   name: "DaysOffRequestsForm",
@@ -165,6 +174,22 @@ export default {
       this.$buefy.modal.open({
         parent: this,
         component: EditLeaveModal,
+        hasModalCard: true,
+        props: { request },
+        trapFocus: true,
+        events: {
+          reloadapi() {
+            that.getRequests();
+          },
+        },
+      });
+    },
+    OpenCancelModal(request)
+    {
+      const that = this;
+      this.$buefy.modal.open({
+        parent: this,
+        component: CancelLeaveModal,
         hasModalCard: true,
         props: { request },
         trapFocus: true,

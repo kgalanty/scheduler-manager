@@ -38,6 +38,7 @@
             :events="shifts_events"
             indicators="bars"
             :focused-date="focused_date"
+            :first-day-of-week="1"
             @change="recalculateDaysBalance"
             multiple>
         </b-datepicker></b-field>
@@ -136,7 +137,10 @@ export default {
     this.datesrange = [new Date(this.request.date_start), new Date(this.request.date_end)];
     
     let ExclDaysArray = []
-    this.request.excluded_days?.split(',').forEach(i=> ExclDaysArray.push(new Date(i)))
+    if(this.request.excluded_days!= '')
+    {
+      this.request.excluded_days.split(',').forEach(i=> ExclDaysArray.push(new Date(i)))
+    }
 
     this.excluded_dates = ExclDaysArray
   },

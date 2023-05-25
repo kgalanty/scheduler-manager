@@ -9,6 +9,8 @@ use App\Functions\AgentsHelper;
 use App\Functions\DatesHelper;
 use App\Functions\DaysOffHelper;
 use App\Functions\EditorsAuth;
+use App\Functions\Logs\DelDaysOff;
+use App\Functions\LogsFactory;
 use App\Functions\Notifications\reviewNotify;
 use App\Functions\SlackNotifications;
 use WHMCS\Database\Capsule as DB;
@@ -32,7 +34,9 @@ class LeaveRequestsController
                 ->join('tbladmins as a', 'a.id', '=', 'r.agent_id')
                 ->leftJoin('tbladmins as b', 'b.id', '=', 'r.approve_admin_id')
                 ->leftJoin('schedule_agents_to_groups as atg', 'atg.agent_id', '=', 'r.agent_id')
-                ->leftJoin('schedule_agentsgroups as ag', 'ag.id', '=', 'atg.group_id');
+                ->leftJoin('schedule_agentsgroups as ag', 'ag.id', '=', 'atg.group_id')
+                ->leftJoin('tbladmins as c', 'c.id', '=', 'r.cancelled');
+
             if ($request_type) {
                 $results->whereIn('r.request_type', explode(',', $request_type));
             }
@@ -58,7 +62,14 @@ class LeaveRequestsController
             if ($_GET['order'] && $_GET['orderdir']) {
                 $results->orderBy($_GET['order'], $_GET['orderdir']);
             }
-            $results = $results->get(['r.*', 'a.firstname as a_firstname', 'a.lastname as a_lastname', 'b.firstname as b_firstname', 'b.lastname as b_lastname', 'ag.group', 'ag.id AS agent_group_id']);
+            $results = $results->get(['r.*', 'a.firstname as a_firstname', 'a.lastname as a_lastname', 
+            'b.firstname as b_firstname', 
+            'b.lastname as b_lastname', 
+            'ag.group', 
+            'ag.id AS agent_group_id',
+            'c.firstname as c_firstname',
+            'c.lastname as c_lastname'
+        ]);
         }
 
         return Response::json(['response' => 'success', 'data' => $results, 'total' => $total], $response);
@@ -120,7 +131,7 @@ class LeaveRequestsController
 
             $daysToSubtract = count($dates) - count($excl_dates);
 
-            DaysOffHelper::AddDaysOffVacations($dates, $agent);
+            DaysOffHelper::AddDaysOffVacations(array_diff($dates, $excl_dates), $agent);
             DaysOffHelper::SubtractDaysFromHolidays($daysToSubtract, $agent);
         }
 
@@ -143,27 +154,27 @@ class LeaveRequestsController
 
         return Response::json(['response' => 'success', 'result' => $results], $response);
     }
-    public function cancelLeave($request, $response, $args)
-    {
-        $groupsManaging = EditorsAuth::getEditorGroups();   //TODO: Add checking permission group vs leave request staff group
+    // public function cancelLeave($request, $response, $args)
+    // {
+    //     $groupsManaging = EditorsAuth::getEditorGroups();   //TODO: Add checking permission group vs leave request staff group
 
-        if (!EditorsAuth::isAdmin() || !$groupsManaging[4]) {
-            return Response::json(['response' => 'error', 'msg' => 'You dont have permission to do this'], $response);
-        }
-        $entry = DB::table('schedule_vacations_request')->where('id', $args['id'])->first();
-        if (!$entry) {
-            return Response::json(['response' => 'error', 'msg' => 'Invalid id'], $response);
-        }
+    //     if (!EditorsAuth::isAdmin() || !$groupsManaging[4]) {
+    //         return Response::json(['response' => 'error', 'msg' => 'You dont have permission to do this'], $response);
+    //     }
+    //     $entry = DB::table('schedule_vacations_request')->where('id', $args['id'])->first();
+    //     if (!$entry) {
+    //         return Response::json(['response' => 'error', 'msg' => 'Invalid id'], $response);
+    //     }
 
-        $daysCount = DatesHelper::generateBetweenDates($entry->date_start, $entry->date_end);
+    //     $daysCount = DatesHelper::generateBetweenDates($entry->date_start, $entry->date_end);
 
-        if (DaysOffHelper::AddDaysFromHolidays(count($daysCount), $entry->agent_id)) {
-            DB::table('schedule_vacations_request')->where('id', $entry->id)->update(['cancelled' => '1']);
-            return Response::json(['response' => 'success', 'result' => 'success'], $response);
-        }
+    //     if (DaysOffHelper::AddDaysFromHolidays(count($daysCount), $entry->agent_id)) {
+    //         DB::table('schedule_vacations_request')->where('id', $entry->id)->update(['cancelled' => '1']);
+    //         return Response::json(['response' => 'success', 'result' => 'success'], $response);
+    //     }
 
-        return Response::json(['response' => 'error', 'result' => 'Unable to restore days off count'], $response);
-    }
+    //     return Response::json(['response' => 'error', 'result' => 'Unable to restore days off count'], $response);
+    // }
 
     public function reorder($request, $response, $args)
     {
@@ -210,40 +221,56 @@ class LeaveRequestsController
 
     function editLeave($request, $response, $args)
     {
+
         $groupsManaging = EditorsAuth::getEditorGroups();
 
-        if (!EditorsAuth::isAdmin() || !$groupsManaging[4]) {
+        if (!EditorsAuth::isAdmin() && !$groupsManaging[4]) {
             return Response::json(['response' => 'error', 'msg' => 'You dont have permission to perform this action.'], $response);
         }
         $entry = DB::table('schedule_vacations_request as vr')
-        ->join('schedule_agents_to_groups as atg', 'atg.agent_id', '=', 'vr.agent_id')
-        ->where('vr.id', $args['id'])
-        ->first(['vr.agent_id', 'atg.group_id']);
+            ->join('schedule_agents_to_groups as atg', 'atg.agent_id', '=', 'vr.agent_id')
+            ->where('vr.id', $args['id'])
+            ->first(['vr.agent_id', 'atg.group_id', 'vr.date_start', 'vr.date_end']);
         if (!$entry) {
             return Response::json(['response' => 'error', 'msg' => 'Invalid id'], $response);
         }
 
-        if(!in_array($entry->group_id, $groupsManaging[4]))
-        {
+        if (!in_array($entry->group_id, $groupsManaging[4])) {
             return Response::json(['response' => 'error', 'msg' => 'No permissions to perform this action.'], $response);
         }
 
         $newdatestart = $request->getParsedBody()['datestart'];
         $newdateend = $request->getParsedBody()['dateend'];
 
+
+        $newdatesBetween = DatesHelper::generateBetweenDates($newdatestart, $newdateend);
+        $olddatesBetween = DatesHelper::generateBetweenDates($entry->date_start, $entry->date_end);
+
+        $datestoRemove = array_diff($olddatesBetween, $newdatesBetween);
+        $datestoAdd = array_diff($newdatesBetween, $olddatesBetween);
+
         if ($request->getParsedBody()['diff'] !== 0) {
             //update pool of staff or return error
-            $resp = $request->getParsedBody()['diff'] > 0 ? 
-                DaysOffHelper::AddDaysFromHolidays($request->getParsedBody()['diff'],$entry->agent_id)
+            $resp = $request->getParsedBody()['diff'] > 0 ?
+                DaysOffHelper::AddDaysFromHolidays($request->getParsedBody()['diff'], $entry->agent_id)
                 :
                 DaysOffHelper::SubtractDaysFromHolidays(abs($request->getParsedBody()['diff']), $entry->agent_id);
 
-                if(!$resp)
-                {
-                    return Response::json(['response' => 'error', 'msg' => 'Failed to readjust days in pool.'], $response);
-                }
+            if (!$resp) {
+                return Response::json(['response' => 'error', 'msg' => 'Failed to readjust days in pool.'], $response);
+            }
         }
 
+        if (count($datestoRemove) > 0) {
+            DB::table('schedule_vacations')
+                ->where('agent_id', $entry->agent_id)
+                ->whereIn('day', $datestoRemove)
+                ->delete();
+        }
+
+        if (count($datestoAdd) > 0) {
+            DaysOffHelper::AddDaysOffVacations($datestoAdd, $entry->agent_id);
+        }
         // update  date range in request
 
         DB::table('schedule_vacations_request')->where('id', $args['id'])
@@ -255,6 +282,51 @@ class LeaveRequestsController
                 ]
             );
 
-            return Response::json(['response' => 'success'], $response);
+        return Response::json(['response' => 'success'], $response);
+    }
+
+    function cancelLeave($request, $response, $args)
+    {
+        $groupsManaging = EditorsAuth::getEditorGroups();
+        //var_dump(EditorsAuth::isAdmin(), $groupsManaging[4]); die;
+        if (!EditorsAuth::isAdmin() && !$groupsManaging[4]) {
+            return Response::json(['response' => 'error', 'msg' => 'You dont have permission to perform this action.'], $response);
+        }
+        
+        $entry = DB::table('schedule_vacations_request as vr')
+            ->join('schedule_agents_to_groups as atg', 'atg.agent_id', '=', 'vr.agent_id')
+            ->where('vr.id', $args['id'])
+            ->first(['vr.agent_id', 'atg.group_id', 'vr.date_start', 'vr.date_end', 'vr.cancelled']);
+        if (!$entry) {
+            return Response::json(['response' => 'error', 'msg' => 'Invalid id'], $response);
+        }
+
+        if (!in_array($entry->group_id, $groupsManaging[4])) {
+            return Response::json(['response' => 'error', 'msg' => 'No permissions to perform this action.'], $response);
+        }
+
+        if($entry->cancelled > 0)
+        {
+            return Response::json(['response' => 'error', 'msg' => 'This request is already cancelled'], $response);
+        }
+
+        //update pool of staff or return error
+        $resp = $request->getParsedBody()['daysreturn'] > 0 ?
+            DaysOffHelper::AddDaysFromHolidays($request->getParsedBody()['daysreturn'], $entry->agent_id)
+            :
+            true;
+
+        if (!$resp) {
+            return Response::json(['response' => 'error', 'msg' => 'Failed to return days into pool.'], $response);
+        }
+
+        $daysLeave = DatesHelper::generateBetweenDates($entry->date_start, $entry->date_end);
+
+        DB::table('schedule_vacations')->whereIn('day', $daysLeave)->where('agent_id', $entry->agent_id)->delete();
+
+        DB::table('schedule_vacations_request')->where('id', $args['id'])->update(['cancelled' => AgentConstants::adminid()]);
+
+        return Response::json(['response' => 'success'], $response);
+
     }
 }

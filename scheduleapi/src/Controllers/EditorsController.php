@@ -56,5 +56,4 @@ class EditorsController
     // return $response
     //   ->withHeader('Content-Type', 'application/json');
   }
-  
 }

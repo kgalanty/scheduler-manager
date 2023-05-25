@@ -27,9 +27,9 @@ class DaysoffController
         $dateexp = $request->getParsedBody()['dateexp'];
         $daysoff = $request->getParsedBody()['daysoff'];
         $year = (int)$request->getParsedBody()['year'];
-        if (DB::table('schedule_daysoff')->where('agent_id', (int)$args['agentid'])->where('year', $year)->count() > 0) {
-            return Response::json(['result' => 'error', 'msg' => 'This agent already has days off pool in given year'], $response);
-        }
+        // if (DB::table('schedule_daysoff')->where('agent_id', (int)$args['agentid'])->where('year', $year)->count() > 0) {
+        //     return Response::json(['result' => 'error', 'msg' => 'This agent already has days off pool in given year'], $response);
+        // }
         $r = DB::table('schedule_daysoff')->insert(
             [
                 'agent_id' => (int)$args['agentid'],

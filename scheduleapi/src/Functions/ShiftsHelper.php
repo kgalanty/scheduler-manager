@@ -13,9 +13,9 @@ class ShiftsHelper
     {
         usort($shifts, function ($a, $b) {
             if (strpos($a['from'], '00:') === 0 && strpos($b['from'], '00:') === false) {
-                return -1;
-            } elseif (strpos($a['from'], '00:') === false && strpos($b['from'], '00:') === 0) {
                 return 1;
+            } elseif (strpos($a['from'], '00:') === false && strpos($b['from'], '00:') === 0) {
+                return -1;
             } else {
                 return (int)$a['from'] - (int)$b['from'];
             }

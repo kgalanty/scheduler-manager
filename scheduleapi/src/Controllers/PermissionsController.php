@@ -21,7 +21,8 @@ class PermissionsController
       ) {
         DB::table('schedule_agents_groups_editor')->insert([
           'agent_id' => $agentid,
-          'group_id' => $group_id, 'permission' => $perm
+          'group_id' => $group_id,
+          'permission' => $perm
         ]);
       } else {
         DB::table('schedule_agents_groups_editor')->where('agent_id', $agentid)

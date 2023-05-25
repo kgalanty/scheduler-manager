@@ -1,0 +1,6 @@
+{
+    "require": {
+        "symfony/http-client": "^4.4",
+        "nyholm/psr7": "^1.5"
+    }
+}

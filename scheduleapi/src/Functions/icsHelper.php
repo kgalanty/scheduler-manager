@@ -154,26 +154,25 @@ class SimpleICS_Event {
 
 
 icsHelper::$Template=<<<EOTT
-	BEGIN:VCALENDAR
-	VERSION:2.0
-	PRODID:{{productString}}
-	METHOD:PUBLISH
-	CALSCALE:GREGORIAN
-	{{events|serialize}}
-	END:VCALENDAR
-
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:{{productString}}
+METHOD:PUBLISH
+CALSCALE:GREGORIAN
+{{events|serialize}}
+END:VCALENDAR
 EOTT;
 
 SimpleICS_Event::$Template=<<<DUPA
-	BEGIN:VEVENT
-	UID:{{uniqueId}}
-	DTSTART:{{startDate|calDate}}
-	DTSTAMP:{{dateStamp|calDate}}
-	DTEND:{{endDate|calDate}}
-	LOCATION:{{location|escape}}
-	DESCRIPTION:{{description|escape}}
-	URL;VALUE=URI:{{uri|escape}}
-	SUMMARY:{{summary|escape}}
-	END:VEVENT
+BEGIN:VEVENT
+UID:{{uniqueId}}
+DTSTART:{{startDate|calDate}}
+DTSTAMP:{{dateStamp|calDate}}
+DTEND:{{endDate|calDate}}
+LOCATION:{{location|escape}}
+DESCRIPTION:{{description|escape}}
+URL;VALUE=URI:{{uri|escape}}
+SUMMARY:{{summary|escape}}
+END:VEVENT
 
 DUPA;

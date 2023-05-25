@@ -1,8 +1,8 @@
 <?php
-require_once('../init.php');
-// ini_set('display_errors', 1);
-// ini_set('display_startup_errors', 1);
-// error_reporting(E_ALL);
+require_once('../../init.php');
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
 use WHMCS\Database\Capsule as DB;
 
 class LDAP
@@ -71,23 +71,28 @@ class AgentsLDAPCron
     }
     public function queryAgents()
     {
-        $agents = DB::table('schedule_agents_details as ad')
-            ->join('tbladmins as a', 'a.id', '=', 'ad.agent_id')
-            ->get(['ad.*', 'a.username']);
+        $agents = DB::table('tbladmins as a')->where('a.disabled', '0')
+            ->leftJoin('schedule_slackusers as s', 's.agent_id', '=', 'a.id')
+            ->get(['a.id', 'a.username', 's.*']);
         return $agents;
     }
     public function handleAgent($agentRow)
     {
+
         return $this->ldap->filter('uid', $agentRow->username);
     }
 }
 
 $agentsHandler = (new AgentsLDAPCron(new LDAP()));
 $agentsList = $agentsHandler->queryAgents();
+echo('<pre>'); var_dump($agentsList);die;
 $agentsReady = [];
 foreach ($agentsList as $agent) {
     $a = $agentsHandler->handleAgent($agent);
-    if ($a) $agentsReady[] = array_merge(['id' => $agent->id, 'adminid' => $agent->agent_id], $a);
+   
+    if ($a) {
+        $agentsReady[] = array_merge(['id' => $agent->id, 'adminid' => $agent->agent_id], $a);
+    }
 }
 foreach ($agentsReady as $ar) {
 

@@ -71,7 +71,8 @@
             >Cancel</b-button
           >
           <b-tag type="is-info is-light" v-if="showCancelledLabel(row)"
-            >Cancelled</b-tag
+            >Cancelled by {{ props.row.c_firstname }}
+            {{ props.row.c_lastname }}</b-tag
           >
         </b-table-column>
       </b-table>
@@ -150,10 +151,9 @@ export default {
     showCancel(row) {
       return row.cancelled === 0 && row.approve_admin_id > 0;
     },
-    showCancelledLabel(row)
-    {
-      return row.cancelled === 1
-    }
+    showCancelledLabel(row) {
+      return row.cancelled > 0;
+    },
   },
   data() {
     return {

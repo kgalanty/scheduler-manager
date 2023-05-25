@@ -298,7 +298,7 @@ export default {
      // if (!alreadyInStore) {
       //  this.$store.commit("setRefdate", this.referenceDate);
 
-        this.readVacationAPI();
+    this.readVacationAPI();
         
      // } else {
      //   this.$store.commit("setRefdate", this.referenceDate);

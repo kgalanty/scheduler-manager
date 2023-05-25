@@ -206,7 +206,9 @@ class AgentsController
   {
     $agentid = (int)$args['agentid'];
     if ($agentid) {
-      $admin = DB::table('tbladmins')->where('id', $agentid)->first(['id', 'firstname', 'lastname', 'username', 'disabled']);
+      $admin = DB::table('tbladmins as a')
+      ->leftJoin('schedule_agents_to_groups as atg', 'atg.agent_id', '=', 'a.id')
+      ->where('a.id', $agentid)->first(['a.id', 'a.firstname', 'a.lastname', 'a.username', 'a.disabled', 'atg.group_id']);
       $resp = ['response' => 'success', 'data' => $admin];
     } else {
       $resp = ['response' => 'error', 'msg' => 'Not logged as admin'];
@@ -281,7 +283,7 @@ class AgentsController
 
     $groupsManaging = EditorsAuth::getEditorGroups();
 
-    if (!EditorsAuth::isAdmin() || !$groupsManaging[2]) {
+    if (!EditorsAuth::isAdmin() && !$groupsManaging[2]) {
         return Response::json(['response' => 'error', 'msg' => 'You dont have permission to do this'], $response);
     }
 

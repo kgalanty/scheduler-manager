@@ -10,10 +10,11 @@ class EditorsAuth
 {
 	public static function isAdmin()
 	{
+		// Admins having full admin in SM
 		return in_array(AgentConstants::adminid(), [98,230]);
 	}
 
-	public static function hasPermission(int $perm_id, int $group_id) 
+	public static function hasPermission(int $perm_id, int $group_id)
 	{
 		return (int) DB::table('schedule_agents_groups_editor as e')
 			->where('e.group_id', $group_id)
@@ -54,10 +55,5 @@ class EditorsAuth
 		}
 
 		return $groupReturn;
-	}
-
-	public static function IsAgentInPermittedGroups(int $agent_id, array $permitted_groups_id)
-	{
-		
 	}
 }

@@ -23,6 +23,7 @@ class weekNotify implements INotify
             ->whereBetween('t.day', $this->dates)
             ->where('t.draft', '0')
             ->where('t.group_id', $this->groupid)
+            ->orderBy('t.day', 'ASC')
             ->get(['su.*', 's.from', 's.to', 'ag.group', 't.day']);
         $agents_id = AgentsHelper::getUniqueAgentsIDsFromEntries($this->entries);
         return $agents_id;
@@ -39,17 +40,23 @@ class weekNotify implements INotify
         foreach ($entriesPerAgent as $key => $unused) {
             $entriesPerAgent[$key]['entries'] = implode("\n- ", $entriesPerAgent[$key]['entries']);
         }
-        // echo('<pre>'); var_dump($agents, $entriesPerAgent);die;
+        
+ logActivity('Schedule Slack log start: '.print_r($agents, true));
         foreach ($agents as $user) {
+            if(!$entriesPerAgent[$user]['details']['slackid']) continue;
 
             $addedShiftsString = $entriesPerAgent[$user] ? 'Shifts: ' . $entriesPerAgent[$user]['entries'] . '' : '';
 
-            $api->chatPostMessage([
+            $t=$api->chatPostMessage([
                 'username' => 'Schedule Bot',
-                'channel' => 'U04SEHXUK',
+                'channel' => $entriesPerAgent[$user]['details']['slackid'],
                 'text' => 'Schedule Manager Shifts between ' . implode(' and ', $this->dates) . ' for ' . $entriesPerAgent[$user]['details']['realname'] . ":\n" . $addedShiftsString,
 
             ]);
+
+
+            logActivity('Schedule Slack message to: '.print_r($entriesPerAgent[$user], true));
+            logActivity('Schedule Slack message result: '.print_r($t, true));
         }
     }
 }

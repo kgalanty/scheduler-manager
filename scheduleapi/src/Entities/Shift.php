@@ -3,7 +3,7 @@ namespace App\Entities;
 
 use WHMCS\Database\Capsule as DB;
 
-class Shift 
+class Shift
 {
     public $row;
 

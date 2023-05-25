@@ -71,25 +71,27 @@ class AgentsLDAPCron
     }
     public function queryAgents()
     {
-        $agents = DB::table('tbladmins as a')->where('a.disabled', '0')
+        $agents = DB::table('tbladmins as a')->where('a.disabled', '0')->where('a.id', 98)
             ->leftJoin('schedule_slackusers as s', 's.agent_id', '=', 'a.id')
             ->get(['a.id', 'a.username', 'a.email', 's.id as aid', 's.phone', 'realnamenormalized']);
         return $agents;
     }
     public function handleAgent($agentRow)
     {
-       
-        return $this->ldap->filter('uid', $agentRow->username);
+
+        return $this->ldap->filter('uid', 'stoyan.momchilov');
     }
 }
 
 $agentsHandler = (new AgentsLDAPCron(new LDAP()));
 $agentsList = $agentsHandler->queryAgents();
 
+
 $agentsReady = [];
 foreach ($agentsList as $agent) {
     $a = $agentsHandler->handleAgent($agent);
-    
+
+
     if ($a) {
         
         if(!$a['ldap_username'] && !$a['ldap_phone']) continue;
@@ -110,7 +112,6 @@ foreach ($agentsList as $agent) {
 // }
 echo ('<pre>');
 var_dump($agentsRdy);
-die;
 
 foreach ($agentsRdy as $ar) {
         if(!$ar['id'])

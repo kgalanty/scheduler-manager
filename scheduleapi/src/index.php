@@ -61,8 +61,7 @@ $app->get(ROUTE_PREFIX . '/leaverequests', 'App\Controllers\LeaveRequests:reques
 $app->get(ROUTE_PREFIX . '/calendar/generate', 'App\Controllers\CalendarController:create');
 $app->get(ROUTE_PREFIX . '/calendar/{agenthash}', 'App\Controllers\CalendarController:usercalendar');
 $app->get(ROUTE_PREFIX . '/calendar', 'App\Controllers\CalendarController:accesslist');
-
-$app->post(ROUTE_PREFIX . '/calendar/revoke', 'App\Controllers\CalendarController:revokeaccess');
+$app->post(ROUTE_PREFIX . '/calendar/revoke', 'App\Controllers\CalendarController:revokeaccess')->add(new JsonMiddleware());
 
 $app->post(ROUTE_PREFIX . '/subteams/color', 'App\Controllers\SubteamsController:setcolor')->add(new JsonMiddleware());
 

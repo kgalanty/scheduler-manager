@@ -141,7 +141,7 @@ export default {
       if (this.excluded_dates.length > 0) {
         for (const excl_date of this.excluded_dates) {
           const day = new Date(excl_date);
-          const month = day.getMonth + 1
+          const month = day.getMonth() + 1
           const day_date =
             day.getFullYear() +
             "-" +
