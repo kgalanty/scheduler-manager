@@ -1,0 +1,17 @@
+on:
+  push:
+    branches:
+      - 'master'
+      - 'main'
+
+jobs:
+  trigger_build:
+    runs-on: ubuntu-latest
+    steps:
+      - run: >
+          curl -H "Accept: application/vnd.github+json" 
+          -H "Authorization: token ${{ secrets.DOCKER_BUILD_TOKEN }}" 
+          -H "X-GitHub-Api-Version: 2022-11-28" 
+          --request POST 
+          --data '{"event_type": "build-deploy", "client_payload": { "target": "whmcs" } }' 
+          https://api.github.com/repos/tmdhosting/docker-whmcs/dispatches
