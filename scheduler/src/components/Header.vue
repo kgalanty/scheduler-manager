@@ -43,7 +43,7 @@
       </div>
       <div class="navbar-end">
         <b-button type="is-warning" style="margin-top:5px" @click="FeedbackModal">Give us Your Feedback</b-button>
-        <a class="navbar-item" href="https://my.tmdhosting.com/admin/">
+        <a class="navbar-item" href="../admin/">
           <b-icon pack="fa" icon="chevron-left" size="is-medium"> </b-icon>
         </a>
       </div>

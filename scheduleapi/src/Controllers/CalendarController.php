@@ -48,7 +48,7 @@ class CalendarController
             AgentConstants::adminid()
         )->first();
         if ($existingHash) {
-            $link = Env::API . '/calendar/' . $existingHash->hash;
+            $link = Env::api() . '/calendar/' . $existingHash->hash;
             return Response::json(['response' => 'success', 'link' => $link], $response);
         }
         $hash = bin2hex(random_bytes(16));
@@ -56,7 +56,7 @@ class CalendarController
             'agent_id' => AgentConstants::adminid(),
             'hash' => $hash
         ]);
-        $link = Env::API . '/calendar/' . $hash;
+        $link = Env::api() . '/calendar/' . $hash;
         return Response::json(['response' => 'success', 'link' => $link], $response);
     }
     public function usercalendar($request, $response, $args)
