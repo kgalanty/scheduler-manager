@@ -1,0 +1,1 @@
+<?php require_once('../init.php'); if(!$_SESSION['adminid']){header('Location: ../admin/login.php?redirect=/../schedule/'); exit;}?>
