@@ -17,10 +17,6 @@ if (!($_SESSION['adminid'] && $_SESSION['adminpw'])) {
 }
 define('ROUTE_PREFIX', '/schedule/scheduleapi');
 
-$app->get(ROUTE_PREFIX . '/', function (Request $request, Response $response, $args) {
-    $response->getBody()->write("Hello world!");
-    return $response;
-});
 $app->get(ROUTE_PREFIX . '/home', 'App\Controllers\HomeController:home');
 $app->get(ROUTE_PREFIX . '/dbmigration', 'App\Controllers\MigrationController:home');
 $app->get(ROUTE_PREFIX . '/agents', 'App\Controllers\AgentsController:agents');
