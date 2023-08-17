@@ -7,6 +7,6 @@ class Env
     public static function api()
     {
         global $CONFIG;
-        return $CONFIG['SystemURL'] . '/schedule/scheduleapi'; //https://my.tmdhosting.com/schedule/scheduleapi';
-    }
+        return $CONFIG['SystemURL'].'/schedule/scheduleapi'; //https://my.tmdhosting.com/schedule/scheduleapi';
+}
 }

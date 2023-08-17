@@ -11,7 +11,9 @@ class EditorsAuth
 	public static function isAdmin()
 	{
 		// Admins having full admin in SM
-		return in_array(AgentConstants::adminid(), [98,230]);
+		//return in_array(AgentConstants::adminid(), [98,230]);
+		return DB::table('schedule_editors as e')
+		->where('e.editor_id', AgentConstants::adminid())->count() == 0 ? false : true;
 	}
 
 	public static function hasPermission(int $perm_id, int $group_id)
