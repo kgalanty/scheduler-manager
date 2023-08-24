@@ -25,9 +25,23 @@ class LeaveRequestsController
         $requestAuthor = $args['agentid'] ? $args['agentid'] : $author;
         $results = [];
         $request_type = $_GET['mode'] ? $_GET['mode'] : [];
-        $teamsFilter = $_GET['team'];
+        $teamsFilter = $_GET['team'] ? [intval($_GET['team'])] : [];
 
         $groupsManaging = EditorsAuth::getEditorGroups();
+
+        if ($teamsFilter) {
+            $isTopTeam = DB::table('schedule_agentsgroups')->where('id', $teamsFilter[0])->where('parent', '0')->count();
+           
+            if ($isTopTeam > 0) {
+                $groups = DB::table('schedule_agentsgroups')->where('parent', $teamsFilter[0])->get(['id']);
+                //$teamsFilter = [$teamsFilter];
+      
+                foreach ($groups as $gr) {
+                    $teamsFilter[] = $gr->id;
+                }
+            }
+            
+        }
 
         if (EditorsAuth::isAdmin() || $groupsManaging[4]) {
             $results = DB::table("schedule_vacations_request as r")
@@ -40,14 +54,12 @@ class LeaveRequestsController
             if ($request_type) {
                 $results->whereIn('r.request_type', explode(',', $request_type));
             }
-
             if ($groupsManaging[4] && !EditorsAuth::isAdmin()) {
 
                 $results->whereIn('atg.group_id', $groupsManaging[4]);
             }
-
-            if ($teamsFilter) {
-                $results->where('atg.group_id', $teamsFilter);
+            elseif ($teamsFilter) {
+                $results->whereIn('atg.group_id', $teamsFilter);
             }
 
             if (!$_GET['all']) {
@@ -60,16 +72,17 @@ class LeaveRequestsController
             $total = $results->count();
 
             if ($_GET['order'] && $_GET['orderdir']) {
-                $results->orderBy($_GET['order'], $_GET['orderdir']);
+                $results->orderBy(trim($_GET['order']), trim($_GET['orderdir']));
             }
-            $results = $results->get(['r.*', 'a.firstname as a_firstname', 'a.lastname as a_lastname', 
-            'b.firstname as b_firstname', 
-            'b.lastname as b_lastname', 
-            'ag.group', 
-            'ag.id AS agent_group_id',
-            'c.firstname as c_firstname',
-            'c.lastname as c_lastname'
-        ]);
+            $results = $results->get([
+                'r.*', 'a.firstname as a_firstname', 'a.lastname as a_lastname',
+                'b.firstname as b_firstname',
+                'b.lastname as b_lastname',
+                'ag.group',
+                'ag.id AS agent_group_id',
+                'c.firstname as c_firstname',
+                'c.lastname as c_lastname'
+            ]);
         }
 
         return Response::json(['response' => 'success', 'data' => $results, 'total' => $total], $response);
@@ -292,7 +305,7 @@ class LeaveRequestsController
         if (!EditorsAuth::isAdmin() && !$groupsManaging[4]) {
             return Response::json(['response' => 'error', 'msg' => 'You dont have permission to perform this action.'], $response);
         }
-        
+
         $entry = DB::table('schedule_vacations_request as vr')
             ->join('schedule_agents_to_groups as atg', 'atg.agent_id', '=', 'vr.agent_id')
             ->where('vr.id', $args['id'])
@@ -305,8 +318,7 @@ class LeaveRequestsController
             return Response::json(['response' => 'error', 'msg' => 'No permissions to perform this action.'], $response);
         }
 
-        if($entry->cancelled > 0)
-        {
+        if ($entry->cancelled > 0) {
             return Response::json(['response' => 'error', 'msg' => 'This request is already cancelled'], $response);
         }
 
@@ -327,6 +339,5 @@ class LeaveRequestsController
         DB::table('schedule_vacations_request')->where('id', $args['id'])->update(['cancelled' => AgentConstants::adminid()]);
 
         return Response::json(['response' => 'success'], $response);
-
     }
 }

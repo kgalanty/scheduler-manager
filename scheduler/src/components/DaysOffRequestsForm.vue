@@ -43,8 +43,8 @@
                   v-for="team in teams"
                   :value="team.group_id"
                   :key="team.group_id"
-                  :disabled="team.hasSubteams > 0"
-                >
+                 
+                > <!-- :disabled="team.hasSubteams > 0" -->
                   <span v-if="team.parent > 0">- </span> {{ team.name }}
                 </option>
               </b-select></b-field
@@ -62,18 +62,21 @@
       :total="total"
       paginated
       backend-pagination
+      backend-sorting
       :per-page="perPage"
+      @sort="sortDaysOffRequests"
       @page-change="onPageChange"
     >
       <template #empty>
         <div class="has-text-centered">No pending requests</div>
       </template>
       <b-table-column
-        field="date_start"
+        field="a_lastname"
         label="Agent"
         v-slot="props"
         centered
         width="140"
+        sortable
       >
         {{ props.row.a_firstname }} {{ props.row.a_lastname }}
       </b-table-column>
@@ -91,7 +94,7 @@
         label="Vacation Range"
         v-slot="props"
         centered
-        width="230"
+        width="230" sortable 
       >
         {{ props.row.date_start }} - {{ props.row.date_end }}
         <b-tag v-if="props.row.cancelled > 0" type="is-danger">Cancelled by {{ props.row.c_firstname }} {{ props.row.c_lastname }}</b-tag>
@@ -110,7 +113,7 @@
         label="Date Added"
         v-slot="props"
         centered
-        width="180"
+        width="180" sortable 
       >
         {{ props.row.date_submit }}
       </b-table-column>
@@ -124,7 +127,7 @@
           :hasPermission="hasPermission(props.row.agent_group_id)"
         />
       </b-table-column>
-      <b-table-column field="" label="Actions" v-slot="props" centered>
+      <b-table-column field="" label="Actions" v-slot="props" centered width="100">
         <b-button  v-if="props.row.cancelled == 0"
           type="is-info"
           @click="OpenEditModal(props.row)"
@@ -163,6 +166,12 @@ export default {
     },
   },
   methods: {
+    sortDaysOffRequests(field, order)
+    {
+      this.sort_field = field
+      this.sort_order = order
+      this.getRequests()
+    },  
     hasPermission(group_id) {
       return this.$store.getters.hasPermission(
         this.LeaveManagementPermissions,
@@ -216,12 +225,12 @@ export default {
       const params = [
         `all=1`,
         `status=${status}`,
-        `order=id`,
+        `order=${this.sort_field}`,
         `page=${this.page}`,
         `perpage=${this.perPage}`,
         `team=${this.teamsfilter}`,
         `mode=${this.requestTypeFilter.map((u) => u.id).join(",")}`,
-        `orderdir=desc`,
+        `orderdir=${this.sort_order}`,
       ].join("&");
 
       this.$http.get(`./scheduleapi/leave/get?${params}`).then((r) => {
@@ -264,6 +273,8 @@ export default {
         { id: 3, label: "Sick Leave" },
       ],
       filteredTags: [],
+      sort_field: '',
+      sort_order: '',
     };
   },
   mounted() {
