@@ -41,7 +41,10 @@
               </p>
             </b-message>
             <h2 class="subtitle">
-              <b-button type="is-primary" @click="addTeam" :loading="addNewTeamBtn"
+              <b-button
+                type="is-primary"
+                @click="addTeam"
+                :loading="addNewTeamBtn"
                 >Add New Team</b-button
               >
             </h2>
@@ -89,7 +92,11 @@
               </b-field>
             </h2>
             <h2 class="subtitle">
-              <b-button type="is-primary" @click="addShift" :loading="addShiftLoading" :disabled="addShiftLoading"
+              <b-button
+                type="is-primary"
+                @click="addShift"
+                :loading="addShiftLoading"
+                :disabled="addShiftLoading"
                 >Add New Shift</b-button
               >
             </h2>
@@ -105,11 +112,11 @@
           </div>
         </section>
       </b-tab-item>
-    <b-tab-item label="Days Off Requests">
+      <b-tab-item label="Days Off Requests">
         <section class="section adminsection">
           <h1 class="title agentstitle">Days Off Requests</h1>
           <div class="subtitle">
-             <DaysOffRequestsForm />
+            <DaysOffRequestsForm />
           </div>
         </section>
       </b-tab-item>
@@ -134,8 +141,8 @@
 import ShiftsList from "../components/ShiftsList.vue";
 import AgentsList from "../components/AgentsList.vue";
 import ReportsForm from "../components/ReportsForm.vue";
-import DaysOffRequestsForm from '../components/DaysOffRequestsForm.vue'
-import CalendarAccess from "../components/CalendarAccess.vue"
+import DaysOffRequestsForm from "../components/DaysOffRequestsForm.vue";
+import CalendarAccess from "../components/CalendarAccess.vue";
 
 export default {
   name: "admin",
@@ -148,7 +155,6 @@ export default {
     CalendarAccess,
   },
   data() {
-
     return {
       activeTab: 0,
       timefrom: null,
@@ -164,15 +170,14 @@ export default {
     };
   },
   computed: {
-    isAdmin()
-    {
-      return this.$store.state.adminPermission === 1
+    isAdmin() {
+      return this.$store.state.adminPermission === 1;
     },
     teams() {
       return this.$store.state.schedule_teams;
     },
     topteams() {
-      return this.$store.getters.topteams('Admin')
+      return this.$store.getters.topteams("Admin");
     },
     admins() {
       return this.$store.state.admins;
@@ -193,25 +198,22 @@ export default {
     },
   },
   mounted() {
-    if(this.isAdmin === 0)
-    {
-    this.$http
-      .get("./scheduleapi/verify", { withCredentials: true })
-      .then((r) => {
-      
-        if (r.data.response === "success" && r.data.admin === 1) {
-          this.$store.dispatch("getAdmins");
-          this.$store.dispatch("teams/getTeams");
-        } else {
-          this.$router.push({ path: `/` });
-        }
-      });
-    }
-    else
-    {
-      this.$store.dispatch("getAdmins");
-      this.$store.dispatch("teams/getTeams");
-    }
+    //if (!this.isAdmin) {
+      this.$http
+        .get("./scheduleapi/verify", { withCredentials: true })
+        .then((r) => {
+          console.log(r.data)
+          if (r.data.response === "success" && r.data.admin === 1) {
+            this.$store.dispatch("getAdmins");
+            this.$store.dispatch("teams/getTeams");
+          } else {
+            this.$router.push({ path: `/` });
+          }
+        });
+    // } else if(this.isAdmin === 1) {
+    //   this.$store.dispatch("getAdmins");
+    //   this.$store.dispatch("teams/getTeams");
+    // }
   },
   methods: {
     formatter(d) {
@@ -225,14 +227,14 @@ export default {
         });
         return;
       }
-      this.addNewTeamBtn = true
+      this.addNewTeamBtn = true;
       this.$http
         .post("./scheduleapi/agents/addgroup", {
           name: this.new_team,
           parent: this.parentteam,
         })
         .then((response) => {
-          this.addNewTeamBtn = false
+          this.addNewTeamBtn = false;
           if (response.data.response == "success") {
             this.$buefy.toast.open({
               message: "New Team Added",
@@ -256,7 +258,7 @@ export default {
         });
         return;
       }
-      this.addShiftLoading = true
+      this.addShiftLoading = true;
       this.$http
         .post("./scheduleapi/shift/new", {
           from: this.moment(this.timefrom).format("HH:mm"),
@@ -264,7 +266,7 @@ export default {
           team_id: this.team_id,
         })
         .then((response) => {
-          this.addShiftLoading = false
+          this.addShiftLoading = false;
           if (response.data.response == "success") {
             this.$buefy.toast.open({
               message: "Added!",

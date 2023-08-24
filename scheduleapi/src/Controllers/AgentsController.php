@@ -240,7 +240,10 @@ class AgentsController
     if (EditorsAuth::isAdmin()) {
       $data['admin'] = 1;
     }
-
+    else
+    {
+      $data['admin'] = 0;
+    }
     return Response::json($data, $response);
     // $response->getBody()->write(json_encode($data));
     // return $response
