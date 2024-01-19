@@ -25,14 +25,39 @@ class DaysOffHelper
         return;
     }
 
+    public static function checkIfDaysAreAvailable(int $daysCount, int $agent_id)
+    {
+        $daysPools = DB::table('schedule_daysoff')->where('date_expiration', '>', date('Y-m-d'))->where('agent_id', $agent_id)->where('days', '>', '0')->orderBy('date_expiration', 'ASC')->get();
+        $daysAvailable = 0;
+        foreach ($daysPools as $pool) {
+            $daysAvailable += $pool->days;
+        }
+        return $daysAvailable >= $daysCount ? true : false;
+    }
+
     public static function SubtractDaysFromHolidays(int $daysCount, int $agent_id)
     {
-        $daysPool = DB::table('schedule_daysoff')->where('date_expiration', '>', date('Y-m-d'))->where('agent_id', $agent_id)->orderBy('date_expiration', 'ASC')->first();
-        if ($daysPool) {
-            DB::table('schedule_daysoff')->where('id', $daysPool->id)->update(['days' => $daysPool->days - $daysCount]);
-            return true;
+        $daysPools = DB::table('schedule_daysoff')->where('date_expiration', '>', date('Y-m-d'))->where('agent_id', $agent_id)->where('days', '>', '0')->orderBy('date_expiration', 'ASC')->get();
+
+        $daysCountcalculation = $daysCount;
+        $daysAvailable = 0;
+
+        foreach ($daysPools as $pool) {
+            $daysAvailable += $pool->days;
         }
-        return false;
+
+        if ($daysAvailable < $daysCountcalculation) {
+            return false;
+        }
+
+        foreach ($daysPools as $pool) {
+            $thisPoolDays = $pool->days >= $daysCountcalculation ? $pool->days - $daysCountcalculation : 0;
+
+            $daysCountcalculation -= $pool->days;
+            DB::table('schedule_daysoff')->where('id', $pool->id)->update(['days' => $thisPoolDays]);
+        }
+
+        return true;
     }
     public static function AddDaysFromHolidays(int $daysCount, int $agent_id)
     {

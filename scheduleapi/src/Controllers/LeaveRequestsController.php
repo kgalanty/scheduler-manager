@@ -143,6 +143,11 @@ class LeaveRequestsController
             $dates = DatesHelper::generateBetweenDates($requestEntity->getRow()->date_start, $requestEntity->getRow()->date_end);
 
             $daysToSubtract = count($dates) - count($excl_dates);
+            
+            if(DaysOffHelper::checkIfDaysAreAvailable($daysToSubtract, $agent)===false)
+            {
+                return Response::json(['response' => 'error', 'msg' => 'This agent doesnt have '.$daysToSubtract.' days in pool(s) to take.'], $response);
+            }
 
             DaysOffHelper::AddDaysOffVacations(array_diff($dates, $excl_dates), $agent);
             DaysOffHelper::SubtractDaysFromHolidays($daysToSubtract, $agent);
