@@ -170,10 +170,10 @@ export default {
               type: "is-success",
             });
           } else {
-            this.$emit("close");
             this.$buefy.toast.open({
               message: r.data.msg,
               type: "is-danger",
+              duration: 5000
             });
             // loadingComponent.close();
           }
@@ -196,10 +196,10 @@ export default {
               type: "is-success",
             });
           } else {
-            this.$emit("close");
             this.$buefy.toast.open({
               message: r.data.msg,
               type: "is-danger",
+              duration: 5000
             });
             // loadingComponent.close();
           }
