@@ -87,8 +87,8 @@ class CalendarController
 
         foreach ($schedule as $event) {
             $cal->addEvent(function ($e) use ($event) {
-                $e->startDate = new \DateTime($event->day, new \DateTimeZone('Europe/Sofia'));
-                $e->endDate = new \DateTime($event->day ,  new \DateTimeZone('Europe/Sofia'));
+                $e->startDate = new \DateTime($event->day.' '.$event->from .' Europe/Sofia');
+                $e->endDate = new \DateTime($event->day.' '.$event->to .' Europe/Sofia');
                 //$e->uri = 'http://url.to/my/event';
                 $e->location = 'TMDHosting';
                 $e->description = $event->group;
